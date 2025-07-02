@@ -3,6 +3,9 @@
 import { useState } from 'react';
  import Carousel from '../../components/Carousel';
  import BuyParts from '../../components/BuyParts';
+ import Testimonials from '../../components/Testimonials';
+ import TrendingProducts from '../../components/TrendingProducts';
+ import { Footer } from '../../components/Footer';
 
 export default function UsersPage() {
    const [selectedTab, setSelectedTab] = useState('buy'); // removed TypeScript union type
@@ -47,6 +50,12 @@ export default function UsersPage() {
  
            </div>
         )}
+      </div>
+
+      <div>
+        <Testimonials />
+        <TrendingProducts />
+        <Footer/>
       </div>
 
        
