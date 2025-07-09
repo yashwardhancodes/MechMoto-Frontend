@@ -3,11 +3,13 @@ import React, { useState } from "react";
 import Image from "next/image";
 import logo from "../../../public/assets/logo.png";
 import google from "../../../public/assets/Google.png";
-import { useSignupUserMutation } from "../../../lib/redux/api/signupSlice"; // ✅ Correctly import the hook
+import { useSignupUserMutation } from "../../../lib/redux/api/signupSlice";  
 import { signupSchema } from "../../../lib/schema/signupSchema";
 import { toast } from "react-hot-toast";  
 import { useRouter } from 'next/navigation';
 import { z } from "zod";
+ import { Eye, EyeOff } from 'lucide-react';
+import Link from "next/link"; // Import Link for navigation
 
 const Page = () => {
   const [formData, setFormData] = useState({
@@ -49,14 +51,18 @@ const Page = () => {
         formattedErrors[e.path[0]] = e.message;
       });
       setErrors(formattedErrors);
-      toast.error("Validation failed!");
+      toast.error("Validation failed!",formattedErrors);
       console.log("❌ Validation Errors:", formattedErrors);
     } else {
       console.error("❌ Error:", err);
-      toast.error("Something went wrong!");
+      toast.error("Something went wrong!",err);
     }
   }
 };
+
+const [showPassword, setShowPassword] = useState(false);
+
+  const togglePassword = () => setShowPassword(prev => !prev);
 
 
   return (
@@ -85,15 +91,34 @@ const Page = () => {
                 <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full border border-[rgba(0,0,0,0.35)] rounded-md px-4 py-2 lg:py-2 focus:outline-none focus:border-black transition" />
               </div>
 
-              <div className="w-3/4 md:w-1/2 lg:w-1/3 px-9 space-y-2 lg:space-y-3 mt-2">
-                <p className="font-sans text-xs md:text-sm font-semibold text-[#1C274C]">Enter Your Password</p>
-                <input type="password" name="password" value={formData.password} onChange={handleChange} className="w-full border border-[rgba(0,0,0,0.35)] rounded-md px-4 py-2 lg:py-2 focus:outline-none focus:border-black transition" />
-              </div>
+             
 
               <div className="w-3/4 md:w-1/2 lg:w-1/3 px-9 space-y-2 lg:space-y-3 mt-2">
                 <p className="font-sans text-xs md:text-sm font-semibold text-[#1C274C]">Enter Your Phone Number</p>
                 <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full border border-[rgba(0,0,0,0.35)] rounded-md px-4 py-2 lg:py-2 focus:outline-none focus:border-black transition" />
               </div>
+
+             <div className="w-3/4 md:w-1/2 lg:w-1/3 px-9 space-y-2 lg:space-y-3 mt-2">
+      <p className="font-sans text-xs md:text-sm font-semibold text-[#1C274C]">
+        Enter Your Password
+      </p>
+      <div className="relative">
+        <input
+          type={showPassword ? 'text' : 'password'}
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          className="w-full border border-[rgba(0,0,0,0.35)] rounded-md px-4 py-2 lg:py-2 pr-10 focus:outline-none focus:border-black transition"
+        />
+        <button
+          type="button"
+          onClick={togglePassword}
+          className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500 hover:text-black"
+        >
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </div>
+    </div>
 
               <div className="flex justify-between px-9 items-center w-3/4 md:w-1/2 lg:w-1/3 text-[12px] md:text-sm text-[#1C274C] mt-2">
                 <label className="flex items-center gap-1 md:gap-2 cursor-pointer">
@@ -124,8 +149,9 @@ const Page = () => {
             </div>
 
             <div className="flex my-2 lg:my-2 font-sans text-xs md:text-sm mx-auto">
-              <span>Don't have an account? </span>
-              <span className="text-[#6BDE23]">&nbsp; Register Now</span>
+              <span>Already have an account? </span>
+              <Link href={"/login"}>
+              <span className="text-[#6BDE23]">&nbsp; Sign In</span></Link>
             </div>
           </div>
         </div>

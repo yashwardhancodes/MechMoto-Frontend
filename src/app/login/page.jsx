@@ -8,6 +8,7 @@ import { loginSchema } from "../../../lib/schema/loginSchema";
 import { toast } from "react-hot-toast";  
 import { useRouter } from 'next/navigation';
 import { z } from "zod";
+import Link from "next/link"; // Import Link for navigation
 
 const Page = () => {
   const [formData, setFormData] = useState({
@@ -127,7 +128,8 @@ const Page = () => {
 
             <div className="flex my-2 lg:my-2 font-sans text-xs md:text-sm mx-auto">
               <span>Don't have an account? </span>
-              <span className="text-[#6BDE23]">&nbsp; Register Now</span>
+              <Link href="/signup">
+              <span className="text-[#6BDE23]">&nbsp; Register Now</span></Link>
             </div>
           </div>
         </div>
