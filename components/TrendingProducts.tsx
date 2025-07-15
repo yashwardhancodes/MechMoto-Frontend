@@ -67,7 +67,7 @@ export default function TrendingProducts() {
 	};
 
 	return (
-		<section className="py-10 px-4 md:px-12 lg:px-24 bg-white relative">
+		<section className="py-10 px-4 md:px-12 lg:px-24 lg:min-h-[calc(100vh-80px)] bg-white relative">
 			<h1 className="text-2xl md:text-4xl font-sans text-center mt-12 font-bold">
 				Trending{" "}
 				<span className="bg-gradient-to-r from-[#9AE144] to-[#547B25] bg-clip-text text-transparent">
@@ -114,11 +114,11 @@ export default function TrendingProducts() {
 							<div className="border border-[rgba(0,0,0,0.14)] p-3 lg:p-5 bg-white relative">
 								<button
 									onClick={() => toggleSave(product.id)}
-									className="absolute top-3 right-3 hover:text-black text-gray-400 p-1 rounded"
+									className="absolute top-3 right-3 hover:text-black  text-gray-400 p-1 rounded"
 									aria-pressed={!!savedProducts[product.id]}
 								>
 									{savedProducts[product.id] ? (
-										<FontAwesomeIcon icon={faBookmark} className=" text-green-600"/>
+										<FontAwesomeIcon icon={faBookmark} className=" text-green-600" />
 									) : (
 										<FontAwesomeIcon icon={faBookmark} className="" />
 									)}

@@ -14,7 +14,7 @@ const Navbar = () => {
     return (
         <>
             {/* Desktop Navbar */}
-<div className='fixed top-0 w-full z-50 px-6 lg:px-12 hidden md:flex justify-between items-center md:h-[50px] lg:h-[56px] bg-[#050B20] font-sans text-white'>
+            <div className='fixed top-0 w-full z-50 px-6 lg:px-12 hidden md:flex justify-between items-center md:h-[50px] lg:h-[56px] bg-[#050B20] font-sans text-white'>
                 <div>
                     <Image src={navLogo} alt="logo" className='h-[45px] lg:h-[52px] w-auto' />
                 </div>
@@ -35,10 +35,10 @@ const Navbar = () => {
                         </div>
                     </div>
                     <Link href={"/login"}>
-                    <div className='flex space-x-2 items-center cursor-pointer justify-center'>
-                        <FontAwesomeIcon icon={faUser} className="text-sm" />
-                        <span>Sign in</span>
-                    </div></Link>
+                        <div className='flex space-x-2 items-center cursor-pointer justify-center'>
+                            <FontAwesomeIcon icon={faUser} className="text-sm" />
+                            <span>Sign in</span>
+                        </div></Link>
                     <button className="flex items-center justify-between gap-1 lg:gap-2 px-3 lg:px-4 py-2 rounded-3xl bg-gradient-to-r from-[#1F5B05] to-[#9AE144] text-black font-medium shadow-md">
                         <span>My Cart</span>
                         <FontAwesomeIcon icon={faCartShopping} className="text=sm" />
@@ -47,7 +47,7 @@ const Navbar = () => {
             </div>
 
             {/* Mobile Navbar */}
-<div className='fixed top-0 w-full z-50 md:hidden flex justify-between items-center h-[40px] bg-[#050B20] font-sans text-white px-4'>
+            <div className='fixed top-0 w-full z-50 md:hidden flex justify-between items-center h-[40px] bg-[#050B20] font-sans text-white px-4'>
                 <button
                     onClick={() => setSidebarOpen(!sidebarOpen)}
                     className='flex items-center justify-center rounded-full size-[25px] bg-[#9AE144] shrink-0'

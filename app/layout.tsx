@@ -1,14 +1,30 @@
-import { Outfit } from 'next/font/google';
+// app/layout.tsx
+import { Outfit, Roboto, DM_Sans } from 'next/font/google';
 import './globals.css';
 import { ReduxProvider } from '../lib/redux/provider';
 import { Toaster } from 'react-hot-toast';
 import '../lib/fontawesome.ts';
-import ClientLayout from './clientLayout'; // wrap the client logic
+import ClientLayout from './clientLayout';
 
+// Load fonts
 const outfit = Outfit({
   subsets: ['latin'],
   variable: '--font-outfit',
   weight: ['300', '400', '500', '600', '700'],
+});
+
+const roboto = Roboto({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-roboto',
+  display: 'swap',
+});
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-dm-sans',
+  weight: ['400', '500', '700'],
+  display: 'swap',
 });
 
 export const metadata = {
@@ -18,7 +34,10 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${outfit.variable} font-sans`}>
+    <html
+      lang="en"
+      className={`${outfit.variable} ${roboto.variable} ${dmSans.variable} font-sans`}
+    >
       <body className="antialiased">
         <ClientLayout>
           <Toaster />

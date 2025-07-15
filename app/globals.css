@@ -26,3 +26,32 @@
 .swiper-button-next:hover {
   background-color: #f0f0f0;
 }
+
+/* Hide scrollbar for mobile smooth scroll */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+
+
+/* styles.css or global.css */
+ 
+.button{
+  text-decoration: none !important;
+  
+}
+
+/* globals.css */
+
+.font-roboto {
+  font-family: var(--font-roboto), sans-serif;
+}
+
+
+.font-dm-sans {
+  font-family: var(--font-dm-sans), sans-serif;
+}
