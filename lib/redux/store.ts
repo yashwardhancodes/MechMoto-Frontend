@@ -1,18 +1,18 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { apiSlice } from './api/apiSlice';
-import { signupSlice } from './api/signupSlice';
-import { loginSlice } from './api/loginSlice';
-import { vendorSlice } from './api/vendorSlice';
-
+import { configureStore } from "@reduxjs/toolkit";
+import authReducer from "./slices/authSlice";
+import { authApi } from "./api/authApi";
+import { vendorApi } from "./api/vendorApi";
 
 export const makeStore = () =>
-  configureStore({
-    reducer: {
-      [apiSlice.reducerPath]: apiSlice.reducer,
-      [signupSlice.reducerPath]: signupSlice.reducer,
-      [loginSlice.reducerPath]: loginSlice.reducer,
-      [vendorSlice.reducerPath] : vendorSlice.reducer,
-    },
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware().concat(apiSlice.middleware , signupSlice.middleware, loginSlice.middleware,vendorSlice.middleware),
-  });
+	configureStore({
+		reducer: {
+			auth: authReducer,
+			[authApi.reducerPath]: authApi.reducer,
+			[vendorApi.reducerPath]: vendorApi.reducer,
+		},
+		middleware: (getDefaultMiddleware) =>
+			getDefaultMiddleware().concat(authApi.middleware, vendorApi.middleware),
+	});
+
+export type RootState = ReturnType<ReturnType<typeof makeStore>["getState"]>;
+export type AppDispatch = ReturnType<typeof makeStore>["dispatch"];

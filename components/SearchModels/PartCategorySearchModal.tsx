@@ -1,11 +1,10 @@
 import React, { JSX, useState } from "react";
-import { FaSearch } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 import { FiFilter } from "react-icons/fi";
 import { IoIosArrowDown } from "react-icons/io";
 import Image from "next/image";
-import searchIcon from "../../public/assets/search.png";
-import { useRouter } from "next/navigation"; // ✅ ADDED
+import searchIcon from "@/public/assets/search.png";
+import { useRouter } from "next/navigation";
 
 // Props Interface
 interface PartCategorySearchModalProps {
