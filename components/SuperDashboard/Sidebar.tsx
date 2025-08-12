@@ -1,4 +1,6 @@
 'use client';
+
+import { useRouter, usePathname } from 'next/navigation';
 import { LogOut, ShoppingCart, Wrench, Car, DollarSign, BarChart2 } from 'lucide-react';
 import { LuLayoutDashboard } from "react-icons/lu";
 import { IoPeopleOutline } from "react-icons/io5";
@@ -26,25 +28,36 @@ const menuItems = [
   { label: 'Customer Support', icon: <BiSupport size={16} /> },
 ];
 
-export default function Sidebar({ activeMenu, setActiveMenu }: Props) {
+export default function Sidebar({ activeMenu }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleClick = (label: string) => {
+    // Convert label to a URL-friendly slug
+    const slug = label.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-');
+    router.push(`/admin/dashboard/${slug}`);
+  };
+
   return (
     <aside className="bg-white h-[calc(100vh-56px)] w-60 shadow-md flex flex-col justify-between fixed">
       <div>
         <ul className="pt-6 space-y-2 px-4 text-sm font-medium text-[#5F6165]">
-          {menuItems.map((item) => (
-            <li
-              key={item.label}
-              onClick={() => setActiveMenu(item.label)}
-              className={`p-2 rounded-md flex items-center gap-2 cursor-pointer ${
-                activeMenu === item.label
-                  ? 'bg-[#DCF4BE]  '
-                  : 'hover:bg-gray-100'
-              }`}
-            >
-              {item.icon}
-              {item.label}
-            </li>
-          ))}
+          {menuItems.map((item) => {
+            const slug = item.label.toLowerCase().replace(/ & /g, '-').replace(/\s+/g, '-');
+            const isActive = pathname.startsWith(`/admin/dashboard/${slug}`);
+            console.log("is active", isActive, pathname)
+            return (
+              <li
+                key={item.label}
+                onClick={() => handleClick(item.label)}
+                className={`p-2 rounded-md flex items-center gap-2 cursor-pointer ${isActive ? 'bg-[#DCF4BE]' : 'hover:bg-gray-100'
+                  }`}
+              >
+                {item.icon}
+                {item.label}
+              </li>
+            );
+          })}
         </ul>
       </div>
       <div className="mb-8 px-4">

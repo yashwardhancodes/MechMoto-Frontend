@@ -17,7 +17,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
 			let redirectPath = "/";
 			if (role != undefined) {
 				if (role === ROLES.SUPER_ADMIN) {
-					redirectPath = "/admin/dashboard";
+					redirectPath = "/admin/dashboard/dashboard";
 				} else if (role === ROLES.VENDOR) {
 					redirectPath = "/vendor/dashboard";
 				}
