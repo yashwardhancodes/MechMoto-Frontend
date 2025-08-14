@@ -9,6 +9,7 @@ export interface TableColumn {
   header: string;
   render?: (item: any, index: number) => React.ReactNode;
   sortable?: boolean;
+  width?: string;
 }
 
 export interface TableAction {
@@ -131,7 +132,7 @@ export default function DataTable({
             <thead className="font-medium">
               <tr>
                 {columns.map((column) => (
-                  <th key={column.key} className="px-4 py-2">
+                  <th key={column.key} className="px-4 py-2" style={{width: column.width || 'auto'}}>
                     {column.header}
                   </th>
                 ))}
