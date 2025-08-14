@@ -29,7 +29,7 @@ if (!segment) return "Dashboard";
       'orders': 'Orders',
       'service-request': 'Service Request',
       'manage-mechanics': 'Manage Mechanics',
-      'manage-vehicle': 'Manage Vehicle',
+      'manage-vehicles': 'Manage Vehicles',
       'financial-management': 'Financial Management',
       'analytics-and-reporting': 'Analytics and Reporting',
       'customer-support': 'Customer Support',
