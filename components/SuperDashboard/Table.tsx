@@ -119,7 +119,7 @@ export default function DataTable({
       <hr />
 
       {/* Table Container */}
-      <div className="w-full h-[calc(100vh-250px)] pt-2 overflow-y-auto">
+      <div className="w-full h-[calc(100vh-260px)] pt-2 overflow-y-auto">
         {isLoading ? (
           <p className="text-sm text-gray-500 p-4">{loadingMessage}</p>
         ) : isError ? (
@@ -146,35 +146,9 @@ export default function DataTable({
                   {columns.map((column) => (
                     <td key={column.key} className="px-4 py-2">
                       {/* Special handling for avatar column */}
-                      {avatarConfig?.enabled && column.key === avatarConfig.nameKey ? (
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={
-                              avatarConfig.getAvatarUrl 
-                                ? avatarConfig.getAvatarUrl(item)
-                                : `https://api.dicebear.com/7.x/initials/svg?seed=${item[avatarConfig.nameKey || 'name']}`
-                            }
-                            alt={
-                              avatarConfig.getAvatarAlt 
-                                ? avatarConfig.getAvatarAlt(item)
-                                : item[avatarConfig.nameKey || 'name']
-                            }
-                            className="w-8 h-8 rounded-full"
-                          />
-                          <div>
-                            <div className="font-medium">
-                              {renderCellContent(item, column, index)}
-                            </div>
-                            {avatarConfig.subtitleKey && (
-                              <div className="text-xs text-gray-500">
-                                {avatarConfig.subtitleKey.split('.').reduce((obj, key) => obj?.[key], item) || "-"}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
+                      { 
                         renderCellContent(item, column, index)
-                      )}
+                       }
                     </td>
                   ))}
                   {actions.length > 0 && (

@@ -17,6 +17,19 @@ export default function Mvendor() {
     {
       key: "name",
       header: "Name",
+       render: (value) =>
+                <div className="flex row items-center gap-2 ">
+                         <div className="size-10 rounded-full p-2 flex items-center text-white justify-center bg-blue-400">
+                            {value.name
+                                ?.split(" ")
+                                .map((word: string) => word.charAt(0).toUpperCase())
+                                .join("")
+                            }
+                        </div>
+                     <div className="flex flex-col ">
+                        <span className="font-semibold   " >{value.name}</span>
+                        <span className=" text-xs" >{value.user.email}</span>
+                    </div></div>
     },
     {
       key: "purchases",
@@ -77,7 +90,7 @@ export default function Mvendor() {
       isLoading={isLoading}
       isError={isError}
       addButtonText="Add Vendors"
-      addButtonPath="/admin/dashboard/manage-vendors/addVendor"
+      addButtonPath="/admin/manage-vendors/addVendor"
       emptyMessage="No vendors found."
       errorMessage="Failed to load vendors."
       loadingMessage="Loading vendors..."
