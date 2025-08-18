@@ -3,7 +3,7 @@ export type Role = keyof typeof ROLES;
 export type Permission = (typeof ROLES)[Role][number];
 
 const ROLES = {
-  Admin: [
+  SuperAdmin: [
     "view:dashboard",
     "view:vendors",
     "view:parts",
