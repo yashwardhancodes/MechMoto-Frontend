@@ -2,13 +2,15 @@
 "use client";
 
 import { Pencil, Eye, Trash2 } from "lucide-react";
-import { useGetAllSubcategoriesQuery } from "@/lib/redux/api/subCategoriesApi";
+import { useGetAllSubcategoriesQuery,useDeleteSubcategoryMutation } from "@/lib/redux/api/subCategoriesApi";
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
+import { toast } from "react-hot-toast";
 
 export default function ManageSubcategories() {
   const { data, isLoading, isError } = useGetAllSubcategoriesQuery({});
   const router = useRouter();
+  const [deleteSubcategory] = useDeleteSubcategoryMutation();
 
   // Log API data for debugging
   console.log("API data:", data);
@@ -58,7 +60,7 @@ export default function ManageSubcategories() {
       onClick: (subcategory) => {
         console.log("Edit subcategory:", subcategory);
         if (subcategory?.id && typeof subcategory.id === 'number') {
-          // router.push(`/admin/dashboard/manage-subcategories/edit/${subcategory.id}`);
+          router.push(`/admin/manage-subcategories/edit/${subcategory.id}`);
         } else {
           console.error("Invalid subcategory ID for edit:", subcategory);
         }
@@ -82,11 +84,14 @@ export default function ManageSubcategories() {
       onClick: (subcategory) => {
         console.log("Delete subcategory:", subcategory);
         if (subcategory?.id && typeof subcategory.id === 'number') {
-          // Add confirmation dialog and delete logic using useDeleteSubcategoryMutation
-          console.log("Trigger delete for subcategory ID:", subcategory.id);
-        } else {
-          console.error("Invalid subcategory ID for delete:", subcategory);
+          try{
+            deleteSubcategory(subcategory.id).unwrap();
+            toast.success("Subcategory deleted successfully!");
+          }catch (error) {
+            console.error("Error deleting subcategory:", error);
+            toast.error("Failed to delete subcategory. Please try again.");
         }
+        }  
       },
       tooltip: "Delete subcategory"
     }

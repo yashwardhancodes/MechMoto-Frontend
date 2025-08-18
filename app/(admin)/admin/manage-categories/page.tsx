@@ -2,13 +2,15 @@
 "use client";
 
 import { Pencil, Eye, Trash2 } from "lucide-react";
-import { useGetAllCategoriesQuery } from "@/lib/redux/api/categoriesApi";
+import { useGetAllCategoriesQuery,useDeleteCategoryMutation } from "@/lib/redux/api/categoriesApi";
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
+import { toast } from "react-hot-toast";
 
 export default function ManageCategories() {
     const { data, isLoading, isError } = useGetAllCategoriesQuery({});
     const router = useRouter();
+    const [deleteCategory] = useDeleteCategoryMutation();
 
     // Log API data for debugging
     console.log("API data:", data);
@@ -53,7 +55,7 @@ export default function ManageCategories() {
             onClick: (category) => {
                 console.log("Edit category:", category);
                 if (category?.id && typeof category.id === 'number') {
-                    //   router.push(`/admin/dashboard/manage-categories/edit/${category.id}`);
+                      router.push(`/admin/manage-categories/edit/${category.id}`);
                 } else {
                     console.error("Invalid category ID for edit:", category);
                 }
@@ -77,8 +79,14 @@ export default function ManageCategories() {
             onClick: (category) => {
                 console.log("Delete category:", category);
                 if (category?.id && typeof category.id === 'number') {
-                    // Add confirmation dialog and delete logic using useDeleteCategoryMutation
-                    console.log("Trigger delete for category ID:", category.id);
+                    try{
+                    deleteCategory(category.id).unwrap();
+                    toast.success("Category deleted successfully!");
+                    } catch (error) {
+                        console.error("Error deleting category:", error);
+                        toast.error("Failed to delete category. Please try again.");
+                    }
+                   
                 } else {
                     console.error("Invalid category ID for delete:", category);
                 }

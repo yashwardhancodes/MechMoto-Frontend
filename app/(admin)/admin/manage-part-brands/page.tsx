@@ -4,6 +4,7 @@ import { Pencil, Eye, Trash2 } from "lucide-react";
 import { useGetAllPartBrandsQuery,useDeletePartBrandMutation } from "@/lib/redux/api/partBrandApi";
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
+import toast from "react-hot-toast";
 
 
 export default function ManageBrands() {
@@ -79,9 +80,11 @@ export default function ManageBrands() {
                 console.log("Delete brand:", brand);
                 if (brand?.id && typeof brand.id === 'number') {
                          deletePartBrand(brand.id).unwrap();
+                        toast.success("Brand deleted successfully!");
                       console.log("Deleted successfully");
                  } else {
                     console.error("Invalid brand ID for delete:", brand);
+                        toast.error("Failed to delete brand. Please try again.");
                 }
             },
             tooltip: "Delete brand"

@@ -1,10 +1,12 @@
-import React, { JSX, useState } from "react";
+ 
+import React, { useState } from "react";
 import { IoMdClose } from "react-icons/io";
 import { FiFilter } from "react-icons/fi";
 import { IoIosArrowDown } from "react-icons/io";
 import Image from "next/image";
 import searchIcon from "@/public/assets/search.png";
 import { useRouter } from "next/navigation";
+import { useGetAllCategoriesQuery } from "@/lib/redux/api/categoriesApi";
 
 // Props Interface
 interface PartCategorySearchModalProps {
@@ -14,56 +16,51 @@ interface PartCategorySearchModalProps {
 // Category/Subcategory Item Type
 interface PartCategory {
   name: string;
-  icon: JSX.Element;
+  img_src: string; // Updated to use img_src for base64 image string
 }
-
-// Sample Categories
-const categories: PartCategory[] = [
-  { name: "Maintenance Service Part", icon: <img src="/assets/categories/Transmission.png" alt="" className="h-10 w-auto" /> },
-  { name: "Transmission", icon: <img src="/assets/categories/Transmission.png" alt="" className="h-10 w-auto" /> },
-  { name: "Braking System", icon: <img src="/assets/categories/Exhaust-System.png" alt="" className="h-10 w-auto" /> },
-  { name: "Exhaust System", icon: <img src="/assets/categories/Car-Battery.png" alt="" className="h-10 w-auto" /> },
-  { name: "Oil Filter", icon: <img src="/assets/categories/Oil-Filter.png" alt="" className="h-10 w-auto" /> },
-  { name: "Battery", icon: <img src="/assets/categories/Exhaust-System.png" alt="" className="h-10 w-auto" /> },
-  { name: "Brake Pads", icon: <img src="/assets/categories/Car-Battery.png" alt="" className="h-10 w-auto" /> },
-  { name: "Engine Oil", icon: <img src="/assets/categories/Oil-Filter.png" alt="" className="h-10 w-auto" /> },
-  { name: "Oil Filter", icon: <img src="/assets/categories/Oil-Filter.png" alt="" className="h-10 w-auto" /> },
-  { name: "Battery", icon: <img src="/assets/categories/Exhaust-System.png" alt="" className="h-10 w-auto" /> },
-  { name: "Brake Pads", icon: <img src="/assets/categories/Car-Battery.png" alt="" className="h-10 w-auto" /> },
-  { name: "Engine Oil", icon: <img src="/assets/categories/Oil-Filter.png" alt="" className="h-10 w-auto" /> },
-  { name: "Brake Pads", icon: <img src="/assets/categories/Car-Battery.png" alt="" className="h-10 w-auto" /> },
-  { name: "Engine Oil", icon: <img src="/assets/categories/Oil-Filter.png" alt="" className="h-10 w-auto" /> },
-  { name: "Brake Pads", icon: <img src="/assets/categories/Car-Battery.png" alt="" className="h-10 w-auto" /> },
-  { name: "Engine Oil", icon: <img src="/assets/categories/Oil-Filter.png" alt="" className="h-10 w-auto" /> },
-  { name: "Brake Pads", icon: <img src="/assets/categories/Car-Battery.png" alt="" className="h-10 w-auto" /> },
-  { name: "Engine Oil", icon: <img src="/assets/categories/Oil-Filter.png" alt="" className="h-10 w-auto" /> },
-];
 
 // Sample Subcategories
 const subcategories: PartCategory[] = [
-  { name: "Engine Oil", icon: <img src="/assets/categories/Oil-Filter.png" alt="" className="h-10 w-auto" /> },
-  { name: "Air Filter", icon: <img src="/assets/categories/Transmission.png" alt="" className="h-10 w-auto" /> },
-  { name: "Spark Plugs", icon: <img src="/assets/categories/Exhaust-System.png" alt="" className="h-10 w-auto" /> },
-  { name: "Coolant", icon: <img src="/assets/categories/Car-Battery.png" alt="" className="h-10 w-auto" /> },
-  { name: "Engine Oil", icon: <img src="/assets/categories/Oil-Filter.png" alt="" className="h-10 w-auto" /> },
-  { name: "Air Filter", icon: <img src="/assets/categories/Transmission.png" alt="" className="h-10 w-auto" /> },
-  { name: "Spark Plugs", icon: <img src="/assets/categories/Exhaust-System.png" alt="" className="h-10 w-auto" /> },
-  { name: "Coolant", icon: <img src="/assets/categories/Car-Battery.png" alt="" className="h-10 w-auto" /> },
-  { name: "Engine Oil", icon: <img src="/assets/categories/Oil-Filter.png" alt="" className="h-10 w-auto" /> },
-  { name: "Air Filter", icon: <img src="/assets/categories/Transmission.png" alt="" className="h-10 w-auto" /> },
-  { name: "Spark Plugs", icon: <img src="/assets/categories/Exhaust-System.png" alt="" className="h-10 w-auto" /> },
-  { name: "Coolant", icon: <img src="/assets/categories/Car-Battery.png" alt="" className="h-10 w-auto" /> },
+  { name: "Engine Oil", img_src: "/assets/categories/Oil-Filter.png" },
+  { name: "Air Filter", img_src: "/assets/categories/Transmission.png" },
+  { name: "Spark Plugs", img_src: "/assets/categories/Exhaust-System.png" },
+  { name: "Coolant", img_src: "/assets/categories/Car-Battery.png" },
+  { name: "Engine Oil", img_src: "/assets/categories/Oil-Filter.png" },
+  { name: "Air Filter", img_src: "/assets/categories/Transmission.png" },
+  { name: "Spark Plugs", img_src: "/assets/categories/Exhaust-System.png" },
+  { name: "Coolant", img_src: "/assets/categories/Car-Battery.png" },
+  { name: "Engine Oil", img_src: "/assets/categories/Oil-Filter.png" },
+  { name: "Air Filter", img_src: "/assets/categories/Transmission.png" },
+  { name: "Spark Plugs", img_src: "/assets/categories/Exhaust-System.png" },
+  { name: "Coolant", img_src: "/assets/categories/Car-Battery.png" },
 ];
 
 const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({ onClose }) => {
   const [selectedCategory, setSelectedCategory] = useState<PartCategory | null>(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState<PartCategory | null>(null);
-  const router = useRouter(); // ✅ ADDED
+  const router = useRouter();
+  const { data: categoriesData, isLoading } = useGetAllCategoriesQuery({});
+
+  // Map API categories to PartCategory type
+  const categories: PartCategory[] = categoriesData?.data.map((category: any) => ({
+    name: category.name,
+    img_src: category.img_src, // Use img_src directly from API
+  })) || [];
 
   const currentList = selectedCategory ? subcategories : categories;
   const title = selectedCategory
     ? `Select a subcategory for "${selectedCategory.name}"`
     : "Select a part category to get started";
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.2)] flex items-center justify-center p-4">
+        <div className="bg-white w-full max-w-3xl rounded-lg p-6 px-8 relative max-h-[90vh]">
+          <p>Loading categories...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.2)] flex items-center justify-center p-4">
@@ -156,8 +153,6 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({ onClo
                     setSelectedCategory(item);
                   } else {
                     setSelectedSubCategory(item);
-
-                    // ✅ Redirect to product page
                     const formattedName = item.name.toLowerCase().replace(/\s+/g, "-");
                     router.push(`/products/${formattedName}`);
                   }
@@ -168,7 +163,7 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({ onClo
                   hover:bg-[#E8F9DB] transition
                 `}
               >
-                {item.icon}
+                <img src={item.img_src} alt={item.name} className="h-10 w-auto" />
                 <span className="mt-2 text-center px-4 text-[13px] font-medium text-gray-800">
                   {item.name}
                 </span>
@@ -187,3 +182,6 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({ onClo
 };
 
 export default PartCategorySearchModal;
+ 
+
+ 

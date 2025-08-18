@@ -23,6 +23,7 @@ const useAuth = (): useAuthType => {
     const isLoggedIn = !!user && !!token;
 
     const role = user?.role.name;
+    console.log("Role in useAuth:", role);
 
     return {isLoggedIn, user, loading, signOut, role}
 }

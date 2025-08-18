@@ -42,7 +42,7 @@ export default function AdminDashboardLayout({ children }: DashboardLayoutProps)
 		const menuMap: { [key: string]: string } = {
 			"dashboard": "Dashboard",
 			"manage-vendors": "Manage Vendors",
-			"parts": "Parts",
+			"manage-parts": "Manage Parts",
 			"coupons-discounts": "Coupons & Discounts",
 			"orders": "Orders",
 			"service-request": "Service Request",

@@ -123,7 +123,7 @@ export default function ManageParts() {
       isLoading={isLoading}
       isError={isError}
       addButtonText="Add Part"
-      addButtonPath="/admin/manage-parts/addPart"
+      addButtonPath="/admin/manage-parts/addParts"
       emptyMessage="No parts found."
       errorMessage="Failed to load parts."
       loadingMessage="Loading parts..."
