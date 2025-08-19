@@ -35,9 +35,9 @@ const Navbar = () => {
 		<>
 			{/* Desktop Navbar */}
 			<div className="fixed top-0 w-full z-50 px-6 lg:px-12 hidden md:flex justify-between items-center md:h-[50px] lg:h-[56px] bg-[#050B20] font-sans text-white">
-				<div>
+				<Link href={"/"} className="flex items-center"	>
 					<Image src={navLogo} alt="logo" className="h-[45px] lg:h-[52px] w-auto" />
-				</div>
+				</Link>
 				<div className="flex items-center gap-4 lg:gap-8 text-xs lg:text-sm">
 					<div className="flex items-center gap-4 lg:gap-8">
 						<Link href={"/"}>Home</Link>

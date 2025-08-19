@@ -19,6 +19,10 @@ export const partApi = createApi({
       query: () => "/parts",
       providesTags: ["Part"],
     }),
+    getAllPartsByVendor: builder.query({
+      query: () => "/parts/vendor",
+      providesTags: ["Part"],
+    }),
     createPart: builder.mutation({
       query: (partData) => ({
         url: "/parts",
@@ -51,6 +55,7 @@ export const partApi = createApi({
 
 export const {
   useGetAllPartsQuery,
+  useGetAllPartsByVendorQuery,
   useCreatePartMutation,
   useGetPartQuery,
   useUpdatePartMutation,

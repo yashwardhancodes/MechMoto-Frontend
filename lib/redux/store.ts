@@ -9,6 +9,7 @@ import { categoryApi } from "./api/categoriesApi";
 import { subcategoryApi } from "./api/subCategoriesApi";
 import { partBrandApi } from "./api/partBrandApi";
 import { partApi } from "./api/partApi";
+import { modelLineApi } from "./api/modelLineApi";
 
 export const makeStore = () =>
 	configureStore({
@@ -23,12 +24,11 @@ export const makeStore = () =>
 			[subcategoryApi.reducerPath]: subcategoryApi.reducer,
 			[partBrandApi.reducerPath]: partBrandApi.reducer,
 			[partApi.reducerPath]: partApi.reducer,
-			
-			
+			[modelLineApi.reducerPath]: modelLineApi.reducer
 		},
 		middleware: (getDefaultMiddleware) =>
 			getDefaultMiddleware().concat(authApi.middleware, vendorApi.middleware, vehicleApi.middleware,partApi.middleware,
-				engineTypeApi.middleware,carMakeApi.middleware, categoryApi.middleware,subcategoryApi.middleware,partBrandApi.middleware),
+				engineTypeApi.middleware,carMakeApi.middleware, categoryApi.middleware,subcategoryApi.middleware,partBrandApi.middleware, modelLineApi.middleware),
 	});
 
 export type RootState = ReturnType<ReturnType<typeof makeStore>["getState"]>;

@@ -137,7 +137,7 @@ const UpdateVehicle: React.FC = () => {
 
       console.log('Submitting payload:', payload);
       const parsedData = vehicleSchema.parse(payload);
-      const result = await updateVehicle(parsedData).unwrap();
+      const result = await updateVehicle({...parsedData, id: vehicleId}).unwrap();
 
       if (result?.success) {
         toast.success('Vehicle updated successfully!');

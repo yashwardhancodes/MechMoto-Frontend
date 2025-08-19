@@ -18,6 +18,7 @@ type MenuItem = {
   basePath: string; // Base path that can be adjusted by role
   permission: string;
   subItems?: { label: string; basePath: string; icon: React.ReactNode; permission: string }[];
+  path?: string
 };
 
 type Props = {
@@ -122,10 +123,10 @@ export default function Sidebar({ activeMenu, setActiveMenu }: Props) {
 
     if (item.subItems) {
       setExpandedMenu(expandedMenu === item.label ? null : item.label);
-      router.push(item.path);
+      router.push(item.path ?? "");
     } else {
       setActiveMenu(item.label);
-      router.push(item.path);
+      router.push(item.path ?? "");
     }
   };
 

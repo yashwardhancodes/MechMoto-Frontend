@@ -1,16 +1,31 @@
 "use client";
 
 import { Pencil, Eye, Trash2 } from "lucide-react";
-import { useGetAllPartsQuery,useDeletePartMutation } from "@/lib/redux/api/partApi";
+import { useGetAllPartsQuery,useDeletePartMutation, useGetAllPartsByVendorQuery } from "@/lib/redux/api/partApi";
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
 import { toast } from "react-hot-toast";
+import useAuth from "@/hooks/useAuth";
+import { ROLES } from "@/constants/roles";
 
 export default function ManageParts() {
-  const { data, isLoading, isError } = useGetAllPartsQuery({});
+  const { user } = useAuth();
+  console.log("user", user);
+  let data, isLoading, isError;
   const router = useRouter();
   const [deletePart] = useDeletePartMutation();
 
+  if (user?.role.name == ROLES.VENDOR) {
+    const result = useGetAllPartsByVendorQuery({});
+    data = result.data;
+    isLoading = result.isLoading;
+    isError = result.isError;
+  } else {
+    const result = useGetAllPartsQuery({});
+    data = result.data;
+    isLoading = result.isLoading;
+    isError = result.isError;
+  }
   // Log API data for debugging
   console.log("API data:", data);
 
