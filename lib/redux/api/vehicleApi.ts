@@ -51,11 +51,22 @@ export const vehicleApi = createApi({
 			query: (modelLine) => `vehicles/production-years?model-line=${modelLine}`,
 			providesTags: ["Vehicle"],
 		}),
-    getModifications: builder.query({
-      query: ({modelLine, productionYear}) =>
-        `vehicles/modifications?model-line=${modelLine}&production-year=${productionYear}`,
-      providesTags: ["Vehicle"],
-    }),
+		getModifications: builder.query({
+			query: ({ modelLine, productionYear }) =>
+				`vehicles/modifications?model-line=${modelLine}&production-year=${productionYear}`,
+			providesTags: ["Vehicle"],
+		}),
+		getFilteredVehicles: builder.query({
+			query: ({ carMakeId, modelLine, productionYear, modification }) => {
+				const queryParams = new URLSearchParams();
+				if (carMakeId) queryParams.append("carMakeId", carMakeId.toString());
+				if (modelLine) queryParams.append("modelLine", modelLine);
+				if (productionYear) queryParams.append("productionYear", productionYear.toString());
+				if (modification) queryParams.append("modification", modification);
+				return `vehicles/filter?${queryParams.toString()}`;
+			},
+			providesTags: ["Vehicle"],
+		}),
 	}),
 });
 
@@ -67,4 +78,5 @@ export const {
 	useDeleteVehicleMutation,
 	useLazyGetProductionYearsQuery,
 	useLazyGetModificationsQuery,
+	useLazyGetFilteredVehiclesQuery,
 } = vehicleApi;
