@@ -62,7 +62,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {product.price}
         </div>
         <div className='flex items-center justify-between  '>
-            <a href="#" className="text-[#405FF2] text-sm font-medium   inline-flex items-center gap-1">
+            <a href="/products/engine-oil/1" className="text-[#405FF2] text-sm font-medium   inline-flex items-center gap-1">
           View Details <FiExternalLink className="mt-[-2px]" />
         </a>
             {product.discount && (
