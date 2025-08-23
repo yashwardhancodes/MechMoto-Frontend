@@ -3,10 +3,12 @@ import React, { useState } from "react";
 import { Star, Eye, MapPin, Heart } from "lucide-react";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { useGetPartQuery } from "@/lib/redux/api/partApi";
+import { useParams } from "next/navigation";
 
 export default function ToyotaNexusBelt() {
   // Fetch part details (pass partId dynamically if needed)
-  const { data: response, isLoading, error } = useGetPartQuery(1); // example id = 1
+  const {id} = useParams();
+  const { data: response, isLoading, error } = useGetPartQuery(id);
   const part = response?.data;
 
   const images = part?.image_urls?.length ? part.image_urls : [
