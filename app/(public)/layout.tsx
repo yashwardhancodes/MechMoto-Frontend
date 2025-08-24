@@ -32,8 +32,11 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
     <>
       <Navbar />
       {/* Breadcrumb added here */}
- 
+ 		<div className=" mt-[40px] md:mt-[50px] lg:mt-[56px]">
+
         {children}
+
+		</div> 
     
     </>
   );

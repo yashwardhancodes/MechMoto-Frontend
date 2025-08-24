@@ -10,7 +10,7 @@ import { uploadImageToBackend } from "@/lib/utils/imageUpload";
 import { useGetAllVehiclesQuery } from "@/lib/redux/api/vehicleApi";
 import { useGetAllSubcategoriesQuery } from "@/lib/redux/api/subCategoriesApi";
 import { useGetAllPartBrandsQuery } from "@/lib/redux/api/partBrandApi";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 
 // Define interfaces
 interface CarMake {
@@ -94,6 +94,7 @@ const AddPart: React.FC = () => {
   const [createPart, { isLoading }] = useCreatePartMutation();
   const token = useSelector((state: any) => state.auth.token);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const { data: vehicles, isLoading: isVehiclesLoading, error: vehiclesError } = useGetAllVehiclesQuery({});
   console.log("vehicle data", vehicles)
@@ -123,14 +124,38 @@ const AddPart: React.FC = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFiles(Array.from(e.target.files));
+      setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
     }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files) {
+      const newFiles = Array.from(e.dataTransfer.files).filter((file) =>
+        file.type.startsWith("image/")
+      );
+      setFiles((prev) => [...prev, ...newFiles]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
   };
 
   const handleImageClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
+  };
+
+  const removeImage = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSelectChange = (name: string, value: string | number) => {
@@ -314,7 +339,7 @@ const AddPart: React.FC = () => {
                 !vehiclesError &&
                 Array.isArray(vehicles?.data) &&
                 vehicles.data.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
                     {vehicles.data.map((vehicle: Vehicle) => (
                       <button
                         key={vehicle.id}
@@ -363,7 +388,7 @@ const AddPart: React.FC = () => {
                 />
               </button>
               {dropdownOpen.subcategory && !isSubcategoriesLoading && !subcategoriesError && Array.isArray(subcategories?.data) && subcategories.data.length > 0 && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
                   {subcategories.data.map((subcategory: Subcategory) => (
                     <button
                       key={subcategory.id}
@@ -411,7 +436,7 @@ const AddPart: React.FC = () => {
                 />
               </button>
               {dropdownOpen.partBrand && !isPartBrandsLoading && !partBrandsError && Array.isArray(partBrands?.data) && partBrands.data.length > 0 && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
                   {partBrands.data.map((partBrand: PartBrand) => (
                     <button
                       key={partBrand.id}
@@ -455,7 +480,7 @@ const AddPart: React.FC = () => {
                 />
               </button>
               {dropdownOpen.discount && !isDiscountsLoading && !discountsError && Array.isArray(discounts?.data) && discounts.data.length > 0 && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
                   {discounts.data.map((discount: Discount) => (
                     <button
                       key={discount.id}
@@ -490,7 +515,7 @@ const AddPart: React.FC = () => {
                 />
               </button>
               {dropdownOpen.availabilityStatus && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
                   {availabilityOptions.map((status) => (
                     <button
                       key={status}
@@ -521,7 +546,7 @@ const AddPart: React.FC = () => {
                 />
               </button>
               {dropdownOpen.origin && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
                   {originOptions.map((origin) => (
                     <button
                       key={origin}
@@ -542,7 +567,57 @@ const AddPart: React.FC = () => {
 
           {/* Row 6: Image Upload, Submit Button */}
           <div className="flex justify-between items-start">
-            <div>
+            <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4">
+                {previewUrls.length > 0 ? (
+                  previewUrls.map((url, index) => (
+                    <div
+                      key={index}
+                      className="relative h-44 w-44 cursor-pointer group"
+                      onClick={handleImageClick}
+                      title="Click to add more images"
+                    >
+                      <img
+                        src={url}
+                        alt={`Part preview ${index + 1}`}
+                        className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage(index);
+                        }}
+                        className="absolute top-2 right-2 p-1 z-10 bg-red-500 rounded-full text-white hover:bg-red-600 transition-colors duration-200"
+                        title="Remove image"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                      <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-[#9AE144] bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <span className="text-black font-medium text-sm">Add More Images</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div
+                    className={`h-44 w-44 border-2 border-dashed rounded-lg p-4 flex items-center justify-center text-center transition-all duration-200 ${
+                      isDragging ? "border-[#9AE144] bg-[#9AE144]/10" : "border-[#808080]"
+                    }`}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onClick={handleImageClick}
+                  >
+                    <div>
+                      <p className="text-gray-700">
+                        {isDragging ? "Drop images here" : "Drag & drop or click to select"}
+                      </p>
+                      <p className="text-gray-400 text-sm mt-1">
+                        Supports multiple images
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
               <input
                 type="file"
                 accept="image/*"
@@ -551,35 +626,6 @@ const AddPart: React.FC = () => {
                 className="hidden"
                 ref={fileInputRef}
               />
-              {previewUrls.length > 0 ? (
-                <div className="flex flex-wrap gap-4">
-                  {previewUrls.map((url, index) => (
-                    <div
-                      key={index}
-                      className="relative h-44 w-44 cursor-pointer group"
-                      onClick={handleImageClick}
-                      title="Click to update images"
-                    >
-                      <img
-                        src={url}
-                        alt={`Part preview ${index + 1}`}
-                        className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-[#9AE144] bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <span className="text-black font-medium text-sm">Update Images</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleImageClick}
-                  className="w-full px-4 py-3 border border-[#808080] rounded-md text-gray-700 text-left hover:bg-gray-100 transition-colors duration-200"
-                >
-                  Choose Images
-                </button>
-              )}
               {errors["imageUrls"] && (
                 <p className="text-red-500 text-sm mt-1">{errors["imageUrls"]}</p>
               )}

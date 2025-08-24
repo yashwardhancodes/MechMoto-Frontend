@@ -27,5 +27,5 @@ export const updatePartSchema = z.object({
   availabilityStatus: z.string().optional(),
   origin: z.string().optional(),
   partBrandId: z.number().int().positive("Part Brand ID must be a positive integer").optional(),
-  discountId: z.number().int().positive("Discount ID must be a positive integer").optional(),
+  // discountId: z.number().int().positive("Discount ID must be a positive integer").optional(),
 });

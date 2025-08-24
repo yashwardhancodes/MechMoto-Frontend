@@ -8,6 +8,9 @@ import { useRouter } from "next/navigation";
 import { useGetAllCategoriesQuery } from "@/lib/redux/api/categoriesApi";
 import { useLazyGetSubcategoriesByCategoryIdQuery } from "@/lib/redux/api/subCategoriesApi";
 import Link from "next/link";
+import { useDispatch } from "react-redux";
+import { setBreadcrumbs } from "@/lib/redux/slices/breadcrumbSlice";
+import Breadcrumb from "../ProductListing/Breadcrumb"; // ✅ use breadcrumb component
 
 interface PartCategorySearchModalProps {
 	onClose: () => void;
@@ -24,6 +27,7 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({ onClo
 	const [selectedCategory, setSelectedCategory] = useState<PartCategory | null>(null);
 	const [selectedSubCategory, setSelectedSubCategory] = useState<PartCategory | null>(null);
 	const router = useRouter();
+	const dispatch = useDispatch();
 
 	// Categories
 	const { data: categoriesData, isLoading: isLoadingCategories } = useGetAllCategoriesQuery({});
@@ -34,7 +38,7 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({ onClo
 			img_src: category.img_src,
 		})) || [];
 
-    useEffect(() => {
+	useEffect(() => {
 		console.log("vehicles", vehicles);
 	}, [vehicles]);
 
@@ -63,7 +67,10 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({ onClo
 		);
 	}
 
-	const vehicleName = vehicles ? vehicles[0]?.car_make.name + " " + vehicles[0].model_line + vehicles[0]?.modification : "";
+	const vehicleId = vehicles.length > 0 ? vehicles[0].id : null;
+	const vehicleName = vehicles.length > 0
+		? vehicles[0]?.car_make.name + " " + vehicles[0].model_line + vehicles[0]?.modification
+		: "";
 
 	return (
 		<div className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.2)] flex items-center justify-center p-4">
@@ -109,52 +116,23 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({ onClo
 				{/* Title & Breadcrumbs */}
 				<div className="mt-0 flex flex-col items-start justify-between">
 					<h2 className="font-semibold text-lg mb-2">{title}</h2>
-
-					{selectedCategory && (
-						<div className="text-sm cursor-pointer">
-							<div className="mb-2 text-sm font-medium flex flex-wrap items-center gap-1">
-								<button
-									onClick={() => {
-										setSelectedCategory(null);
-										setSelectedSubCategory(null);
-									}}
-									className="text-gray-700 no-underline"
-								>
-									All Categories
-								</button>
-
-								<span>{">"}</span>
-								{!selectedSubCategory ? (
-									<span className="text-green-600">{selectedCategory.name}</span>
-								) : (
-									<>
-										<button
-											onClick={() => setSelectedSubCategory(null)}
-											className="text-gray-700 no-underline"
-										>
-											{selectedCategory.name}
-										</button>
-										<span>{">"}</span>
-										<span className="text-green-600">
-											{selectedSubCategory.name}
-										</span>
-									</>
-								)}
-							</div>
-						</div>
-					)}
+					<Breadcrumb /> {/* ✅ central breadcrumb component */}
 				</div>
 
-				{/* Category List (if no category selected) */}
+				{/* Category List */}
 				{!selectedCategory && (
 					<div className="grid grid-cols-2 mt-3 sm:grid-cols-4 gap-4 max-h-[250px] overflow-y-auto scrollbar-black">
 						{categories.map((item, index) => (
 							<div
 								key={item.id || index}
 								onClick={() => {
-									console.log("Selected Category:", item); // 🔥 Debug log
 									setSelectedCategory(item);
-									triggerSubcategories(item.id!); // 🔥 Fetch subcategories immediately
+									const breadcrumbs = [
+										{ label: 'All Categories', href: '/categories' },
+										{ label: item.name, href: vehicleId ? `/products?category_id=${item.id}&vehicle_id=${vehicleId}` : `/products?category_id=${item.id}` },
+									];
+									dispatch(setBreadcrumbs(breadcrumbs));
+									triggerSubcategories(item.id!);
 								}}
 								className="flex flex-col items-center justify-center p-4 h-28 rounded-md cursor-pointer bg-gray-100 hover:bg-[#E8F9DB] transition"
 							>
@@ -167,7 +145,7 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({ onClo
 					</div>
 				)}
 
-				{/* Subcategory List (after selecting category) */}
+				{/* Subcategory List */}
 				{selectedCategory && (
 					<div className="grid grid-cols-2 mt-3 sm:grid-cols-4 gap-4 max-h-[250px] overflow-y-auto scrollbar-black">
 						{isLoadingSubcategories ? (
@@ -180,20 +158,22 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({ onClo
 									key={item.id || index}
 									onClick={() => {
 										setSelectedSubCategory(item);
-										router.push(`/products/category_id=${selectedCategory.id}&sub_category_id=${item.id}&vehicle_id=${vehicles[0].id}`);
+										const breadcrumbs = [
+											{ label: 'All Categories', href: '/categories' },
+											{ label: selectedCategory.name, href: vehicleId ? `/products?category_id=${selectedCategory.id}&vehicle_id=${vehicleId}` : `/products?category_id=${selectedCategory.id}` },
+											{ label: item.name, href: vehicleId ? `/products?sub_category_id=${item.id}&vehicle_id=${vehicleId}` : `/products?sub_category_id=${item.id}` },
+										];
+										dispatch(setBreadcrumbs(breadcrumbs));
+										router.push(vehicleId ? `/products?sub_category_id=${item.id}&vehicle_id=${vehicleId}` : `/products?sub_category_id=${item.id}`);
 									}}
-                  href={`/products?sub_category_id=${item.id}&vehicle_id=${vehicles[0].id}`}
+									href={vehicleId ? `/products?sub_category_id=${item.id}&vehicle_id=${vehicleId}` : `/products?sub_category_id=${item.id}`}
 									className={`
-                    flex flex-col items-center justify-center p-4 h-28 rounded-md cursor-pointer
-                    ${selectedSubCategory?.id === item.id ? "bg-[#E8F9DB]" : "bg-gray-100"}
-                    hover:bg-[#E8F9DB] transition
-                  `}
+										flex flex-col items-center justify-center p-4 h-28 rounded-md cursor-pointer
+										${selectedSubCategory?.id === item.id ? "bg-[#E8F9DB]" : "bg-gray-100"}
+										hover:bg-[#E8F9DB] transition
+									`}
 								>
-									<img
-										src={item.img_src}
-										alt={item.name}
-										className="h-10 w-auto"
-									/>
+									<img src={item.img_src} alt={item.name} className="h-10 w-auto" />
 									<span className="mt-2 text-center px-4 text-[13px] font-medium text-gray-800">
 										{item.name}
 									</span>

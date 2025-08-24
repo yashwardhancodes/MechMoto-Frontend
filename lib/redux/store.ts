@@ -10,11 +10,15 @@ import { subcategoryApi } from "./api/subCategoriesApi";
 import { partBrandApi } from "./api/partBrandApi";
 import { partApi } from "./api/partApi";
 import { modelLineApi } from "./api/modelLineApi";
+import redirectReducer from "./slices/redirectSlice";
+import breadcrumbReducer from "./slices/breadcrumbSlice";
 
 export const makeStore = () =>
 	configureStore({
 		reducer: {
 			auth: authReducer,
+			redirect: redirectReducer,
+			breadcrumb: breadcrumbReducer,
 			[authApi.reducerPath]: authApi.reducer,
 			[vendorApi.reducerPath]: vendorApi.reducer,
 			[vehicleApi.reducerPath]: vehicleApi.reducer,

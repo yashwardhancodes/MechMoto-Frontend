@@ -12,6 +12,8 @@ import logo from "@/public/assets/logo.png";
 import google from "@/public/assets/Google.png";
 import { ROLES } from "@/constants/roles";
 import useAuth from "@/hooks/useAuth";
+import { useDispatch,useSelector } from "react-redux";
+import { setRedirect } from "@/lib/redux/slices/redirectSlice";
 
 const SignupPage = () => {
 	const [formData, setFormData] = useState({
@@ -24,16 +26,22 @@ const SignupPage = () => {
 	const [showPassword, setShowPassword] = useState(false);
 	const [signup, { isLoading }] = useSignupMutation();
 	const router = useRouter();
+	const dispatch = useDispatch();
+	const redirectPath = useSelector((state: any) => state.redirect.path); // adjust if store path different
+	
 	const { user, role } = useAuth();
 
 	useEffect(() => {
 		if (user) {
-			let redirectPath = "/";
-			if (role != undefined) {
+			let finalPath = "/";
+			if (redirectPath) {
+				finalPath = redirectPath;
+				dispatch(setRedirect("")); // clear after use
+			} else if (role != undefined) {
 				if (role === ROLES.SUPER_ADMIN) {
-					redirectPath = "/admin/dashboard";
+					finalPath = "/admin/dashboard";
 				} else if (role === ROLES.VENDOR) {
-					redirectPath = "/vendor/dashboard";
+					finalPath = "/vendor/dashboard";
 				}
 			}
 			router.push(redirectPath);
