@@ -18,6 +18,7 @@ export interface User {
 	role: Role;
 	fullName?: string;
 	phone?: string;
+	token?: string;
 }
 
 

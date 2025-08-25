@@ -86,7 +86,7 @@ export default function Checkout() {
 					amount: Math.round(newOrder.data.final_amount * 100),
 					currency: "INR",
 					name: "Your App Name",
-					description: `Order #${newOrder.id}`,
+					description: `Order #${newOrder.data.id}`,
 					order_id: newOrder.data.razorpayOrderId,
 					handler: async function (response) {
 						try {
@@ -132,7 +132,7 @@ export default function Checkout() {
 				dispatch(resetCheckout());
 				toast.success("Order placed successfully");
 				router.push(
-					`/products/cart/select-address/checkout/order-confirmation/${newOrder.id}`,
+					`/products/cart/select-address/checkout/order-confirmation/${newOrder.data.id}`,
 				);
 			}
 		} catch (err: any) {
