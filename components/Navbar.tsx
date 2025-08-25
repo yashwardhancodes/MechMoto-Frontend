@@ -88,10 +88,10 @@ const Navbar = () => {
 							</div>
 						)}
 					</div>
-					<button className="flex items-center justify-between gap-1 lg:gap-2 px-3 lg:px-4 py-2 rounded-3xl bg-gradient-to-r from-[#1F5B05] to-[#9AE144] text-black font-medium shadow-md">
+					<Link href="/products/cart" className="flex items-center justify-between gap-1 lg:gap-2 px-3 lg:px-4 py-2 rounded-3xl bg-gradient-to-r from-[#1F5B05] to-[#9AE144] text-black font-medium shadow-md">
 						<span>My Cart</span>
 						<FontAwesomeIcon icon={faCartShopping} className="text=sm" />
-					</button>
+					</Link>
 				</div>
 			</div>
 

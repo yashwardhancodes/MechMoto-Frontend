@@ -13,8 +13,9 @@ export const partApi = createApi({
 			return headers;
 		},
 	}),
-	tagTypes: ["Part"],
+	tagTypes: ["Part", "Cart", "Address", "Order"],
 	endpoints: (builder) => ({
+		// Existing endpoints
 		getAllParts: builder.query({
 			query: () => "/parts",
 			providesTags: ["Part"],
@@ -57,6 +58,79 @@ export const partApi = createApi({
 			}),
 			invalidatesTags: ["Part"],
 		}),
+		// New cart endpoints
+		getCartItems: builder.query({
+			query: () => "/carts",
+			providesTags: ["Cart"],
+		}),
+		addToCart: builder.mutation({
+			query: (data) => ({
+				url: "/carts",
+				method: "POST",
+				body: data,
+			}),
+			invalidatesTags: ["Cart"],
+		}),
+		updateCartItem: builder.mutation({
+			query: ({ id, quantity }) => ({
+				url: `/carts/${id}`,
+				method: "PUT",
+				body: { quantity },
+			}),
+			invalidatesTags: ["Cart"],
+		}),
+		removeFromCart: builder.mutation({
+			query: (id) => ({
+				url: `/carts/${id}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: ["Cart"],
+		}),
+		getAddresses: builder.query({
+			query: () => "/addresses",
+			providesTags: ["Address"],
+		}),
+		createAddress: builder.mutation({
+			query: (data) => ({
+				url: "/addresses",
+				method: "POST",
+				body: data,
+			}),
+			invalidatesTags: ["Address"],
+		}),
+		updateAddress: builder.mutation({
+			query: ({ id, ...data }) => ({
+				url: `/addresses/${id}`,
+				method: "PUT",
+				body: data,
+			}),
+			invalidatesTags: ["Address"],
+		}),
+		deleteAddress: builder.mutation({
+			query: (id) => ({
+				url: `/addresses/${id}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: ["Address"],
+		}),
+
+		// Order endpoints
+		createOrder: builder.mutation({
+			query: (data) => ({
+				url: "/orders",
+				method: "POST",
+				body: data,
+			}),
+			invalidatesTags: ["Order", "Cart"],
+		}),
+		getOrder: builder.query({
+			query: (id) => `/orders/${id}`,
+			providesTags: ["Order"],
+		}),
+		getOrders: builder.query({
+			query: () => "/orders",
+			providesTags: ["Order"],
+		}),
 	}),
 });
 
@@ -68,4 +142,15 @@ export const {
 	useGetPartQuery,
 	useUpdatePartMutation,
 	useDeletePartMutation,
+	useGetCartItemsQuery,
+	useAddToCartMutation,
+	useUpdateCartItemMutation,
+	useRemoveFromCartMutation,
+	useGetAddressesQuery,
+	useCreateAddressMutation,
+	useUpdateAddressMutation,
+	useDeleteAddressMutation,
+	useCreateOrderMutation,
+	useGetOrderQuery,
+	useGetOrdersQuery,
 } = partApi;

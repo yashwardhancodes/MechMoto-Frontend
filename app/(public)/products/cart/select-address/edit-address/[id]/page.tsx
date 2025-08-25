@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useCreateAddressMutation } from "@/lib/redux/api/partApi";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useUpdateAddressMutation, useGetAddressesQuery } from "@/lib/redux/api/partApi";
 
-export default function AddAddress() {
+export default function EditAddress() {
+	const { id } = useParams();
 	const router = useRouter();
 	const [form, setForm] = useState({
 		label: "",
@@ -13,13 +14,39 @@ export default function AddAddress() {
 		email: "",
 		house: "",
 		area: "",
-		city: "", // Added city
+		city: "",
 		state: "",
 		landmark: "",
 		pincode: "",
 	});
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
-	const [createAddress, { isLoading }] = useCreateAddressMutation();
+	const { data: addressesData } = useGetAddressesQuery(undefined);
+	const [updateAddress, { isLoading }] = useUpdateAddressMutation();
+
+	useEffect(() => {
+		if (addressesData) {
+			const address = addressesData.data.find(
+				(addr: any) => addr.id === parseInt(id as string),
+			);
+			if (address) {
+				const [house, area, landmark] = address.address_line1
+					? address.address_line1.split(", ")
+					: ["", "", ""];
+				setForm({
+					label: address.label || "",
+					fullName: address.fullName || "",
+					mobile: address.mobile || "",
+					email: address.email || "",
+					house: house || "",
+					area: area || "",
+					city: address.city || "",
+					state: address.state || "",
+					landmark: landmark || "",
+					pincode: address.zip || "",
+				});
+			}
+		}
+	}, [addressesData, id]);
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setForm({ ...form, [e.target.name]: e.target.value });
@@ -29,6 +56,7 @@ export default function AddAddress() {
 		e.preventDefault();
 		try {
 			const addressData = {
+				id: parseInt(id as string),
 				label: form.label || "Custom",
 				address_line1: `${form.house}, ${form.area}, ${form.landmark}`,
 				address_line2: "",
@@ -37,10 +65,10 @@ export default function AddAddress() {
 				zip: form.pincode,
 				country: "India",
 			};
-			await createAddress(addressData).unwrap();
+			await updateAddress(addressData).unwrap();
 			router.push("/products/cart/select-address");
 		} catch (err) {
-			setErrorMessage("Failed to add address. Please try again.");
+			setErrorMessage("Failed to update address. Please try again.");
 		}
 	};
 
@@ -136,7 +164,7 @@ export default function AddAddress() {
 						disabled={isLoading}
 						className="bg-[#9AE144] text-black font-semibold px-10 py-3 rounded-full hover:bg-[#3A7813] transition-colors"
 					>
-						{isLoading ? "Saving..." : "Save"}
+						{isLoading ? "Updating..." : "Update"}
 					</button>
 				</div>
 			</form>
