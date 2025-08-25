@@ -7,21 +7,22 @@ import { useGetPartQuery } from "@/lib/redux/api/partApi";
 import { useParams, useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setBreadcrumbs } from "@/lib/redux/slices/breadcrumbSlice";
+import { useAddToCartMutation } from "@/lib/redux/api/partApi";
+import useAuth from "@/hooks/useAuth";
 
 export default function ToyotaNexusBelt() {
   const { id } = useParams();
   const router = useRouter();
   const dispatch = useDispatch();
+  const { isLoggedIn } = useAuth();
+  const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
 
   const { data: response, isLoading, error } = useGetPartQuery(id);
   const part = response?.data;
 
-  const images =
-    part?.image_urls?.length
-      ? part.image_urls
-      : [
-          "https://png.pngtree.com/png-clipart/20240927/original/pngtree-car-engine-against-transparent-background-png-image_16100504.png",
-        ];
+  const images = part?.image_urls?.length
+    ? part.image_urls
+    : ["https://png.pngtree.com/png-clipart/20240927/original/pngtree-car-engine-against-transparent-background-png-image_16100504.png"];
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -33,12 +34,24 @@ export default function ToyotaNexusBelt() {
     setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
-  // 🔹 Dispatch breadcrumb trail when product data is ready
+  // Add to cart handler
+  const handleAddToCart = async () => {
+    if (!isLoggedIn) {
+      router.push("/login");
+      return;
+    }
+    try {
+      await addToCart({ partId: parseInt(id as string), quantity: 1 }).unwrap();
+      alert("Item added to cart!");
+    } catch (error) {
+      alert("Failed to add item to cart.");
+    }
+  };
+
   useEffect(() => {
     if (part) {
-      // Construct a breadcrumb trail dynamically
       const breadcrumbs = [
-        { label: "All Categories", href: "/categories" }, // Starting point
+        { label: "All Categories", href: "/categories" },
         {
           label: part.category?.name || "Category",
           href: `/products?category_id=${part.category?.id}&vehicle_id=${part.vehicle?.id}`,
@@ -47,10 +60,8 @@ export default function ToyotaNexusBelt() {
           label: part.subcategory?.name || "Subcategory",
           href: `/products?sub_category_id=${part.subcategory?.id}&vehicle_id=${part.vehicle?.id}`,
         },
-        { label: part.part_number || "Product Detail", href: `/products/${id}` }, // Current product
+        { label: part.part_number || "Product Detail", href: `/products/${id}` },
       ];
-
-      console.log("🚀 Adding breadcrumbs:", breadcrumbs);
       dispatch(setBreadcrumbs(breadcrumbs));
     }
   }, [part, id, dispatch]);
@@ -70,19 +81,14 @@ export default function ToyotaNexusBelt() {
           <div className="grid lg:grid-cols-[1fr_2fr] md:grid-cols-1 gap-4 lg:gap-2">
             {/* Left Column */}
             <div className="space-y-4 lg:space-y-5 order-2 lg:order-1">
-              {/* Title */}
               <h1 className="text-4xl font-sans text-[#17183B]">
                 {part.subcategory?.name || "Unknown Part"}
               </h1>
-
-              {/* Delivery Info */}
               <p className="text-sm text-[#9AE144] font-medium">
                 {part.availability_status === "Unavailable"
                   ? "Currently Unavailable"
                   : "Delivery within 15 days"}
               </p>
-
-              {/* Price */}
               <div className="flex items-baseline gap-2 font-[var(--font-poppins)]">
                 <span className="text-3xl font-semibold text-[#17183B]">
                   Rs.{part.price}
@@ -91,8 +97,6 @@ export default function ToyotaNexusBelt() {
                   include in all taxes
                 </span>
               </div>
-
-              {/* Rating */}
               <div className="flex items-center gap-2">
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -107,8 +111,6 @@ export default function ToyotaNexusBelt() {
                 </span>
                 <span className="text-sm text-gray-400">(556)</span>
               </div>
-
-              {/* Specifications */}
               <div className="space-y-4 font-[var(--font-poppins)]">
                 <h3 className="text-lg font-bold text-[#050B20]">
                   Part Specifications
@@ -145,11 +147,13 @@ export default function ToyotaNexusBelt() {
                   </div>
                 </div>
               </div>
-
-              {/* Actions */}
               <div className="flex flex-col md:flex-row gap-3 pt-2 w-full">
-                <button className="md:w-auto bg-[#050B20] text-white font-sans px-4 md:px-8 text-base md:text-xl py-3 rounded-md font-medium">
-                  Add to Cart
+                <button
+                  onClick={handleAddToCart}
+                  className="md:w-auto bg-[#050B20] text-white font-sans px-4 md:px-8 text-base md:text-xl py-3 rounded-md font-medium"
+                  disabled={isAddingToCart}
+                >
+                  {isAddingToCart ? "Adding..." : "Add to Cart"}
                 </button>
                 <button
                   onClick={() => router.push("/products/cart")}
@@ -158,15 +162,11 @@ export default function ToyotaNexusBelt() {
                   Buy Now
                 </button>
               </div>
-
-              {/* Features */}
               <div className="flex gap-4 md:gap-6 text-xs md:text-sm text-[#17183B] pt-1">
                 <span>Free 3-5 day shipping</span>
                 <span>Tool-free assembly</span>
                 <span>30-day trial</span>
               </div>
-
-              {/* Delivery Location */}
               <div className="flex items-center gap-2 text-[12px] md:text-sm text-gray-700 pt-1">
                 <MapPin className="md:size-4 text-[#9AE144]" />
                 <span className="font-bold text-[#050B20]">
@@ -175,7 +175,6 @@ export default function ToyotaNexusBelt() {
                 </span>
               </div>
             </div>
-
             {/* Right Column */}
             <div className="flex flex-col md:flex-row order-1 lg:order-2">
               <div className="bg-[#F5F5F5] h-72 md:h-full w-full md:p-4 lg:p-8 relative flex flex-col items-center justify-center overflow-hidden">
@@ -205,7 +204,7 @@ export default function ToyotaNexusBelt() {
                   <IoIosArrowForward className="text-gray-800 text-xl" />
                 </button>
               </div>
-              <div className="border-gray-200 flex  mt-2 md:mt-0 md:flex-col md:pl-2 sm:pl-3 space-y-2 sm:space-y-3">
+              <div className="border-gray-200 flex mt-2 md:mt-0 md:flex-col md:pl-2 sm:pl-3 space-y-2 sm:space-y-3">
                 {images.map((img, index) => (
                   <div
                     key={index}
@@ -228,8 +227,6 @@ export default function ToyotaNexusBelt() {
           </div>
         </div>
       </div>
-
-      {/* Wishlist */}
       <div className="flex text-left justify-center sm:justify-end pr-0 sm:pr-12 items-center gap-2 text-black cursor-pointer pt-4 sm:pt-0">
         <Heart className="size-5 sm:size-6 text-black" />
         <h1 className="text-lg sm:text-xl font-bold">Add to wishlist</h1>

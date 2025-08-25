@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
+import checkoutReducer from "./slices/checkoutSlice";
 import { authApi } from "./api/authApi";
 import { vendorApi } from "./api/vendorApi";
 import { vehicleApi } from "./api/vehicleApi";
@@ -17,6 +18,7 @@ export const makeStore = () =>
 	configureStore({
 		reducer: {
 			auth: authReducer,
+			checkout: checkoutReducer,
 			redirect: redirectReducer,
 			breadcrumb: breadcrumbReducer,
 			[authApi.reducerPath]: authApi.reducer,
@@ -28,11 +30,21 @@ export const makeStore = () =>
 			[subcategoryApi.reducerPath]: subcategoryApi.reducer,
 			[partBrandApi.reducerPath]: partBrandApi.reducer,
 			[partApi.reducerPath]: partApi.reducer,
-			[modelLineApi.reducerPath]: modelLineApi.reducer
+			[modelLineApi.reducerPath]: modelLineApi.reducer,
 		},
 		middleware: (getDefaultMiddleware) =>
-			getDefaultMiddleware().concat(authApi.middleware, vendorApi.middleware, vehicleApi.middleware,partApi.middleware,
-				engineTypeApi.middleware,carMakeApi.middleware, categoryApi.middleware,subcategoryApi.middleware,partBrandApi.middleware, modelLineApi.middleware),
+			getDefaultMiddleware().concat(
+				authApi.middleware,
+				vendorApi.middleware,
+				vehicleApi.middleware,
+				partApi.middleware,
+				engineTypeApi.middleware,
+				carMakeApi.middleware,
+				categoryApi.middleware,
+				subcategoryApi.middleware,
+				partBrandApi.middleware,
+				modelLineApi.middleware,
+			),
 	});
 
 export type RootState = ReturnType<ReturnType<typeof makeStore>["getState"]>;
