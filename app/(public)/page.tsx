@@ -6,7 +6,8 @@ import BuyParts from "@/components/BuyParts";
 import Testimonials from "@/components/Testimonials";
 import TrendingProducts from "@/components/TrendingProducts";
 import { Footer } from "@/components/Footer";
- 
+import Service from "@/components/Service/Service";
+
 export default function UsersPage() {
 	const [selectedTab, setSelectedTab] = useState("buy"); // removed TypeScript union type
 
@@ -18,17 +19,15 @@ export default function UsersPage() {
 			<div className="container mx-auto w-full flex justify-center mb-6">
 				<div className="inline-flex items-center text-xs md:text-sm lg:text-base bg-[#050B20] rounded-full p-1  md:p-1.5">
 					<button
-						className={`px-4 py-1.5 font-sans font-semibold rounded-full ${
-							selectedTab === "buy" ? "bg-[#9AE144] text-black" : "text-white"
-						}`}
+						className={`px-4 py-1.5 font-sans font-semibold rounded-full ${selectedTab === "buy" ? "bg-[#9AE144] text-black" : "text-white"
+							}`}
 						onClick={() => setSelectedTab("buy")}
 					>
 						Buy Parts
 					</button>
 					<button
-						className={`px-4 py-1.5 font-sans font-semibold rounded-full ${
-							selectedTab === "repair" ? "bg-[#9AE144] text-black" : "text-white"
-						}`}
+						className={`px-4 py-1.5 font-sans font-semibold rounded-full ${selectedTab === "repair" ? "bg-[#9AE144] text-black" : "text-white"
+							}`}
 						onClick={() => setSelectedTab("repair")}
 					>
 						Repair my car
@@ -37,23 +36,24 @@ export default function UsersPage() {
 			</div>
 
 			{/* Conditional Content */}
-			<div className="container mx-auto w-full px-4">
+			<div className="  w-full  ">
 				{selectedTab === "buy" ? (
 					<div>
 						<BuyParts />
+				 
+							<Testimonials />
+							<TrendingProducts />
+							<Footer />
+						 
 					</div>
 				) : (
-					<div className="text-black">
-						<h2 className="text-lg font-bold mb-2">Car Repair Services</h2>
+					<div>
+						 <Service/>
 					</div>
 				)}
 			</div>
 
-			<div>
-				<Testimonials />
-				<TrendingProducts />
-				<Footer />
- 			</div>
+
 		</div>
 	);
 }
