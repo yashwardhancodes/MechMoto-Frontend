@@ -5,15 +5,23 @@ import serviceImg from "@/public/assets/service.png";
 import helplineImg from "@/public/assets/helpline.png";
 import customerServiceImg from "@/public/assets/customerService.png";
 
-export default function Service() {
-  const [showExpertForm, setShowExpertForm] = useState(false);
-  const [showCallForm, setShowCallForm] = useState(false);
-  const [selectedProblem, setSelectedProblem] = useState("");
-  const [callIssue, setCallIssue] = useState("");
-  const [issues, setIssues] = useState([]); // Store submitted issues
-  const [currentStatus, setCurrentStatus] = useState(null); // Track current issue status
+interface Issue {
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  date: string;
+}
 
-  const commonProblems = [
+export default function Service() {
+  const [showExpertForm, setShowExpertForm] = useState<boolean>(false);
+  const [showCallForm, setShowCallForm] = useState<boolean>(false);
+  const [selectedProblem, setSelectedProblem] = useState<string>("");
+  const [callIssue, setCallIssue] = useState<string>("");
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [currentStatus, setCurrentStatus] = useState<string | null>(null);
+
+  const commonProblems: string[] = [
     "Engine won’t start",
     "Flat tire",
     "Battery issue",
@@ -22,26 +30,26 @@ export default function Service() {
     "Other",
   ];
 
-  const statusSteps = [
+  const statusSteps: string[] = [
     "Submitted",
     "In Progress",
     "Technician Assigned",
     "Resolved",
   ];
 
-  const handleExpertHelp = () => {
+  const handleExpertHelp = (): void => {
     setShowExpertForm((prev) => !prev);
-    setShowCallForm(false); // Close other form
+    setShowCallForm(false);
   };
 
-  const handleLiveCall = () => {
+  const handleLiveCall = (): void => {
     setShowCallForm((prev) => !prev);
-    setShowExpertForm(false); // Close other form
+    setShowExpertForm(false);
   };
 
-  const handleExpertSubmit = () => {
+  const handleExpertSubmit = (): void => {
     if (!selectedProblem) return alert("Please select a problem");
-    const newIssue = {
+    const newIssue: Issue = {
       id: Date.now(),
       title: selectedProblem,
       description: selectedProblem === "Other" ? "Custom issue" : selectedProblem,
@@ -50,15 +58,14 @@ export default function Service() {
     };
     setIssues([...issues, newIssue]);
     setCurrentStatus("Submitted");
-    console.log("Expert help request submitted:", selectedProblem);
     alert("Your request has been sent! Our team will contact you.");
     setSelectedProblem("");
     setShowExpertForm(false);
   };
 
-  const handleCallSubmit = () => {
+  const handleCallSubmit = (): void => {
     if (!callIssue) return alert("Please describe your issue");
-    const newIssue = {
+    const newIssue: Issue = {
       id: Date.now(),
       title: "Live Call Issue",
       description: callIssue,
@@ -67,14 +74,14 @@ export default function Service() {
     };
     setIssues([...issues, newIssue]);
     setCurrentStatus("Submitted");
-    console.log("Live call requested for issue:", callIssue);
     alert("Our team will call you shortly!");
     setCallIssue("");
     setShowCallForm(false);
   };
 
   // Simulate status progression for demo purposes
-  const updateStatus = (issueId) => {
+  const updateStatus = (issueId: number | undefined): void => {
+    if (!issueId) return;
     setIssues((prevIssues) =>
       prevIssues.map((issue) => {
         if (issue.id === issueId) {
@@ -236,24 +243,45 @@ export default function Service() {
       {/* Issue History */}
       {issues.length > 0 && (
         <div className="mt-12 mx-36 bg-white border rounded-xl shadow-lg p-6 w-[90%] md:w-[970px]">
-          <h3 className="text-lg font-bold mb-4">Issue History</h3>
+          <h3 className="text-lg font-bold mb-6">Issue History</h3>
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full border-collapse rounded-lg overflow-hidden">
               <thead>
-                <tr className="border-b">
-                  <th className="p-2">Issue Title</th>
-                  <th className="p-2">Description</th>
-                  <th className="p-2">Resolution Date</th>
-                  <th className="p-2">Status</th>
+                <tr className="bg-gray-100 text-gray-700 text-sm uppercase">
+                  <th className="p-3 text-left">Issue Title</th>
+                  <th className="p-3 text-left">Description</th>
+                  <th className="p-3 text-left">Resolution Date</th>
+                  <th className="p-3 text-left">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {issues.map((issue) => (
-                  <tr key={issue.id} className="border-b">
-                    <td className="p-2">{issue.title}</td>
-                    <td className="p-2">{issue.description}</td>
-                    <td className="p-2">{issue.date}</td>
-                    <td className="p-2">{issue.status}</td>
+                {issues.map((issue, index) => (
+                  <tr
+                    key={issue.id}
+                    className={`text-sm ${
+                      index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                    } hover:bg-gray-100 transition`}
+                  >
+                    <td className="p-3 font-medium text-gray-900">
+                      {issue.title}
+                    </td>
+                    <td className="p-3 text-gray-700">{issue.description}</td>
+                    <td className="p-3 text-gray-500">{issue.date}</td>
+                    <td className="p-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          issue.status === "Resolved"
+                            ? "bg-green-100 text-green-700"
+                            : issue.status === "In Progress"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : issue.status === "Technician Assigned"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-gray-200 text-gray-700"
+                        }`}
+                      >
+                        {issue.status}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
