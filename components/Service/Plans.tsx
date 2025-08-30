@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { CheckCircle2, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { setRedirect } from "@/lib/redux/slices/redirectSlice";
+import { useDispatch } from "react-redux";
 
 export default function Pricing() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<{ name: string; link: string } | null>(null);
+  const dispatch = useDispatch();
 
   const plans = [
     {
@@ -41,7 +44,7 @@ export default function Pricing() {
     },
   ];
 
-  const handleRedirect = (plan: { name: string; link: string }) => {
+  const   handleRedirect = (plan: { name: string; link: string }) => {
     const isLoggedIn = localStorage.getItem("auth");
 
     if (isLoggedIn) {
@@ -129,7 +132,9 @@ export default function Pricing() {
                 Cancel
               </button>
               <button
-                onClick={() => router.push("/auth/login")}
+                onClick={() => {
+                  dispatch(setRedirect(selectedPlan.link));
+                  router.push("/auth/login")}}
                 className="px-5 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition"
               >
                 Login

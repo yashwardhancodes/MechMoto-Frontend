@@ -36,15 +36,18 @@ const LoginPage = () => {
 		if (user) {
 			let finalPath = "/";
 
-			if (redirectPath) {
+			// ✅ Redirect path has highest priority
+			if (redirectPath && redirectPath.trim() !== "") {
 				finalPath = redirectPath;
-				dispatch(setRedirect("")); // clear after use
-			} else if (role != undefined) {
-				if (role === ROLES.SUPER_ADMIN) {
-					finalPath = "/admin/";
-				} else if (role === ROLES.VENDOR) {
-					finalPath = "/vendor/dashboard";
-				}
+				router.push(finalPath);
+ 				return; // stop here, don't check roles
+			}
+
+			// ✅ Role-based fallback
+			if (role === ROLES.SUPER_ADMIN) {
+				finalPath = "/admin/";
+			} else if (role === ROLES.VENDOR) {
+				finalPath = "/vendor/dashboard";
 			}
 
 			router.push(finalPath);
