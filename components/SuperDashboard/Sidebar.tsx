@@ -15,7 +15,7 @@ import { hasPermission, Role, Permission } from '@/lib/auth';
 type MenuItem = {
   label: string;
   icon: React.ReactNode;
-  basePath: string; // Base path that can be adjusted by role
+  basePath: string;
   permission: string;
   subItems?: { label: string; basePath: string; icon: React.ReactNode; permission: string }[];
   path?: string
@@ -38,6 +38,17 @@ const menuItems: MenuItem[] = [
       { label: 'Manage Categories', basePath: 'manage-categories', icon: <Layers size={16} />, permission: 'manage:categories' },
       { label: 'Manage Subcategories', basePath: 'manage-subcategories', icon: <List size={16} />, permission: 'manage:subcategories' },
       { label: 'Manage Part Brands', basePath: 'manage-part-brands', icon: <Tag size={16} />, permission: 'manage:part-brands' },
+    ],
+  },
+  {
+    label: 'Manage Plans',
+    icon: <Tag size={16} />,
+    basePath: 'manage-plans',
+    permission: 'view:plans',
+    subItems: [
+      { label: 'Manage Plan Types', basePath: 'manage-plan-types', icon: <Layers size={16} />, permission: 'manage:plan-types' },
+      { label: 'Manage Plan Features', basePath: 'manage-plan-features', icon: <List size={16} />, permission: 'manage:plan-features' },
+      { label: 'Manage Plan Pricing', basePath: 'manage-plan-pricing', icon: <Tag size={16} />, permission: 'manage:plan-pricing' },
     ],
   },
   { label: 'Coupons & Discounts', icon: <CiDiscount1 size={18} />, basePath: 'coupons-and-discounts', permission: 'view:coupons' },
@@ -68,7 +79,6 @@ export default function Sidebar({ activeMenu, setActiveMenu }: Props) {
   console.log("User role in Sidebar:", userRole);
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
 
-  // Load role from local storage
   useEffect(() => {
     const storedUserData = localStorage.getItem('auth');
     if (storedUserData) {
@@ -77,12 +87,10 @@ export default function Sidebar({ activeMenu, setActiveMenu }: Props) {
     }
   }, []);
 
-  // Determine base path based on role
   const getBasePath = (role: Role | null) => {
     return role === 'Vendor' ? '/vendor' : '/admin';
   };
 
-  // Filter menu items based on permissions and adjust paths
   const filteredMenuItems = userRole
     ? menuItems
         .filter((item) => hasPermission({ user: { id: '', role: userRole }, permission: item.permission as Permission }))
@@ -97,11 +105,11 @@ export default function Sidebar({ activeMenu, setActiveMenu }: Props) {
         }))
     : [];
 
-  // Initialize expandedMenu based on current pathname
   useEffect(() => {
     if (userRole) {
       const vehicleMenu = filteredMenuItems.find((item) => item.label === 'Manage Vehicles');
       const partsMenu = filteredMenuItems.find((item) => item.label === 'Manage Parts');
+      const plansMenu = filteredMenuItems.find((item) => item.label === 'Manage Plans');
 
       if (vehicleMenu?.subItems) {
         const isVehicleSubItemActive = vehicleMenu.subItems.some((subItem) => pathname === subItem.path);
@@ -111,6 +119,11 @@ export default function Sidebar({ activeMenu, setActiveMenu }: Props) {
       if (partsMenu?.subItems) {
         const isPartsSubItemActive = partsMenu.subItems.some((subItem) => pathname === subItem.path);
         if (isPartsSubItemActive) setExpandedMenu('Manage Parts');
+      }
+
+      if (plansMenu?.subItems) {
+        const isPlansSubItemActive = plansMenu.subItems.some((subItem) => pathname === subItem.path);
+        if (isPlansSubItemActive) setExpandedMenu('Manage Plans');
       }
     }
   }, [userRole, pathname]);

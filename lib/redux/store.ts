@@ -13,6 +13,7 @@ import { partApi } from "./api/partApi";
 import { modelLineApi } from "./api/modelLineApi";
 import redirectReducer from "./slices/redirectSlice";
 import breadcrumbReducer from "./slices/breadcrumbSlice";
+import { planApi } from "./api/planApi";
 
 export const makeStore = () =>
 	configureStore({
@@ -31,6 +32,7 @@ export const makeStore = () =>
 			[partBrandApi.reducerPath]: partBrandApi.reducer,
 			[partApi.reducerPath]: partApi.reducer,
 			[modelLineApi.reducerPath]: modelLineApi.reducer,
+			[planApi.reducerPath]:planApi.reducer
 		},
 		middleware: (getDefaultMiddleware) =>
 			getDefaultMiddleware().concat(
@@ -44,6 +46,7 @@ export const makeStore = () =>
 				subcategoryApi.middleware,
 				partBrandApi.middleware,
 				modelLineApi.middleware,
+				planApi.middleware
 			),
 	});
 

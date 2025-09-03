@@ -1,3 +1,4 @@
+ 
 export type Role = keyof typeof ROLES;
 
 export type Permission = (typeof ROLES)[Role][number];
@@ -21,6 +22,9 @@ const ROLES = {
     "view:financials",
     "view:analytics",
     "view:support",
+    "view:plans",
+    "manage:plan-add",
+    "manage:plan-edit",
   ],
   Vendor: [
     "view:dashboard",
@@ -54,3 +58,4 @@ export function hasPermission({
 }) {
   return (ROLES[user.role] as readonly Permission[]).includes(permission);
 }
+ 

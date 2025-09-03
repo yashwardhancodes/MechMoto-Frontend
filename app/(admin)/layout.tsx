@@ -48,15 +48,25 @@ export default function AdminDashboardLayout({ children }: DashboardLayoutProps)
 			"service-request": "Service Request",
 			"manage-mechanics": "Manage Mechanics",
 			"manage-vehicles": "Manage Vehicles",
+
+			// ✅ Vehicle submenus
 			"manage-car-make": "Manage Car Make",
 			"manage-model-line": "Manage Model Line",
 			"manage-engine-type": "Manage Engine Type",
+
+			// ✅ Parts submenus
+			"manage-categories": "Manage Categories",
+			"manage-subcategories": "Manage Subcategories",
+			"manage-part-brands": "Manage Part Brands",
+
+			// ✅ NEW: Manage Plans
+			"manage-plans": "Manage Plans",
+			"add-plan": "Add Plan",
+			"edit-plan": "Edit Plan",
+
 			"financial-management": "Financial Management",
 			"analytics-and-reporting": "Analytics and Reporting",
 			"customer-support": "Customer Support",
-			"manage-categories": "Manage Categories",
-			"manage-subcategories": "Manage Subcategories",
-			"manage-part-brands": "Manage Part Brands"
 		};
 
 		return menuMap[segment] || "Dashboard";
@@ -76,7 +86,7 @@ export default function AdminDashboardLayout({ children }: DashboardLayoutProps)
 	}
 
 	return (
-		<div className=" bg-gray-50">
+		<div className="bg-gray-50">
 			{/* Fixed Top Navbar */}
 			<Navbar />
 
