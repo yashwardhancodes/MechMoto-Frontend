@@ -6,56 +6,167 @@ import { CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { setRedirect } from "@/lib/redux/slices/redirectSlice";
 import { useDispatch } from "react-redux";
+import { useGetAllPlansQuery } from "@/lib/redux/api/planApi";
+import { useCreateSubscriptionMutation } from "@/lib/redux/api/subscriptionApi";
+import { setSubscriptionId } from "@/lib/redux/slices/authSlice";
 
 
+// Define TypeScript interfaces for the API response
+interface Module {
+  id: number;
+  name: string;
+  description: string | null;
+  created_at: string;
+}
 
+interface PlanModule {
+  id: number;
+  planId: number;
+  moduleId: number;
+  quota: number;
+  quota_unit: string | null;
+  module: Module;
+}
 
+interface Plan {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  period: "monthly" | "yearly";
+  interval: number;
+  razorpay_plan_id: string | null;
+  status: "PENDING" | "ACTIVE";
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  plan_modules: PlanModule[];
+}
 
-const plansData: Record<string, any> = {
-  basic: {
-    title: "Basic Plan",
-    description: "Perfect for short-term roadside assistance.",
-    features: ["Quick roadside assistance", "Certified expert mechanics"],
-  },
-  premium: {
-    title: "Premium",
-    description:
-      "Unlock the full potential of your ride with our Premium Plan — designed for car lovers, mechanics, and professionals who demand quality and speed. Enjoy priority shipping, early access to exclusive parts, extended return periods, personalized customer support, and special member-only offers. With added benefits like expert installation guidance and service reminders, the Premium Plan ensures a smooth, reliable, and upgraded experience every time you shop. Drive smarter, stay ahead — go premium today.",
-    features: [
-      "Your orders are fast-tracked",
-      "Access to rare and high-demand car parts",
-      "Extended return periods",
-      "Personalized customer support",
-    ],
-  },
-  medium: {
-    title: "Medium Plan",
-    description: "A balanced plan for 6 months.",
-    features: ["Quick roadside assistance", "Certified expert mechanics"],
-  },
-};
+// Define interface for the component's plan data
+interface ComponentPlan {
+  title: string;
+  description: string;
+  features: string[];
+}
 
 export default function PlanPage() {
   const params = useParams();
   const plan = params.plan as string;
-  const data = plansData[plan];
   const [checked, setChecked] = useState(false);
   const dispatch = useDispatch();
-
-
-
   const router = useRouter();
 
-  const handleRedirect = () => {
-    const isLoggedIn = localStorage.getItem("auth");
+  const { data: allPlans, isLoading, isError } = useGetAllPlansQuery({});
+  const [createSubscription, { isLoading: isCreating }] =
+    useCreateSubscriptionMutation();
 
-    if (isLoggedIn) {
-      router.push(`/plans/${plan}/checkout`);       
-    } else {
-      router.push("/auth/login");   
-      dispatch(setRedirect(`/plans/${plan}/checkout`));
+  // Transform and filter API data
+  const activePlans: Plan[] = allPlans
+    ? allPlans.filter((plan: Plan) => plan.status === "ACTIVE")
+    : [];
+
+  // Find the plan that matches the URL parameter
+  const selectedPlan = activePlans.find(
+    (p: Plan) => p.name.toLowerCase().replace(/\s+/g, "-") === plan
+  );
+
+  // Map the selected plan to the component's data structure
+  const data: ComponentPlan | undefined = selectedPlan
+    ? {
+      title: selectedPlan.name,
+      description:
+        selectedPlan.description ||
+        "Get a certified mechanic to your location with this plan.",
+      features: selectedPlan.plan_modules.length
+        ? selectedPlan.plan_modules.map(
+          (module) => `${module.module.name} (Quota: ${module.quota})`
+        )
+        : ["Quick roadside assistance", "Certified expert mechanics"],
+    }
+    : undefined;
+
+  const handleRedirect = async () => {
+    const authData = localStorage.getItem("auth");
+
+    if (!authData) {
+      router.push("/auth/login");
+      dispatch(setRedirect(`/plans/${plan}`));
+      return;
+    }
+
+    if (!selectedPlan) return;
+
+    // 🔑 open tab immediately on click
+    const newTab = window.open("", "_blank");
+
+    try {
+      const parsedAuth = JSON.parse(authData);
+      const userId = parsedAuth?.user?.id;
+
+      const payload = {
+        userId,
+        planId: selectedPlan.id,
+        razorpaySubscriptionId: selectedPlan.razorpay_plan_id,
+      };
+
+      const res = await createSubscription(payload).unwrap();
+      console.log("Subscription created:", res);
+
+      if (res?.short_url && newTab) {
+        newTab.location.href = res.short_url; // update tab with Razorpay link
+
+        const interval = setInterval(async () => {
+          try {
+            const checkRes = await fetch(
+              `${process.env.NEXT_PUBLIC_BASE_URL}subscriptions/status/${res.id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${parsedAuth?.token}`,
+                },
+              }
+            );
+            const statusData = await checkRes.json();
+            console.log("statusData", statusData);
+
+            if (
+              statusData?.status === "active" ||
+              statusData?.status === "completed"
+            ) {
+              clearInterval(interval);
+
+              // ✅ update redux + localStorage
+              dispatch(setSubscriptionId(statusData?.razorpaySubscriptionId || null));
+
+              // ✅ redirect to success page
+              router.push(`/plans/${plan}/checkout/success`);
+            }
+          } catch (err) {
+            console.error("Error checking subscription status:", err);
+          }
+        }, 5000);
+
+      } else {
+        router.push(`/plans/${plan}/checkout`);
+      }
+    } catch (err) {
+      console.error("Error creating subscription:", err);
+      if (newTab) newTab.close(); // close blank tab if error
     }
   };
+
+
+
+
+  // 
+
+  if (isLoading) {
+    return <div className="p-10 text-center text-gray-600">Loading plan...</div>;
+  }
+
+  if (isError) {
+    return <div className="p-10 text-center text-red-500">Error loading plan</div>;
+  }
 
   if (!data) {
     return <div className="p-10 text-center text-red-500">Plan not found</div>;
@@ -103,8 +214,7 @@ export default function PlanPage() {
         <h3 className="text-lg font-bold text-[#6BDE23] mb-3">
           Terms and Conditions
         </h3>
-        <div className="h-52 overflow-y-auto rounded-md p-3 text-sm text-gray-600 leading-relaxed scrollbar-green scrollbar-thin scrollbar-thumb-rounded-full scrollbar-track-rounded-full ">
-          {/* terms content here */}
+        <div className="h-52 overflow-y-auto rounded-md p-3 text-sm text-gray-600 leading-relaxed scrollbar-green scrollbar-thin scrollbar-thumb-rounded-full scrollbar-track-rounded-full">
           <p>
             <strong>Last Revised:</strong> December 16, 2013
           </p>
@@ -142,25 +252,21 @@ export default function PlanPage() {
             privacy policy.
           </span>
         </label>
-
-        {/* Action Buttons */}
-
       </div>
 
       {/* Buy Now */}
       <div className="flex justify-end items-center">
         <button
-          disabled={!checked}
-          onClick={() => handleRedirect()          }
-          className={`mt-6  px-8 py-2 rounded-full  text-lg font-semibold transition ${checked
+          disabled={!checked || isCreating}
+          onClick={handleRedirect}
+          className={`mt-6 px-8 py-2 rounded-full text-lg font-semibold transition ${checked
             ? "bg-[#6BDE23] text-black"
             : "bg-gray-300 text-black cursor-not-allowed"
             }`}
         >
-          Buy Now
+          {isCreating ? "Processing..." : "Buy Now"}
         </button>
       </div>
-
     </div>
   );
 }

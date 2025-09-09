@@ -5,6 +5,50 @@ import { CheckCircle2, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { setRedirect } from "@/lib/redux/slices/redirectSlice";
 import { useDispatch } from "react-redux";
+import { useGetAllPlansQuery } from "@/lib/redux/api/planApi";
+
+// Define TypeScript interfaces for the API response
+interface Module {
+  id: number;
+  name: string;
+  description: string | null;
+  created_at: string;
+}
+
+interface PlanModule {
+  id: number;
+  planId: number;
+  moduleId: number;
+  quota: number;
+  quota_unit: string | null;
+  module: Module;
+}
+
+interface Plan {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  period: "monthly" | "yearly";
+  interval: number;
+  razorpay_plan_id: string | null;
+  status: "PENDING" | "ACTIVE";
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  plan_modules: PlanModule[];
+}
+
+// Define interface for the component's plans array
+interface ComponentPlan {
+  name: string;
+  price: string;
+  duration: string;
+  features: string[];
+  highlight: boolean;
+  tag?: string;
+  link: string;
+}
 
 export default function Pricing() {
   const router = useRouter();
@@ -12,39 +56,28 @@ export default function Pricing() {
   const [selectedPlan, setSelectedPlan] = useState<{ name: string; link: string } | null>(null);
   const dispatch = useDispatch();
 
-  const plans = [
-    {
-      name: "Basic",
-      price: "600",
-      duration: "For 2 Months",
-      features: ["Quick roadside assistance", "Certified expert mechanics"],
-      highlight: false,
-      link: "/plans/basic",
-    },
-    {
-      name: "Premium",
-      price: "1200",
-      duration: "Yearly (Just Rs. 100/month!)",
-      features: [
-        "Quick roadside assistance",
-        "Certified expert mechanics",
-        "Save 50% compared to Basic",
-      ],
-      highlight: true,
-      tag: "Most Popular",
-      link: "/plans/premium",
-    },
-    {
-      name: "Medium",
-      price: "900",
-      duration: "For 6 Months",
-      features: ["Quick roadside assistance", "Certified expert mechanics"],
-      highlight: false,
-      link: "/plans/medium",
-    },
-  ];
+  const { data: allPlans, isLoading, isError } = useGetAllPlansQuery({});
 
-  const   handleRedirect = (plan: { name: string; link: string }) => {
+  // Transform and filter API data
+  const plans: ComponentPlan[] = allPlans
+    ? allPlans
+        .filter((plan: Plan) => plan.status === "ACTIVE")
+        .map((plan: Plan) => ({
+          name: plan.name,
+          price: plan.price.toString(),
+          duration: plan.period === "monthly" ? "Monthly" : "Yearly",
+          features: plan.plan_modules.length
+            ? plan.plan_modules.map(
+                (module) => `${module.module.name} (Quota: ${module.quota})`
+              )
+            : ["Quick roadside assistance", "Certified expert mechanics"],
+          highlight: plan.name.toLowerCase().includes("premium"),
+          tag: plan.name.toLowerCase().includes("premium") ? "Most Popular" : undefined,
+          link: `/plans/${plan.name.toLowerCase().replace(/\s+/g, "-")}`,
+        }))
+    : [];
+
+  const handleRedirect = (plan: { name: string; link: string }) => {
     const isLoggedIn = localStorage.getItem("auth");
 
     if (isLoggedIn) {
@@ -54,6 +87,14 @@ export default function Pricing() {
       setShowModal(true);
     }
   };
+
+  if (isLoading) {
+    return <div className="text-center mt-32">Loading plans...</div>;
+  }
+
+  if (isError) {
+    return <div className="text-center mt-32 text-red-600">Error loading plans</div>;
+  }
 
   return (
     <>
@@ -117,7 +158,7 @@ export default function Pricing() {
 
       {/* Modal */}
       {showModal && selectedPlan && (
-<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl p-6 w-[90%] max-w-md text-center">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">
               You have selected the <span className="text-green-700">{selectedPlan.name}</span> plan
@@ -134,7 +175,8 @@ export default function Pricing() {
               <button
                 onClick={() => {
                   dispatch(setRedirect(selectedPlan.link));
-                  router.push("/auth/login")}}
+                  router.push("/auth/login");
+                }}
                 className="px-5 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition"
               >
                 Login

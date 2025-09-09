@@ -1,23 +1,49 @@
 "use client";
 
 import { useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { rehydrateAuth } from "@/lib/redux/thunks/authThunks";
-import { AppDispatch } from "@/lib/redux/store";
+import { AppDispatch, RootState } from "@/lib/redux/store";
 import useAuth from "@/hooks/useAuth";
 import Loading from "@/components/custom/Loading";
+import socket  from "@/lib/utils/subscriptionSocket";
+import { joinUserRoom } from "@/lib/utils/subscriptionSocket";
+import { setSubscriptionId ,clearSubscriptionId } from "@/lib/redux/slices/authSlice";
 
 export default function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
-	const dispatch = useDispatch<AppDispatch>();
-	const {loading} = useAuth();
+  const dispatch = useDispatch<AppDispatch>();
+  const { loading } = useAuth();
+  const user = useSelector((state: RootState) => state.auth.user);
 
-	useEffect(() => {
-		dispatch(rehydrateAuth());
-	}, [dispatch]);
+  // 🔹 Rehydrate user + token from localStorage on mount
+  useEffect(() => {
+    dispatch(rehydrateAuth());
+  }, [dispatch]);
 
-	if (loading) {
-		return (<Loading />);
-	}
+  // 🔹 Setup subscription lifecycle socket listener
+  useEffect(() => {
+    if (user?.id) {
+      joinUserRoom(user.id);
 
-	return <>{children}</>;
+      socket.on("subscription:update", (data) => {
+        console.log("🔔 Subscription update:", data);
+
+        if (data.status === "ACTIVE") {
+          dispatch(setSubscriptionId(data.subscriptionId));
+        } else if (data.status === "INACTIVE") {
+          dispatch(clearSubscriptionId());
+        }
+      });
+
+      return () => {
+        socket.off("subscription:update");
+      };
+    }
+  }, [user, dispatch]);
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  return <>{children}</>;
 }

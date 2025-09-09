@@ -9,14 +9,28 @@ import { faUser } from "@fortawesome/free-regular-svg-icons";
 import { Menu, X } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { useGetAllSubscriptionsQuery } from "@/lib/redux/api/subscriptionApi";
+
 
 const Navbar = () => {
 	const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 	const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const { isLoggedIn, user, loading, signOut } = useAuth();
+	console.log(user?.razorpaySubscriptionId);
 
-    const router = useRouter();
+	const router = useRouter();
+
+	const { data: subscriptions  } = useGetAllSubscriptionsQuery({});
+
+ const particularSubscription = subscriptions?.find(
+  (subscription :any) => subscription.razorpay_subscription_id === user?.razorpaySubscriptionId
+);
+
+ console.log("particularSubscription",particularSubscription);
+
+
+
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -30,6 +44,8 @@ const Navbar = () => {
 			document.removeEventListener("mousedown", handleClickOutside);
 		}
 	}, [])
+
+
 
 	return (
 		<>
@@ -62,7 +78,7 @@ const Navbar = () => {
 							"Loading"
 						) : isLoggedIn ? (
 							<div
-								className=" rounded-full bg-green-500 text-white font-bold w-8 h-8 flex justify-center items-center text-lg cursor-pointer"
+								className="rounded-full bg-green-500 text-white font-bold w-8 h-8 flex justify-center items-center text-lg cursor-pointer"
 								onClick={() => setDropdownOpen((prev) => !prev)}
 							>
 								{user?.email[0].toUpperCase()}
@@ -78,12 +94,48 @@ const Navbar = () => {
 						{dropdownOpen && (
 							<div className="absolute left-0 top-12 w-44 bg-white rounded-lg shadow-md z-50">
 								<ul className="py-2 text-sm text-gray-700">
-									<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">Dashboard</li>
-									<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">Settings</li>
-									<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer" onClick={() => {
-										signOut();
-										router.push("/auth/login");
-									}}>Sign out</li>
+									{/* ✅ Check the role of the user */}
+									{user?.role.name === "Admin" ? (
+										<>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												Admin Dashboard
+											</li>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												Manage Users
+											</li>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												Settings
+											</li>
+										</>
+									) : (
+										<>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												My Profile
+											</li>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												My Orders
+											</li>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												Settings
+											</li>
+										</>
+									)}
+									{/* ✅ Display Razorpay Subscription ID if present */}
+									{particularSubscription && (
+										<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+									Purchased Plan: {particularSubscription.plan.name}
+										</li>
+									)}
+									{/* ✅ Sign out (common for all roles) */}
+									<li
+										className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
+										onClick={() => {
+											signOut();
+											router.push("/auth/login");
+										}}
+									>
+										Sign out
+									</li>
 								</ul>
 							</div>
 						)}

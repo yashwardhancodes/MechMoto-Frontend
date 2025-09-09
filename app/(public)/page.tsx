@@ -13,15 +13,24 @@ export default function UsersPage() {
   const [selectedTab, setSelectedTab] = useState("buy");
   const router = useRouter();
 
-  // Suppose planId comes from backend / Redux / API
-  const planId = "null"; // change to null/undefined if no plan
+  const auth = localStorage.getItem("auth");
+  let razorpaySubscriptionId = null;
+  try {
+    const authObj = auth ? JSON.parse(auth) : null;
+    razorpaySubscriptionId = authObj?.user?.razorpaySubscriptionId ?? null;
+  } catch (e) {
+    razorpaySubscriptionId = null;
+  }
+  console.log("auth", razorpaySubscriptionId);
+
+   const subId = razorpaySubscriptionId;  
 
   // Redirect if planId exists and user clicks "Repair my car"
   useEffect(() => {
-    if (selectedTab === "repair" && planId) {
+    if (selectedTab === "repair" && subId) {
       router.push("/repair");
     }
-  }, [selectedTab, planId, router]);
+  }, [selectedTab, subId, router]);
 
   return (
     <div className="mt-[40px] md:mt-[50px] lg:mt-[56px]">
@@ -62,7 +71,7 @@ export default function UsersPage() {
             <TrendingProducts />
             <Footer />
           </div>
-        ) : !planId ? ( // only show if no plan
+        ) : !subId ? ( // only show if no plan
           <div className="text-center text-gray-500 py-20">
            <Service/>
           </div>
