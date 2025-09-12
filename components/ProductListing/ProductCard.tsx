@@ -3,6 +3,7 @@ import React from 'react';
 import { FiExternalLink } from "react-icons/fi";
 import { FaBookmark } from "react-icons/fa";
 import { FiBookmark } from "react-icons/fi";
+import Link from 'next/link';
 
 interface Product {
   id: number;
@@ -62,9 +63,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {product.price}
         </div>
         <div className='flex items-center justify-between  '>
-            <a href={`/products/${product.id}`} className="text-[#405FF2] text-sm font-medium   inline-flex items-center gap-1">
+            <Link href={`/products/${product.id}`} prefetch className="text-[#405FF2] text-sm font-medium  inline-flex items-center gap-1">
           View Details <FiExternalLink className="mt-[-2px]" />
-        </a>
+        </Link>
             {product.discount && (
           <div className=" w-fit bg-[rgba(154,225,68,0.56)]   text-[#050B20] text-xs font-medium px-2 py-1 rounded">
             {product.discount}

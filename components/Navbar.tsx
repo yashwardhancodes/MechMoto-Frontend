@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useGetAllSubscriptionsQuery } from "@/lib/redux/api/subscriptionApi";
 
 
+
 const Navbar = () => {
 	const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 	const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
@@ -21,13 +22,13 @@ const Navbar = () => {
 
 	const router = useRouter();
 
-	const { data: subscriptions  } = useGetAllSubscriptionsQuery({});
+	const { data: subscriptions } = useGetAllSubscriptionsQuery({});
 
- const particularSubscription = subscriptions?.find(
-  (subscription :any) => subscription.razorpay_subscription_id === user?.razorpaySubscriptionId
-);
+	const particularSubscription = subscriptions?.find(
+		(subscription: any) => subscription.razorpay_subscription_id === user?.razorpaySubscriptionId
+	);
 
- console.log("particularSubscription",particularSubscription);
+	console.log("particularSubscription", particularSubscription);
 
 
 
@@ -123,7 +124,7 @@ const Navbar = () => {
 									{/* ✅ Display Razorpay Subscription ID if present */}
 									{particularSubscription && (
 										<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
-									Purchased Plan: {particularSubscription.plan.name}
+											Purchased Plan: {particularSubscription.plan.name}
 										</li>
 									)}
 									{/* ✅ Sign out (common for all roles) */}

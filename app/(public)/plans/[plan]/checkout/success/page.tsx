@@ -1,9 +1,22 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import checkImg from "@/public/assets/check.png"; // <- replace with your green check image
 
 export default function PlanPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect after 5 seconds (adjust time as needed)
+    const timer = setTimeout(() => {
+      router.push("/repair");
+    }, 5000);
+
+    return () => clearTimeout(timer); // cleanup on unmount
+  }, [router]);
+
   return (
     <div className="mx-auto bg-[rgba(154,225,68,0.023)] py-16 px-6 md:px-32">
       {/* Plan Section */}
@@ -32,10 +45,16 @@ export default function PlanPage() {
 
           {/* Buttons */}
           <div className="mt-10 flex justify-center gap-6">
-            <button className="bg-[#6BDE23] hover:bg-[#5fc71f] transition-colors px-6 py-3 rounded-full font-semibold text-black shadow-md">
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="bg-[#6BDE23] hover:bg-[#5fc71f] transition-colors px-6 py-3 rounded-full font-semibold text-black shadow-md"
+            >
               Return to Dashboard
             </button>
-            <button className="border border-[#6BDE23] text-[#6BDE23] hover:bg-[#f4fff0] transition-colors px-6 py-3 rounded-full font-semibold shadow-sm">
+            <button
+              onClick={() => router.push("/orders")}
+              className="border border-[#6BDE23] text-[#6BDE23] hover:bg-[#f4fff0] transition-colors px-6 py-3 rounded-full font-semibold shadow-sm"
+            >
               Track My Orders
             </button>
           </div>
