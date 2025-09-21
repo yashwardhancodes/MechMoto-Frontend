@@ -49,7 +49,7 @@ const Service = () => {
         </div>
 
 
-         <div className="p-[1.5px] rounded-2xl  bg-gradient-to-l from-[#9AE144] via-green-700 to-black w-[90%] md:w-[470px]">
+        <div className="p-[1.5px] rounded-2xl  bg-gradient-to-l from-[#9AE144] via-green-700 to-black w-[90%] md:w-[470px]">
           <div className="flex items-center  gap-4 rounded-2xl px-6 py-5 shadow-sm hover:shadow-md transition bg-white">
             <Image src={customerServiceImg} alt="helpline" width={60} height={80} />
             <div>
@@ -61,16 +61,16 @@ const Service = () => {
           </div>
         </div>
 
-        
- 
+
+
       </div>
 
 
-       
-<Pricing/>
-      <Benefits/>
 
-      <FAQs/>
+      <Pricing />
+      <Benefits />
+
+      <FAQs />
     </div>
   )
 }

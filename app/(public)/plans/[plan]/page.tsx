@@ -58,7 +58,7 @@ export default function PlanPage() {
   const router = useRouter();
 
   // ✅ Get subscription info from Redux auth state
-  const subscriptionId = useSelector((state: any) => state.auth.user.razorpaySubscriptionId );
+  const subscriptionId = useSelector((state: any) => state.auth.user.razorpaySubscriptionId);
 
   console.log("subscriptionId plan page", subscriptionId);
 
@@ -79,16 +79,16 @@ export default function PlanPage() {
   // Component plan structure
   const data: ComponentPlan | undefined = selectedPlan
     ? {
-        title: selectedPlan.name,
-        description:
-          selectedPlan.description ||
-          "Get a certified mechanic to your location with this plan.",
-        features: selectedPlan.plan_modules.length
-          ? selectedPlan.plan_modules.map(
-              (module) => `${module.module.name} (Quota: ${module.quota})`
-            )
-          : ["Quick roadside assistance", "Certified expert mechanics"],
-      }
+      title: selectedPlan.name,
+      description:
+        selectedPlan.description ||
+        "Get a certified mechanic to your location with this plan.",
+      features: selectedPlan.plan_modules.length
+        ? selectedPlan.plan_modules.map(
+          (module) => `${module.module.name} (Quota: ${module.quota})`
+        )
+        : ["Quick roadside assistance", "Certified expert mechanics"],
+    }
     : undefined;
 
   // -------------------------
@@ -114,8 +114,9 @@ export default function PlanPage() {
       const payload = {
         userId,
         planId: selectedPlan.id,
-        razorpaySubscriptionId: selectedPlan.razorpay_plan_id,
+        
       };
+
 
       const res = await createSubscription(payload).unwrap();
 
@@ -282,11 +283,10 @@ export default function PlanPage() {
         <button
           disabled={!checked || isCreating}
           onClick={handleRedirect}
-          className={`mt-6 px-8 py-2 rounded-full text-lg font-semibold transition ${
-            checked
+          className={`mt-6 px-8 py-2 rounded-full text-lg font-semibold transition ${checked
               ? "bg-[#6BDE23] text-black"
               : "bg-gray-300 text-black cursor-not-allowed"
-          }`}
+            }`}
         >
           {isCreating ? "Processing..." : "Buy Now"}
         </button>

@@ -16,7 +16,10 @@ import breadcrumbReducer from "./slices/breadcrumbSlice";
 import { planApi } from "./api/planApi";
 import { subscriptionApi } from "./api/subscriptionApi";
 import { moduleApi } from "./api/moduleApi";
- 
+import { serviceCenterApi } from "./api/serviceCenterApi";
+import { mechanicApi } from "./api/mechanicApi";
+
+
 export const makeStore = () =>
 	configureStore({
 		reducer: {
@@ -36,8 +39,9 @@ export const makeStore = () =>
 			[modelLineApi.reducerPath]: modelLineApi.reducer,
 			[planApi.reducerPath]:planApi.reducer,
 			[subscriptionApi.reducerPath]:subscriptionApi.reducer,
-			[moduleApi.reducerPath] : moduleApi.reducer
-		},
+			[moduleApi.reducerPath] : moduleApi.reducer,
+			[serviceCenterApi.reducerPath]: serviceCenterApi.reducer,
+			[mechanicApi.reducerPath]: mechanicApi.reducer,},
 		middleware: (getDefaultMiddleware) =>
 			getDefaultMiddleware().concat(
 				authApi.middleware,
@@ -52,7 +56,9 @@ export const makeStore = () =>
 				modelLineApi.middleware,
 				planApi.middleware,
 				subscriptionApi.middleware,
-				moduleApi.middleware
+				moduleApi.middleware,
+				serviceCenterApi.middleware,
+				mechanicApi.middleware
 			),
 	});
 
