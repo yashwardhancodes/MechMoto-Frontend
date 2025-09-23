@@ -25,7 +25,7 @@ export default function PaymentMethod() {
 		},
 		{ name: "Net Banking", icon: "https://cdn-icons-png.flaticon.com/512/3068/3068289.png" },
 		{
-			name: "Cash On Delivery",
+			name: "COD",
 			icon: "https://cdn-icons-png.flaticon.com/512/1170/1170678.png",
 		},
 	];

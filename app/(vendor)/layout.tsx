@@ -56,7 +56,8 @@ export default function VendorLayout({ children }: DashboardLayoutProps) {
 			"customer-support": "Customer Support",
 			"manage-categories": "Manage Categories",
 			"manage-subcategories": "Manage Subcategories",
-			"manage-part-brands": "Manage Part Brands"
+			"manage-part-brands": "Manage Part Brands",
+			"manage-shipments": "Manage Shipments"
 		};
 
 		return menuMap[segment] || "Dashboard";

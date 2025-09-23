@@ -25,6 +25,8 @@ const ROLES = {
     "view:plans",
     "manage:plan-add",
     "manage:plan-edit",
+    "view:shipments",
+    "manage:shipments"
   ],
   Vendor: [
     "view:dashboard",
@@ -34,6 +36,7 @@ const ROLES = {
     "manage:subcategories",
     "view:orders",
     "view:coupons",
+    "view:shipments"
   ],
   Mechanic: [
     "view:dashboard",
