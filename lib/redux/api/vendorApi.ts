@@ -6,7 +6,7 @@ export const vendorApi = createApi({
 		baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
 		prepareHeaders: (headers, { getState }) => {
 			const token = (getState() as any).auth.token;
-			console.log("token", token)
+			console.log("token", token);
 			if (token) {
 				headers.set("Authorization", `Bearer ${token}`);
 			}
@@ -14,9 +14,11 @@ export const vendorApi = createApi({
 			return headers;
 		},
 	}),
+	tagTypes: ["Vendor"],
 	endpoints: (builder) => ({
 		getAllVendors: builder.query({
 			query: () => "vendors",
+			providesTags: ["Vendor"],
 		}),
 		createVendor: builder.mutation({
 			query: (vendorData) => ({
@@ -24,9 +26,11 @@ export const vendorApi = createApi({
 				method: "POST",
 				body: vendorData,
 			}),
+			invalidatesTags: ["Vendor"],
 		}),
 		getVendor: builder.query({
 			query: (id) => `vendors/${id}`,
+			providesTags: ["Vendor"],
 		}),
 		updateVendor: builder.mutation({
 			query: ({ id, ...data }) => ({
@@ -34,20 +38,22 @@ export const vendorApi = createApi({
 				method: "PUT",
 				body: data,
 			}),
+			invalidatesTags: ["Vendor"],
 		}),
 		deleteVendor: builder.mutation({
 			query: (id) => ({
 				url: `vendors/${id}`,
 				method: "DELETE",
 			}),
-		}),
+			invalidatesTags: ["Vendor"],
+		})
 	}),
 });
 
 export const {
-	useGetAllVendorsQuery,
-	useCreateVendorMutation,
-	useGetVendorQuery,
-	useUpdateVendorMutation,
-	useDeleteVendorMutation,
+  useGetAllVendorsQuery,
+  useCreateVendorMutation,
+  useGetVendorQuery,
+  useUpdateVendorMutation,
+  useDeleteVendorMutation,
 } = vendorApi;

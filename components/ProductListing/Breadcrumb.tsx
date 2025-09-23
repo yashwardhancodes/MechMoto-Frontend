@@ -1,19 +1,38 @@
-import { IoIosArrowBack } from "react-icons/io";
+// components/ProductListing/Breadcrumb.js
+'use client';
 
+import { useSelector } from 'react-redux';
+import Link from 'next/link';
 
-const Breadcrumb: React.FC = () => {
+function Breadcrumb() {
+  const items = useSelector((state) => state.breadcrumb.items);
+
+  console.log('Breadcrumb items:', items);
+
+  if (!Array.isArray(items)) {
+    return null;
+  }
+
+  if (items.length === 0) return null;
+
   return (
-    <div className="flex items-center font-roboto font-medium mb-8 text-sm  ">
-      <IoIosArrowBack  className="size-6 mr-3"/>
-      <a href="#" className="text-[#4B4B4B]  "> All Categories</a>
-      <span className="mx-1">&gt;</span>
-      <a href="#" className="text-[#4B4B4B] ">Maintenance service Part</a>
-      <span className="mx-1">&gt;</span>
-      <a href="#" className="text-[#4B4B4B]  ">Belt</a>
-      <span className="mx-1">&gt;</span>
-      <span className="text-[#9AE144]">Toyota Nexus Belt</span>
-    </div>
+    <nav aria-label="breadcrumb">
+      <ol style={{ listStyle: 'none', display: 'flex', gap: '8px' }}>
+        {items.map((item, index) => (
+          <li key={item.href || item.label}>
+            {index > 0 && <span> &gt; </span>}
+            {item.href ? (
+              <Link href={item.href || '#'} style={{ color: index === items.length - 1 ? 'green' : 'black', textDecoration: 'none' }}>
+                {item.label}
+              </Link>
+            ) : (
+              <span style={{ color: 'green' }}>{item.label}</span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </nav>
   );
-};
+}
 
 export default Breadcrumb;

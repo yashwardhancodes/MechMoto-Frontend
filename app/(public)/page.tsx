@@ -1,59 +1,82 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Carousel from "@/components/Carousel";
 import BuyParts from "@/components/BuyParts";
 import Testimonials from "@/components/Testimonials";
 import TrendingProducts from "@/components/TrendingProducts";
 import { Footer } from "@/components/Footer";
- 
+import Service from "@/components/Service/Service";
+
 export default function UsersPage() {
-	const [selectedTab, setSelectedTab] = useState("buy"); // removed TypeScript union type
+  const [selectedTab, setSelectedTab] = useState("buy");
+  const router = useRouter();
 
-	return (
-		<div className=" mt-[40px] md:mt-[50px] lg:mt-[56px]">
-			<Carousel />
+  const auth = localStorage.getItem("auth");
+  let razorpaySubscriptionId = null;
+  try {
+    const authObj = auth ? JSON.parse(auth) : null;
+    razorpaySubscriptionId = authObj?.user?.razorpaySubscriptionId ?? null;
+  } catch (e) {
+    razorpaySubscriptionId = null;
+  }
+  console.log("auth", razorpaySubscriptionId);
 
-			{/* Toggle Buttons */}
-			<div className="container mx-auto w-full flex justify-center mb-6">
-				<div className="inline-flex items-center text-xs md:text-sm lg:text-base bg-[#050B20] rounded-full p-1  md:p-1.5">
-					<button
-						className={`px-4 py-1.5 font-sans font-semibold rounded-full ${
-							selectedTab === "buy" ? "bg-[#9AE144] text-black" : "text-white"
-						}`}
-						onClick={() => setSelectedTab("buy")}
-					>
-						Buy Parts
-					</button>
-					<button
-						className={`px-4 py-1.5 font-sans font-semibold rounded-full ${
-							selectedTab === "repair" ? "bg-[#9AE144] text-black" : "text-white"
-						}`}
-						onClick={() => setSelectedTab("repair")}
-					>
-						Repair my car
-					</button>
-				</div>
-			</div>
+   const subId = razorpaySubscriptionId;  
 
-			{/* Conditional Content */}
-			<div className="container mx-auto w-full px-4">
-				{selectedTab === "buy" ? (
-					<div>
-						<BuyParts />
-					</div>
-				) : (
-					<div className="text-black">
-						<h2 className="text-lg font-bold mb-2">Car Repair Services</h2>
-					</div>
-				)}
-			</div>
+  // Redirect if planId exists and user clicks "Repair my car"
+  useEffect(() => {
+    if (selectedTab === "repair" && subId) {
+      router.push("/repair");
+    }
+  }, [selectedTab, subId, router]);
 
-			<div>
-				<Testimonials />
-				<TrendingProducts />
-				<Footer />
- 			</div>
-		</div>
-	);
+  return (
+    <div className="mt-[40px] md:mt-[50px] lg:mt-[56px]">
+      <Carousel />
+
+      {/* Toggle Buttons */}
+      <div className="container mx-auto w-full flex justify-center mb-6">
+        <div className="inline-flex items-center text-xs md:text-sm lg:text-base bg-[#050B20] rounded-full p-1 md:p-1.5">
+          <button
+            className={`px-4 py-1.5 font-sans font-semibold rounded-full ${
+              selectedTab === "buy"
+                ? "bg-[#9AE144] text-black"
+                : "text-white"
+            }`}
+            onClick={() => setSelectedTab("buy")}
+          >
+            Buy Parts
+          </button>
+          <button
+            className={`px-4 py-1.5 font-sans font-semibold rounded-full ${
+              selectedTab === "repair"
+                ? "bg-[#9AE144] text-black"
+                : "text-white"
+            }`}
+            onClick={() => setSelectedTab("repair")}
+          >
+            Repair my car
+          </button>
+        </div>
+      </div>
+
+      {/* Conditional Content */}
+      <div className="w-full">
+        {selectedTab === "buy" ? (
+          <div>
+            <BuyParts />
+            <Testimonials />
+            <TrendingProducts />
+            <Footer />
+          </div>
+        ) : !subId ? ( // only show if no plan
+          <div className="text-center text-gray-500 py-20">
+           <Service/>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
 }

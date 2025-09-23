@@ -1,7 +1,17 @@
-'use client';
+"use client";
 
-import React from 'react';
-import ProductCard from './ProductCard';
+import React, { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic"; // ✅ import dynamic
+import { useGetPartsByFiltersQuery } from "@/lib/redux/api/partApi";
+import { useDispatch } from "react-redux";
+import { setBreadcrumbs } from "@/lib/redux/slices/breadcrumbSlice";
+
+// ✅ Lazy load ProductCard
+const ProductCard = dynamic(() => import("./ProductCard"), {
+  loading: () => <div className="h-40 bg-gray-200 animate-pulse rounded-lg" />, // fallback skeleton
+  ssr: false, // optional: avoids SSR if ProductCard uses window/document
+});
 
 interface Product {
   id: number;
@@ -16,68 +26,84 @@ interface Product {
 }
 
 const ProductsSection: React.FC = () => {
-  const products: Product[] = [
-    {
-      id: 1,
-      title: 'Time- Belt',
-      specs: '15 Miles • Petrol • CVT',
-      price: 'Rs-15,000',
-      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=200&fit=crop',
-      alt: 'Range Rover',
-    },
-    {
-      id: 2,
-      title: 'C-Class – 2023',
-      specs: '50 Miles • Petrol • Automatic',
-      price: 'Rs-15,000',
-      image: 'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=300&h=200&fit=crop',
-      alt: 'C-Class',
-    },
-    {
-      id: 3,
-      title: 'Ford Transit – 2021',
-      specs: '2500 Miles • Diesel • Manual',
-      price: 'Rs-15,000',
-      image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=300&h=200&fit=crop',
-      alt: 'Ford Transit',
-      isGreatPrice: true,
-    },
-    {
-      id: 4,
-      title: 'T-Cross – 2023',
-      specs: '15 Miles • Petrol • CVT',
-      price: 'Rs-15,000',
-      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=200&fit=crop',
-      alt: 'T-Cross',
-    },
-    {
-      id: 5,
-    title: 'C-Class – 2023',
-      specs: '50 Miles • Petrol • Automatic',
-      price: 'Rs-15,000',
-      image: 'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=300&h=200&fit=crop',
-      alt: 'C-Class',
-    },
-    {
-      id: 6,
-      title: 'Ford Transit – 2021',
-      specs: '2500 Miles • Diesel • Manual',
-      price: '1000/-',
-      oldPrice: 'Rs- 2000',
-      image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=300&h=200&fit=crop',
-      alt: 'Ford Transit',
-      isGreatPrice: true,
-      discount: '-20%',
-    },
-  ];
+  const searchParams = useSearchParams();
+  const subcategoryId = searchParams.get("sub_category_id");
+  const vehicleId = searchParams.get("vehicle_id");
+
+  const dispatch = useDispatch();
+
+  const {
+    data: partsData,
+    isLoading,
+    error,
+  } = useGetPartsByFiltersQuery({
+    subcategoryId: subcategoryId ? Number(subcategoryId) : undefined,
+    vehicleId: vehicleId ? Number(vehicleId) : undefined,
+  });
+
+  const products: Product[] =
+    partsData?.data?.map((part: any) => ({
+      id: part.id,
+      title: part.part_number || "Unknown Part",
+      specs: `${part.subcategory.name} • ${part.vehicle.modification || "N/A"}`,
+      price: `Rs-${part.price}`,
+      oldPrice: part.discount
+        ? `Rs-${Math.round(
+            part.price / (1 - parseFloat(part.discount.percentage) / 100)
+          )}`
+        : undefined,
+      image: part.image_urls[0] || "https://via.placeholder.com/300x200",
+      alt: part.subcategory.name || "Part Image",
+      isGreatPrice: part.discount ? true : false,
+      discount: part.discount ? `-${part.discount.percentage}%` : undefined,
+    })) || [];
+
+  useEffect(() => {
+    if (partsData?.data?.length > 0) {
+      const firstPart = partsData.data[0];
+
+      const breadcrumbs = [
+        { label: "All Categories", href: "/categories" },
+        {
+          label: firstPart.category?.name || "Category",
+          href: `/products?category_id=${firstPart.category?.id}&vehicle_id=${firstPart.vehicle.id}`,
+        },
+        {
+          label: firstPart.subcategory.name || "Subcategory",
+          href: `/products?sub_category_id=${firstPart.subcategory.id}&vehicle_id=${firstPart.vehicle.id}`,
+        },
+      ];
+
+      dispatch(setBreadcrumbs(breadcrumbs));
+    }
+  }, [partsData, dispatch]);
+
+  if (isLoading) {
+    return <div className="bg-white p-5 rounded-lg">Loading parts...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white p-5 rounded-lg">
+        Error loading parts. Please try again.
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white p-5 rounded-lg c">
+    <div className="bg-white p-5 rounded-lg">
       <div className="mb-5">
-        <h1 className="text-4xl text-[rgba(23,24,59,1)] font-dm-sans   mb-2">
-          Timing Belt parts for <span className="text-[#9AE144]">Chevrolet Aveo 1.2L</span>
+        <h1 className="text-4xl text-[rgba(23,24,59,1)] font-dm-sans mb-2">
+          {partsData?.data[0]?.subcategory.name || "Parts"} for{" "}
+          <span className="text-[#9AE144]">
+            {partsData?.data[0]?.vehicle.car_make?.name || "Vehicle"}{" "}
+            {partsData?.data[0]?.vehicle.model_line || ""}{" "}
+            {partsData?.data[0]?.vehicle.modification || ""}
+          </span>
         </h1>
-        <div className="text-[#9AE144] text-base font-roboto font-medium">42 Parts available</div>
+        <div className="text-[#9AE144] text-base font-roboto font-medium">
+          {products.length} Parts available
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
         {products.map((product) => (

@@ -12,6 +12,9 @@ import logo from "@/public/assets/logo.png";
 import google from "@/public/assets/Google.png";
 import useAuth from "@/hooks/useAuth";
 import { ROLES } from "@/constants/roles";
+import { setRedirect } from "@/lib/redux/slices/redirectSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/lib/redux/store"; // adjust if store path different
 
 const LoginPage = () => {
 	const [formData, setFormData] = useState({
@@ -21,22 +24,35 @@ const LoginPage = () => {
 	const [errors, setErrors] = useState<{ [key: string]: string }>({});
 	const [showPassword, setShowPassword] = useState(false);
 	const [login, { isLoading }] = useLoginMutation();
+
 	const router = useRouter();
+	const dispatch = useDispatch();
 	const { user, role, loading } = useAuth();
+
+	// Grab redirect path from redux
+	const redirectPath = useSelector((state: RootState) => state.redirect.path);
 
 	useEffect(() => {
 		if (user) {
-			let redirectPath = "/";
-			if (role != undefined) {
-				if (role === ROLES.SUPER_ADMIN) {
-					redirectPath = "/admin/dashboard";
-				} else if (role === ROLES.VENDOR) {
-					redirectPath = "/vendor/dashboard";
-				}
+			let finalPath = "/";
+
+			// ✅ Redirect path has highest priority
+			if (redirectPath && redirectPath.trim() !== "") {
+				finalPath = redirectPath;
+				router.push(finalPath);
+ 				return; // stop here, don't check roles
 			}
-			router.push(redirectPath);
+
+			// ✅ Role-based fallback
+			if (role === ROLES.SUPER_ADMIN) {
+				finalPath = "/admin/";
+			} else if (role === ROLES.VENDOR) {
+				finalPath = "/vendor/dashboard";
+			}
+
+			router.push(finalPath);
 		}
-	}, [user, router]);
+	}, [user, role, router, redirectPath, dispatch]);
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
@@ -87,6 +103,8 @@ const LoginPage = () => {
 						</p>
 					</div>
 					<hr className="my-4 border-[rgba(0,0,0,0.35)]" />
+
+					{/* Form */}
 					<div className="space-y-4 px-6">
 						<div>
 							<label className="font-sans text-sm font-semibold text-[#1C274C]">
@@ -125,6 +143,7 @@ const LoginPage = () => {
 								<p className="text-red-500 text-xs">{errors.password}</p>
 							)}
 						</div>
+
 						<div className="flex justify-between items-center text-sm text-[#1C274C]">
 							<label className="flex items-center gap-2 cursor-pointer">
 								<input type="checkbox" className="accent-[#6BDE23] size-4" />
@@ -137,6 +156,7 @@ const LoginPage = () => {
 								Recover Password?
 							</Link>
 						</div>
+
 						<button
 							onClick={handleSubmit}
 							disabled={isLoading}
@@ -145,15 +165,19 @@ const LoginPage = () => {
 							{isLoading ? "Logging In..." : "Login"}
 						</button>
 					</div>
+
+					{/* Divider */}
 					<div className="flex items-center justify-center gap-2 my-4 text-[#1C274C]">
 						<hr className="flex-grow border-t border-[rgba(0,0,0,0.35)]" />
 						<span className="text-sm">Or</span>
 						<hr className="flex-grow border-t border-[rgba(0,0,0,0.35)]" />
 					</div>
+
 					<button className="flex items-center justify-center gap-4 w-full px-3 py-2 bg-[#F3F9FA] rounded-md">
 						<Image src={google} alt="Google Logo" className="size-5" />
 						<span className="text-sm font-sans">Sign in With Google</span>
 					</button>
+
 					<div className="flex justify-center my-4 text-sm">
 						<span>Don't have an account? </span>
 						<Link href="/auth/signup" className="text-[#6BDE23] ml-1">
@@ -162,6 +186,7 @@ const LoginPage = () => {
 					</div>
 				</div>
 			</div>
+
 			<footer className="border-t border-[rgba(0,0,0,0.35)] h-12 text-[#1C274C] flex items-center justify-center text-sm">
 				© 2023 GrowthX. All Rights Reserved. Designed, Built & Maintained by Sid*
 			</footer>

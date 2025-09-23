@@ -9,14 +9,29 @@ import { faUser } from "@fortawesome/free-regular-svg-icons";
 import { Menu, X } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { useGetAllSubscriptionsQuery } from "@/lib/redux/api/subscriptionApi";
+
+
 
 const Navbar = () => {
 	const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 	const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const { isLoggedIn, user, loading, signOut } = useAuth();
+	console.log(user?.razorpaySubscriptionId);
 
-    const router = useRouter();
+	const router = useRouter();
+
+	const { data: subscriptions } = useGetAllSubscriptionsQuery({});
+
+	const particularSubscription = subscriptions?.find(
+		(subscription: any) => subscription.razorpay_subscription_id === user?.razorpaySubscriptionId
+	);
+
+	console.log("particularSubscription", particularSubscription);
+
+
+
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -31,13 +46,15 @@ const Navbar = () => {
 		}
 	}, [])
 
+
+
 	return (
 		<>
 			{/* Desktop Navbar */}
 			<div className="fixed top-0 w-full z-50 px-6 lg:px-12 hidden md:flex justify-between items-center md:h-[50px] lg:h-[56px] bg-[#050B20] font-sans text-white">
-				<div>
+				<Link href={"/"} className="flex items-center"	>
 					<Image src={navLogo} alt="logo" className="h-[45px] lg:h-[52px] w-auto" />
-				</div>
+				</Link>
 				<div className="flex items-center gap-4 lg:gap-8 text-xs lg:text-sm">
 					<div className="flex items-center gap-4 lg:gap-8">
 						<Link href={"/"}>Home</Link>
@@ -62,7 +79,7 @@ const Navbar = () => {
 							"Loading"
 						) : isLoggedIn ? (
 							<div
-								className=" rounded-full bg-green-500 text-white font-bold w-8 h-8 flex justify-center items-center text-lg cursor-pointer"
+								className="rounded-full bg-green-500 text-white font-bold w-8 h-8 flex justify-center items-center text-lg cursor-pointer"
 								onClick={() => setDropdownOpen((prev) => !prev)}
 							>
 								{user?.email[0].toUpperCase()}
@@ -78,20 +95,59 @@ const Navbar = () => {
 						{dropdownOpen && (
 							<div className="absolute left-0 top-12 w-44 bg-white rounded-lg shadow-md z-50">
 								<ul className="py-2 text-sm text-gray-700">
-									<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">Dashboard</li>
-									<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">Settings</li>
-									<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer" onClick={() => {
-										signOut();
-										router.push("/auth/login");
-									}}>Sign out</li>
+									{/* ✅ Check the role of the user */}
+									{user?.role.name === "Admin" ? (
+										<>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												Admin Dashboard
+											</li>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												Manage Users
+											</li>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												Settings
+											</li>
+										</>
+									) : (
+										<>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												My Profile
+											</li>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												<Link href="/orders">My Orders</Link>
+											</li>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												<Link href="/wishlist">My Wishlist</Link>
+											</li>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												Settings
+											</li>
+										</>
+									)}
+									{/* ✅ Display Razorpay Subscription ID if present */}
+									{particularSubscription && (
+										<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+											Purchased Plan: {particularSubscription.plan.name}
+										</li>
+									)}
+									{/* ✅ Sign out (common for all roles) */}
+									<li
+										className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
+										onClick={() => {
+											signOut();
+											router.push("/auth/login");
+										}}
+									>
+										Sign out
+									</li>
 								</ul>
 							</div>
 						)}
 					</div>
-					<button className="flex items-center justify-between gap-1 lg:gap-2 px-3 lg:px-4 py-2 rounded-3xl bg-gradient-to-r from-[#1F5B05] to-[#9AE144] text-black font-medium shadow-md">
+					<Link href="/products/cart" className="flex items-center justify-between gap-1 lg:gap-2 px-3 lg:px-4 py-2 rounded-3xl bg-gradient-to-r from-[#1F5B05] to-[#9AE144] text-black font-medium shadow-md">
 						<span>My Cart</span>
 						<FontAwesomeIcon icon={faCartShopping} className="text=sm" />
-					</button>
+					</Link>
 				</div>
 			</div>
 

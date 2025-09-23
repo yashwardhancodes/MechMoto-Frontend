@@ -18,13 +18,13 @@ export interface User {
 	role: Role;
 	fullName?: string;
 	phone?: string;
+	razorpaySubscriptionId?: string | null; // ✅ added here
 }
-
 
 export interface AuthState {
 	user: User | null;
 	token: string | null;
-	loading: boolean
+	loading: boolean;
 }
 
 const initialState: AuthState = {
@@ -37,7 +37,10 @@ const authSlice = createSlice({
 	name: "auth",
 	initialState,
 	reducers: {
-		setCredentials: (state, action: PayloadAction<{ user: User; token: string }>) => {
+		setCredentials: (
+			state,
+			action: PayloadAction<{ user: User; token: string }>
+		) => {
 			state.user = action.payload.user;
 			state.token = action.payload.token;
 			localStorage.setItem("auth", JSON.stringify(action.payload));
@@ -46,6 +49,26 @@ const authSlice = createSlice({
 			state.user = null;
 			state.token = null;
 			localStorage.removeItem("auth");
+		},
+
+		// ✅ new reducer for updating subscriptionId
+		setSubscriptionId: (state, action: PayloadAction<string | null>) => {
+			if (state.user) {
+				state.user.razorpaySubscriptionId = action.payload;
+				// update localStorage copy too
+				const authData = {
+					user: state.user,
+					token: state.token,
+				};
+				localStorage.setItem("auth", JSON.stringify(authData));
+			}
+		},
+
+		clearSubscriptionId: (state) => {
+			if (state.user) {
+				state.user.razorpaySubscriptionId = null;
+			}
+			localStorage.setItem("auth", JSON.stringify(state));
 		},
 	},
 	extraReducers: (builder) => {
@@ -62,5 +85,5 @@ const authSlice = createSlice({
 	},
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials, logout, setSubscriptionId ,clearSubscriptionId } = authSlice.actions;
 export default authSlice.reducer;
