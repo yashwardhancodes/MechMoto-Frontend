@@ -4,6 +4,7 @@ import Image from "next/image";
 import serviceImg from "@/public/assets/service.png";
 import helplineImg from "@/public/assets/helpline.png";
 import customerServiceImg from "@/public/assets/customerService.png";
+import { useHasModule } from "@/hooks/useSubscription"; // 👈 import hook
 
 interface Issue {
   id: number;
@@ -14,14 +15,14 @@ interface Issue {
 }
 
 export default function Service() {
-  const [showExpertForm, setShowExpertForm] = useState<boolean>(false);
-  const [showCallForm, setShowCallForm] = useState<boolean>(false);
-  const [selectedProblem, setSelectedProblem] = useState<string>("");
-  const [callIssue, setCallIssue] = useState<string>("");
+  const [showExpertForm, setShowExpertForm] = useState(false);
+  const [showCallForm, setShowCallForm] = useState(false);
+  const [selectedProblem, setSelectedProblem] = useState("");
+  const [callIssue, setCallIssue] = useState("");
   const [issues, setIssues] = useState<Issue[]>([]);
   const [currentStatus, setCurrentStatus] = useState<string | null>(null);
 
-  const commonProblems: string[] = [
+  const commonProblems = [
     "Engine won’t start",
     "Flat tire",
     "Battery issue",
@@ -30,24 +31,25 @@ export default function Service() {
     "Other",
   ];
 
-  const statusSteps: string[] = [
-    "Submitted",
-    "In Progress",
-    "Technician Assigned",
-    "Resolved",
-  ];
+  const statusSteps = ["Submitted", "In Progress", "Technician Assigned", "Resolved"];
 
-  const handleExpertHelp = (): void => {
+  // ✅ Check subscription modules
+  const hasExpertHelp = useHasModule("expert_help");
+  const hasLiveCall = useHasModule("service_request");
+
+  const handleExpertHelp = () => {
+    if (!hasExpertHelp) return alert("This feature is not in your plan");
     setShowExpertForm((prev) => !prev);
     setShowCallForm(false);
   };
 
-  const handleLiveCall = (): void => {
+  const handleLiveCall = () => {
+    if (!hasLiveCall) return alert("This feature is not in your plan");
     setShowCallForm((prev) => !prev);
     setShowExpertForm(false);
   };
 
-  const handleExpertSubmit = (): void => {
+  const handleExpertSubmit = () => {
     if (!selectedProblem) return alert("Please select a problem");
     const newIssue: Issue = {
       id: Date.now(),
@@ -63,7 +65,7 @@ export default function Service() {
     setShowExpertForm(false);
   };
 
-  const handleCallSubmit = (): void => {
+  const handleCallSubmit = () => {
     if (!callIssue) return alert("Please describe your issue");
     const newIssue: Issue = {
       id: Date.now(),
@@ -79,11 +81,11 @@ export default function Service() {
     setShowCallForm(false);
   };
 
-  // Simulate status progression for demo purposes
-  const updateStatus = (issueId: number | undefined): void => {
+  // Demo status update
+  const updateStatus = (issueId: number | undefined) => {
     if (!issueId) return;
-    setIssues((prevIssues) =>
-      prevIssues.map((issue) => {
+    setIssues((prev) =>
+      prev.map((issue) => {
         if (issue.id === issueId) {
           const currentIndex = statusSteps.indexOf(issue.status);
           const nextStatus =
@@ -112,7 +114,7 @@ export default function Service() {
         <div className="absolute top-5 md:top-10 left-10 md:left-25 lg:left-55">
           <h2 className="text-white text-xl md:text-3xl lg:text-5xl font-bold font-sans leading-snug max-w-[280px] md:max-w-[420px] lg:max-w-3xl">
             Thanks for <span className="text-[#9AE144]">subscribing!</span> We're
-            here to support you. What do <br />{" "}
+            here to support you. What do <br />
             <span className="text-[#9AE144]">you need help with?</span>
           </h2>
         </div>
@@ -124,40 +126,44 @@ export default function Service() {
       {/* Cards */}
       <div className="mt-10 flex flex-col md:flex-row px-36 justify-between items-start gap-8">
         {/* Expert Help */}
-        <div
-          onClick={handleExpertHelp}
-          className="cursor-pointer p-[1.5px] rounded-2xl bg-gradient-to-l from-[#9AE144] via-green-700 to-black w-[90%] md:w-[470px]"
-        >
-          <div className="flex items-center gap-4 rounded-2xl px-6 py-3 shadow-sm hover:shadow-md transition bg-white">
-            <Image src={helplineImg} alt="helpline" width={80} height={80} />
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">Need Expert help?</h3>
-              <p className="text-sm text-gray-600">
-                Get a certified mechanic to your location.
-              </p>
+        {hasExpertHelp && (
+          <div
+            onClick={handleExpertHelp}
+            className="cursor-pointer p-[1.5px] rounded-2xl bg-gradient-to-l from-[#9AE144] via-green-700 to-black w-[90%] md:w-[470px]"
+          >
+            <div className="flex items-center gap-4 rounded-2xl px-6 py-3 shadow-sm hover:shadow-md transition bg-white">
+              <Image src={helplineImg} alt="helpline" width={80} height={80} />
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Need Expert help?</h3>
+                <p className="text-sm text-gray-600">
+                  Get a certified mechanic to your location.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Live Call Support */}
-        <div
-          onClick={handleLiveCall}
-          className="cursor-pointer p-[1.5px] rounded-2xl bg-gradient-to-l from-[#9AE144] via-green-700 to-black w-[90%] md:w-[470px]"
-        >
-          <div className="flex items-center gap-4 rounded-2xl px-6 py-5 shadow-sm hover:shadow-md transition bg-white">
-            <Image src={customerServiceImg} alt="helpline" width={60} height={80} />
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">Live Call Support</h3>
-              <p className="text-sm text-gray-600">
-                Talk to a car expert in real-time for quick fixes
-              </p>
+        {hasLiveCall && (
+          <div
+            onClick={handleLiveCall}
+            className="cursor-pointer p-[1.5px] rounded-2xl bg-gradient-to-l from-[#9AE144] via-green-700 to-black w-[90%] md:w-[470px]"
+          >
+            <div className="flex items-center gap-4 rounded-2xl px-6 py-5 shadow-sm hover:shadow-md transition bg-white">
+              <Image src={customerServiceImg} alt="helpline" width={60} height={80} />
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Live Call Support</h3>
+                <p className="text-sm text-gray-600">
+                  Talk to a car expert in real-time for quick fixes
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Expert Help Form */}
-      {showExpertForm && (
+      {showExpertForm && hasExpertHelp && (
         <div className="mt-8 mx-36 bg-white border rounded-xl shadow-lg p-6 w-[90%] md:w-[470px]">
           <h3 className="text-lg font-bold mb-4">Select your problem</h3>
           <select
@@ -182,7 +188,7 @@ export default function Service() {
       )}
 
       {/* Live Call Support Form */}
-      {showCallForm && (
+      {showCallForm && hasLiveCall && (
         <div className="mt-8 mx-36 bg-white border rounded-xl shadow-lg p-6 w-[90%] md:w-[470px]">
           <h3 className="text-lg font-bold mb-4">Request a Live Call</h3>
           <textarea
@@ -230,7 +236,7 @@ export default function Service() {
               </div>
             ))}
           </div>
-          {/* Demo button to simulate status progression */}
+          {/* Demo button */}
           <button
             onClick={() => updateStatus(issues[issues.length - 1]?.id)}
             className="mt-4 bg-[#9AE144] text-black px-4 py-2 rounded-full hover:bg-green-500"
@@ -262,9 +268,7 @@ export default function Service() {
                       index % 2 === 0 ? "bg-white" : "bg-gray-50"
                     } hover:bg-gray-100 transition`}
                   >
-                    <td className="p-3 font-medium text-gray-900">
-                      {issue.title}
-                    </td>
+                    <td className="p-3 font-medium text-gray-900">{issue.title}</td>
                     <td className="p-3 text-gray-700">{issue.description}</td>
                     <td className="p-3 text-gray-500">{issue.date}</td>
                     <td className="p-3">

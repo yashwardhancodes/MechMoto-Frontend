@@ -67,6 +67,10 @@ const menuItems: MenuItem[] = [
       { label: 'Manage Engine Type', basePath: 'manage-engine-type', icon: <Tag size={16} />, permission: 'manage:engine-type' },
     ],
   },
+  {
+    label: 'Manage Service Center', icon: <MdMiscellaneousServices size={18} />, basePath: 'manage-service-center', permission: 'manage:service-center'
+  },
+
   { label: 'Financial Management', icon: <Tag size={16} />, basePath: 'financial-management', permission: 'view:financials' },
   { label: 'Analytics and Reporting', icon: <Tag size={16} />, basePath: 'analytics-and-reporting', permission: 'view:analytics' },
   { label: 'Customer Support', icon: <BiSupport size={16} />, basePath: 'customer-support', permission: 'view:support' },
@@ -84,7 +88,7 @@ export default function Sidebar({ activeMenu, setActiveMenu }: Props) {
     const storedUserData = localStorage.getItem('auth');
     if (storedUserData) {
       const user = JSON.parse(storedUserData);
-      setUserRole(user.user.role?.name as Role);  
+      setUserRole(user.user.role?.name as Role);
     }
   }, []);
 
@@ -94,16 +98,16 @@ export default function Sidebar({ activeMenu, setActiveMenu }: Props) {
 
   const filteredMenuItems = userRole
     ? menuItems
-        .filter((item) => hasPermission({ user: { id: '', role: userRole }, permission: item.permission as Permission }))
-        .map((item) => ({
-          ...item,
-          path: `${getBasePath(userRole)}/${item.basePath}`,
-          subItems: item.subItems
-            ? item.subItems
-                .filter((sub) => hasPermission({ user: { id: '', role: userRole }, permission: sub.permission as Permission }))
-                .map((sub) => ({ ...sub, path: `${getBasePath(userRole)}/${sub.basePath}` }))
-            : undefined,
-        }))
+      .filter((item) => hasPermission({ user: { id: '', role: userRole }, permission: item.permission as Permission }))
+      .map((item) => ({
+        ...item,
+        path: `${getBasePath(userRole)}/${item.basePath}`,
+        subItems: item.subItems
+          ? item.subItems
+            .filter((sub) => hasPermission({ user: { id: '', role: userRole }, permission: sub.permission as Permission }))
+            .map((sub) => ({ ...sub, path: `${getBasePath(userRole)}/${sub.basePath}` }))
+          : undefined,
+      }))
     : [];
 
   useEffect(() => {

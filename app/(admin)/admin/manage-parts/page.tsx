@@ -1,7 +1,7 @@
 "use client";
 
 import { Pencil, Eye, Trash2 } from "lucide-react";
-import { useGetAllPartsQuery } from "@/lib/redux/api/partApi";
+import { useGetAllPartsQuery,useDeletePartMutation } from "@/lib/redux/api/partApi";
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
 
@@ -104,8 +104,13 @@ export default function ManageParts() {
       onClick: (part) => {
         console.log("Delete part:", part);
         if (part?.id && typeof part.id === 'number') {
-          // Add confirmation dialog and delete logic using useDeletePartMutation
-          console.log("Trigger delete for part ID:", part.id);
+          try {
+                     useDeletePartMutation(part.id);
+                    window.location.reload();
+                    console.log("Deleted successfully");
+                } catch (error) {
+                    console.error("Delete failed", error);
+                }
         } else {
           console.error("Invalid part ID for delete:", part);
         }

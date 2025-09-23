@@ -34,7 +34,7 @@ const AddEngineType: React.FC = () => {
             if (result?.success) {
                 toast.success("Engine Type added successfully!");
                 setFormData({ name: "" });
-                router.push("/admin/manage-engine-type/");
+                router.push("/admin/manage-engine-type/?refresh=true");
             } else {
                 toast.error("Failed to add Engine Type.");
             }
