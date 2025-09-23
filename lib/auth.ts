@@ -24,7 +24,8 @@ const ROLES = {
     "view:plans",
     "manage:plan-add",
     "manage:plan-edit",
-
+    "view:shipments",
+    "manage:shipments"
      "view:service-center",
     "manage:service-center",
   ],
@@ -36,7 +37,8 @@ const ROLES = {
     "manage:categories",
     "manage:subcategories",
     "view:orders",
-    "view:coupons"
+    "view:coupons",
+    "view:shipments"
   ],
 
   Mechanic: [

@@ -5,7 +5,7 @@ import { FiInfo } from "react-icons/fi";
 import { HiOutlineLocationMarker } from "react-icons/hi";
 import { MdCreditCard } from "react-icons/md";
 import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import {
 	useGetAddressesQuery,
@@ -13,23 +13,29 @@ import {
 	useCreateOrderMutation,
 } from "@/lib/redux/api/partApi";
 import { resetCheckout } from "@/lib/redux/slices/checkoutSlice";
-import { useDispatch } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
 import Script from "next/script";
 import { RazorpayOptions } from "@/types";
 
+interface Coupon {
+	id: number;
+	discount_type: "percentage" | "fixed";
+	discount_value: number;
+	max_discount?: number;
+	min_order_amount?: number;
+}
+
 export default function Checkout() {
 	const router = useRouter();
 	const dispatch = useDispatch();
-	const {token} = useSelector((state: RootState) => state.auth);
-	console.log("token", token);
+	const { token } = useSelector((state: RootState) => state.auth);
 	const selectedAddressId = useSelector((state: RootState) => state.checkout.selectedAddressId);
 	const selectedPaymentMethod = useSelector(
 		(state: RootState) => state.checkout.selectedPaymentMethod,
 	);
 	const [couponCode, setCouponCode] = useState("");
 	const [couponError, setCouponError] = useState<string | null>(null);
-	const [couponId, setCouponId] = useState<number | undefined>(undefined);
+	const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
 
 	const { data: addressesData } = useGetAddressesQuery(undefined);
 	const { data: cartItemsData, isLoading: cartLoading } = useGetCartItemsQuery(undefined);
@@ -38,6 +44,7 @@ export default function Checkout() {
 	const selectedAddress = addressesData?.data?.find((addr: any) => addr.id === selectedAddressId);
 	const cartItems = cartItemsData?.data || [];
 
+	// Calculate items total and subtotal
 	const itemsTotal = cartItems?.reduce(
 		(sum: number, item: any) => sum + item.part.price * item.quantity,
 		0,
@@ -45,20 +52,54 @@ export default function Checkout() {
 	const deliveryFee = 5.78;
 	const subtotal = itemsTotal + deliveryFee;
 
+	// Calculate discount and final total
+	let discount = 0;
+	let finalTotal = subtotal;
+
+	if (appliedCoupon) {
+		const { discount_type, discount_value, max_discount, min_order_amount } = appliedCoupon;
+		// Check if order meets minimum order amount requirement
+		if (min_order_amount && subtotal < min_order_amount) {
+			setCouponError(`Order must be at least ₹${min_order_amount} to apply this coupon`);
+			setAppliedCoupon(null);
+		} else {
+			if (discount_type === "percentage") {
+				discount = (subtotal * discount_value) / 100;
+				if (max_discount && discount > max_discount) {
+					discount = max_discount;
+				}
+			} else if (discount_type === "fixed") {
+				discount = discount_value;
+			}
+			finalTotal = subtotal - discount;
+			if (finalTotal < 0) finalTotal = 0; // Ensure total doesn't go negative
+		}
+	}
+
 	const handleApplyCoupon = async () => {
 		try {
-			const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/coupons/validate`, {
+			const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}coupons/validate`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
 				body: JSON.stringify({ code: couponCode }),
 			});
 			const result = await response.json();
 			if (!response.ok) throw new Error(result.message || "Invalid coupon");
-			setCouponId(result.data.id);
+			setAppliedCoupon({
+				id: result.data.id,
+				discount_type: result.data.discount_type,
+				discount_value: result.data.discount_value,
+				max_discount: result.data.max_discount,
+				min_order_amount: result.data.min_order_amount,
+			});
 			setCouponError(null);
 			toast.success("Coupon applied successfully");
 		} catch (err: any) {
 			setCouponError(err.message || "Failed to apply coupon");
+			setAppliedCoupon(null);
 			toast.error(err.message || "Failed to apply coupon");
 		}
 	};
@@ -73,7 +114,7 @@ export default function Checkout() {
 				shippingAddressId: selectedAddressId,
 				billingAddressId: selectedAddressId,
 				paymentMethod: selectedPaymentMethod,
-				couponId,
+				couponId: appliedCoupon?.id,
 			};
 			const newOrder = await createOrder(orderData).unwrap();
 
@@ -83,10 +124,10 @@ export default function Checkout() {
 				}
 				const options: RazorpayOptions = {
 					key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
-					amount: Math.round(newOrder.data.final_amount * 100),
+					amount: Math.round(finalTotal * 100),
 					currency: "INR",
 					name: "Your App Name",
-					description: `Order #${newOrder.id}`,
+					description: `Order #${newOrder.data.id}`,
 					order_id: newOrder.data.razorpayOrderId,
 					handler: async function (response) {
 						try {
@@ -94,7 +135,10 @@ export default function Checkout() {
 								`${process.env.NEXT_PUBLIC_BASE_URL}payments/verify`,
 								{
 									method: "POST",
-									headers: { "Content-Type": "application/json", authorization: `Bearer ${token}` },
+									headers: {
+										"Content-Type": "application/json",
+										Authorization: `Bearer ${token}`,
+									},
 									body: JSON.stringify({
 										razorpay_order_id: response.razorpay_order_id,
 										razorpay_payment_id: response.razorpay_payment_id,
@@ -103,10 +147,11 @@ export default function Checkout() {
 								},
 							);
 							const verifyResult = await verifyResponse.json();
-							if (!verifyResponse.ok)
+							if (!verifyResponse.ok) {
 								throw new Error(
 									verifyResult.message || "Payment verification failed",
 								);
+							}
 							toast.success("Payment verified successfully");
 							dispatch(resetCheckout());
 							router.push(
@@ -132,7 +177,7 @@ export default function Checkout() {
 				dispatch(resetCheckout());
 				toast.success("Order placed successfully");
 				router.push(
-					`/products/cart/select-address/checkout/order-confirmation/${newOrder.id}`,
+					`/products/cart/select-address/checkout/order-confirmation/${newOrder.data.id}`,
 				);
 			}
 		} catch (err: any) {
@@ -158,7 +203,7 @@ export default function Checkout() {
 							</h2>
 							<p className="ml-auto font-semibold text-[10px] md:text-sm text-black flex items-center gap-1">
 								<HiOutlineLocationMarker className="w-4 h-4" />
-								Deliver Tomorrow, Sep 17, 8am–10am
+								Deliver Tomorrow, Sep 22, 8am–10am
 							</p>
 						</div>
 
@@ -185,9 +230,7 @@ export default function Checkout() {
 						</div>
 
 						<div
-							onClick={() =>
-								router.push("/products/cart/payment-method")
-							}
+							onClick={() => router.push("/products/cart/payment-method")}
 							className="bg-white hover:border-black border border-gray-200 rounded-xl md:rounded-2xl p-3 md:p-4 flex justify-between items-center cursor-pointer"
 						>
 							<div>
@@ -243,12 +286,18 @@ export default function Checkout() {
 						<div className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-gray-600">
 							<div className="flex justify-between">
 								<span>Items total</span>
-								<span>Rs.{itemsTotal.toFixed(2)}</span>
+								<span>₹{itemsTotal.toFixed(2)}</span>
 							</div>
 							<div className="flex justify-between">
 								<span>Delivery fee</span>
-								<span>Rs.{deliveryFee.toFixed(2)}</span>
+								<span>₹{deliveryFee.toFixed(2)}</span>
 							</div>
+							{appliedCoupon && discount > 0 && (
+								<div className="flex justify-between text-[#9AE144]">
+									<span>Coupon Discount ({couponCode})</span>
+									<span>-₹{discount.toFixed(2)}</span>
+								</div>
+							)}
 						</div>
 
 						<hr className="my-3 md:my-4" />
@@ -274,7 +323,7 @@ export default function Checkout() {
 
 						<div className="flex justify-between items-center mb-2 text-sm md:text-lg font-semibold">
 							<span>Total</span>
-							<span>Rs.{subtotal.toFixed(2)}</span>
+							<span>₹{finalTotal.toFixed(2)}</span>
 						</div>
 
 						<p className="text-[10px] md:text-xs text-gray-400 mb-3 md:mb-4">

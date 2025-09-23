@@ -114,7 +114,10 @@ const Navbar = () => {
 												My Profile
 											</li>
 											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
-												My Orders
+												<Link href="/orders">My Orders</Link>
+											</li>
+											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												<Link href="/wishlist">My Wishlist</Link>
 											</li>
 											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
 												Settings

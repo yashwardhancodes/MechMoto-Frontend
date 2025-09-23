@@ -13,9 +13,8 @@ export const partApi = createApi({
 			return headers;
 		},
 	}),
-	tagTypes: ["Part", "Cart", "Address", "Order"],
+	tagTypes: ["Part", "Cart", "Wishlist", "Address", "Order", "Coupon"],
 	endpoints: (builder) => ({
-		// Existing endpoints
 		getAllParts: builder.query({
 			query: () => "/parts",
 			providesTags: ["Part"],
@@ -58,7 +57,6 @@ export const partApi = createApi({
 			}),
 			invalidatesTags: ["Part"],
 		}),
-		// New cart endpoints
 		getCartItems: builder.query({
 			query: () => "/carts",
 			providesTags: ["Cart"],
@@ -70,6 +68,18 @@ export const partApi = createApi({
 				body: data,
 			}),
 			invalidatesTags: ["Cart"],
+		}),
+		addToWishlist: builder.mutation({
+			query: (data) => ({
+				url: "/wishlist/toggle",
+				method: "POST",
+				body: data,
+			}),
+			invalidatesTags: ["Wishlist"],
+		}),
+		getWishlists: builder.query({
+			query: () => "/wishlist",
+			providesTags: ["Wishlist"],
 		}),
 		updateCartItem: builder.mutation({
 			query: ({ id, quantity }) => ({
@@ -113,8 +123,6 @@ export const partApi = createApi({
 			}),
 			invalidatesTags: ["Address"],
 		}),
-
-		// Order endpoints
 		createOrder: builder.mutation({
 			query: (data) => ({
 				url: "/orders",
@@ -131,6 +139,55 @@ export const partApi = createApi({
 			query: () => "/orders",
 			providesTags: ["Order"],
 		}),
+		updateOrderStatus: builder.mutation({
+			query: ({ id, status }) => ({
+				url: `/orders/${id}/status`,
+				method: "PATCH",
+				body: { status },
+			}),
+			invalidatesTags: ["Order"],
+		}),
+		getShipmentsByOrder: builder.query<any, string>({
+			query: (orderId) => `/shipments/order/${orderId}`,
+		}),
+		updateShipment: builder.mutation<any, { id: string; data: any }>({
+			query: ({ id, data }) => ({
+				url: `/shipments/${id}`,
+				method: "PATCH",
+				body: data,
+			}),
+		}),
+		getCoupons: builder.query({
+			query: () => "/coupons",
+			providesTags: ["Coupon"],
+		}),
+		getCoupon: builder.query({
+			query: (id) => `/coupons/${id}`,
+			providesTags: ["Coupon"],
+		}),
+		createCoupon: builder.mutation({
+			query: (data) => ({
+				url: "/coupons",
+				method: "POST",
+				body: data,
+			}),
+			invalidatesTags: ["Coupon"],
+		}),
+		updateCoupon: builder.mutation({
+			query: ({ id, ...data }) => ({
+				url: `/coupons/${id}`,
+				method: "PUT",
+				body: data,
+			}),
+			invalidatesTags: ["Coupon"],
+		}),
+		deleteCoupon: builder.mutation({
+			query: (id) => ({
+				url: `/coupons/${id}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: ["Coupon"],
+		}),
 	}),
 });
 
@@ -144,6 +201,8 @@ export const {
 	useDeletePartMutation,
 	useGetCartItemsQuery,
 	useAddToCartMutation,
+	useAddToWishlistMutation,
+	useGetWishlistsQuery,
 	useUpdateCartItemMutation,
 	useRemoveFromCartMutation,
 	useGetAddressesQuery,
@@ -153,4 +212,12 @@ export const {
 	useCreateOrderMutation,
 	useGetOrderQuery,
 	useGetOrdersQuery,
+	useUpdateOrderStatusMutation,
+	useGetShipmentsByOrderQuery,
+	useUpdateShipmentMutation,
+	useGetCouponsQuery,
+	useGetCouponQuery,
+	useCreateCouponMutation,
+	useUpdateCouponMutation,
+	useDeleteCouponMutation,
 } = partApi;

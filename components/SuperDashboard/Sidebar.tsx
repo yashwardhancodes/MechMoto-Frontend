@@ -53,6 +53,7 @@ const menuItems: MenuItem[] = [
   },
   { label: 'Coupons & Discounts', icon: <CiDiscount1 size={18} />, basePath: 'coupons-and-discounts', permission: 'view:coupons' },
   { label: 'Orders', icon: <Tag size={16} />, basePath: 'orders', permission: 'view:orders' },
+  { label: 'Shipments', icon: <Tag size={16} />, basePath: 'manage-shipments', permission: 'view:shipments' },
   { label: 'Service Request', icon: <MdMiscellaneousServices size={18} />, basePath: 'service-request', permission: 'view:service-request' },
   { label: 'Manage Mechanics', icon: <Tag size={16} />, basePath: 'manage-mechanics', permission: 'view:mechanics' },
   {
