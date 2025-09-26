@@ -1,11 +1,17 @@
-// components/ProductListing/Breadcrumb.js
 'use client';
 
 import { useSelector } from 'react-redux';
 import Link from 'next/link';
+import { RootState } from '@/lib/redux/store'; // Adjust the import path based on your project structure
+
+// Define the BreadcrumbItem interface
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
 
 function Breadcrumb() {
-  const items = useSelector((state) => state.breadcrumb.items);
+  const items = useSelector((state: RootState) => state.breadcrumb.items) as BreadcrumbItem[];
 
   console.log('Breadcrumb items:', items);
 
@@ -22,7 +28,13 @@ function Breadcrumb() {
           <li key={item.href || item.label}>
             {index > 0 && <span> &gt; </span>}
             {item.href ? (
-              <Link href={item.href || '#'} style={{ color: index === items.length - 1 ? 'green' : 'black', textDecoration: 'none' }}>
+              <Link
+                href={item.href || '#'}
+                style={{
+                  color: index === items.length - 1 ? 'green' : 'black',
+                  textDecoration: 'none',
+                }}
+              >
                 {item.label}
               </Link>
             ) : (

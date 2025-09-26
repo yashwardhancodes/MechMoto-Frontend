@@ -2,9 +2,22 @@
 
 import { Pencil, Eye, Trash2 } from "lucide-react";
 import { useGetAllVehiclesQuery } from "@/lib/redux/api/vehicleApi";
-import { useDeleteVehicleMutation, useUpdateVehicleMutation } from "@/lib/redux/api/vehicleApi";
+import { useDeleteVehicleMutation    } from "@/lib/redux/api/vehicleApi";
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
+
+// Define a type for the API response
+interface ApiVehicle {
+  id: number;
+  car_make?: { name?: string };
+  model_line?: string;
+  production_year?: number | string;
+  modification?: string;
+  // Add other fields if needed
+}
+
+ 
+
 
 export default function ManageVehicle() {
   const { data, isLoading, isError } = useGetAllVehiclesQuery({});
@@ -14,7 +27,7 @@ export default function ManageVehicle() {
   const router = useRouter();
 
   // Safely extract and transform vehicles for table
-  const vehicles = (data?.data ?? []).map((vehicle: any) => ({
+  const vehicles = (data?.data ?? []).map((vehicle: ApiVehicle) => ({
     id: vehicle.id,
     brand: vehicle.car_make?.name ?? "N/A",
     model: vehicle.model_line ?? "N/A",

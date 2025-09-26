@@ -1,6 +1,5 @@
 'use client';
 import Image from 'next/image';
-import { useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, A11y } from 'swiper/modules';
 import { ChevronRight, ChevronLeft } from 'lucide-react';

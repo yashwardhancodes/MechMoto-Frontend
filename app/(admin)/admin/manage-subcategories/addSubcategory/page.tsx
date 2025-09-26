@@ -9,6 +9,8 @@ import { uploadImageToBackend } from "@/lib/utils/imageUpload";
 import { createSubcategorySchema } from "@/lib/schema/subcategorySchema";
 import { useGetAllCategoriesQuery } from "@/lib/redux/api/categoriesApi";
 import { ChevronDown } from "lucide-react";
+import { RootState } from "@/lib/redux/store";
+import Image from "next/image";
 
 interface FormData {
   name: string;
@@ -38,7 +40,17 @@ const AddSubcategory: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false); // ✅ Added state
   const [createSubcategory, { isLoading }] = useCreateSubcategoryMutation();
-  const token = useSelector((state: any) => state.auth.token);
+  const token = useSelector((state: RootState) => state.auth.token);
+
+
+  // ✅ Instead, handle token after hooks
+  useEffect(() => {
+    if (!token) {
+      toast.error("You are not logged in!");
+      window.location.href = "/login"; // or router.push("/login")
+    }
+  }, [token]);
+
   const {
     data: categories,
     isLoading: isCategoriesLoading,
@@ -89,43 +101,44 @@ const AddSubcategory: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    if (!token) return; // safeguard for TS
     try {
       setErrors({});
       let imgSrc = formData.imgSrc;
+
       if (file) {
         imgSrc = await uploadImageToBackend(file, token);
         setFormData((prev) => ({ ...prev, imgSrc }));
       }
+
       const parsedData = createSubcategorySchema.parse({
         ...formData,
         imgSrc,
-        categoryId: formData.categoryId
-          ? parseInt(formData.categoryId)
-          : undefined,
+        categoryId: formData.categoryId ? parseInt(formData.categoryId) : undefined,
       });
-      console.log("✅ Valid Data:", parsedData);
 
       const result = await createSubcategory(parsedData).unwrap();
-      console.log("✅ API Response:", result);
 
       if (result?.success) {
         toast.success("Subcategory added successfully! Redirecting...");
         window.location.href = "/admin/manage-subcategories";
       } else {
-        toast.error("Subcategory addition failed. Please try again.");
+        toast.error(result?.message || "Subcategory addition failed.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof z.ZodError) {
         const formattedErrors: { [key: string]: string } = {};
         err.errors.forEach((e) => {
-          formattedErrors[e.path[0]] = e.message;
+          formattedErrors[e.path[0] as string] = e.message;
         });
         setErrors(formattedErrors);
         toast.error("Validation failed!");
-        console.log("❌ Validation Errors:", formattedErrors);
+        console.log("Validation errors:", formattedErrors);
       } else {
-        console.error("❌ Error:", err);
-        toast.error(err?.data?.message || "Something went wrong!");
+        console.error("Error:", err);
+        const errorMessage =
+          (err as { data?: { message?: string } })?.data?.message || "Something went wrong!";
+        toast.error(errorMessage);
       }
     }
   };
@@ -184,17 +197,16 @@ const AddSubcategory: React.FC = () => {
                 {isCategoriesLoading
                   ? "Loading categories..."
                   : categoriesError
-                  ? "Error loading categories"
-                  : formData.categoryId && Array.isArray(categories?.data)
-                  ? categories.data.find(
-                      (c: Category) => c.id === Number(formData.categoryId)
-                    )?.name || "Select a Category"
-                  : "Select a Category"}
+                    ? "Error loading categories"
+                    : formData.categoryId && Array.isArray(categories?.data)
+                      ? categories.data.find(
+                        (c: Category) => c.id === Number(formData.categoryId)
+                      )?.name || "Select a Category"
+                      : "Select a Category"}
               </span>
               <ChevronDown
-                className={`w-5 h-5 text-[#9AE144] ${
-                  categoryDropdownOpen ? "rotate-180" : ""
-                }`}
+                className={`w-5 h-5 text-[#9AE144] ${categoryDropdownOpen ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
@@ -243,7 +255,7 @@ const AddSubcategory: React.FC = () => {
                   onClick={handleImageClick}
                   title="Click to update image"
                 >
-                  <img
+                  <Image
                     src={previewUrl}
                     alt="Subcategory preview"
                     className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"

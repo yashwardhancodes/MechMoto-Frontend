@@ -5,6 +5,8 @@ import { z } from "zod";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { useGetCarMakeQuery, useUpdateCarMakeMutation } from "@/lib/redux/api/caeMakeApi"; // You'll need these endpoints in your API slice
+import { isApiError } from "@/lib/utils/typeError";
+
 
 // Validation Schema
 const carMakeSchema = z.object({
@@ -15,9 +17,12 @@ interface FormData {
     name: string;
 }
 
+ 
+
+
 const UpdateCarMake: React.FC = () => {
     const router = useRouter();
-    const params = useParams(); 
+    const params = useParams();
     const id = params?.car_makeId as string;
     console.log("Car Make ID from params:", id);
 
@@ -50,7 +55,7 @@ const UpdateCarMake: React.FC = () => {
             } else {
                 toast.error("Failed to update Car Make.");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             if (err instanceof z.ZodError) {
                 const formattedErrors: { [key: string]: string } = {};
                 err.errors.forEach((e) => {
@@ -58,10 +63,16 @@ const UpdateCarMake: React.FC = () => {
                 });
                 setErrors(formattedErrors);
                 toast.error("Validation failed!");
+            } else if (isApiError(err)) {
+                // Use either err.data.message or err.message
+                const errorMessage = err.data?.message || err.message || "Something went wrong!";
+                toast.error(errorMessage);
             } else {
-                toast.error(err?.data?.message || "Something went wrong!");
+                toast.error("Something went wrong!");
+                console.error("Unknown error:", err);
             }
         }
+
     };
 
     if (isFetching) {

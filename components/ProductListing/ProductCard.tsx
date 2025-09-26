@@ -4,6 +4,7 @@ import { FiExternalLink } from "react-icons/fi";
 import { FaBookmark } from "react-icons/fa";
 import { FiBookmark } from "react-icons/fi";
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Product {
   id: number;
@@ -31,7 +32,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
     <div className="border border-[#E9E9E9] rounded-lg overflow-hidden   ">
       <div className="relative w-full h-48">
-        <img
+        <Image
           src={product.image}
           alt={product.alt}
           className="w-full h-full object-cover"

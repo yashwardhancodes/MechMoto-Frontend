@@ -5,6 +5,7 @@ import { FiChevronRight } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setSelectedPaymentMethod } from "@/lib/redux/slices/checkoutSlice";
+import Image from "next/image";
 
 export default function PaymentMethod() {
 	const router = useRouter();
@@ -50,7 +51,7 @@ export default function PaymentMethod() {
 					>
 						<div className="flex items-center gap-3">
 							<div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
-								<img src={option.icon} alt={option.name} className="w-6 h-6" />
+								<Image src={option.icon} alt={option.name} className="w-6 h-6" />
 							</div>
 							<p className="font-medium">{option.name}</p>
 						</div>

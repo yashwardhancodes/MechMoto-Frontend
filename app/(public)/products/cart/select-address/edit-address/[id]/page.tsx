@@ -4,6 +4,20 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUpdateAddressMutation, useGetAddressesQuery } from "@/lib/redux/api/partApi";
 
+
+interface Address {
+  id: number;
+  label?: string;
+  fullName?: string;
+  mobile?: string;
+  email?: string;
+  address_line1?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+}
+
+
 export default function EditAddress() {
 	const { id } = useParams();
 	const router = useRouter();
@@ -26,7 +40,7 @@ export default function EditAddress() {
 	useEffect(() => {
 		if (addressesData) {
 			const address = addressesData.data.find(
-				(addr: any) => addr.id === parseInt(id as string),
+				(addr: Address) => addr.id === parseInt(id as string),
 			);
 			if (address) {
 				const [house, area, landmark] = address.address_line1
@@ -67,7 +81,7 @@ export default function EditAddress() {
 			};
 			await updateAddress(addressData).unwrap();
 			router.push("/products/cart/select-address");
-		} catch (err) {
+		} catch  {
 			setErrorMessage("Failed to update address. Please try again.");
 		}
 	};

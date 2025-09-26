@@ -1,29 +1,29 @@
 "use client";
 
-import { Pencil, Eye, Trash2, Plus, SlidersHorizontal } from "lucide-react";
+import { Plus, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
+import React from "react";
 
 // Types for the table component
-export interface TableColumn {
+export interface TableColumn<T> {
   key: string;
   header: string;
-  render?: (item: any, index: number) => React.ReactNode;
+  render?: (item: T, index: number) => React.ReactNode;
   sortable?: boolean;
 }
 
-export interface TableAction {
+export interface TableAction<T> {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  onClick: (item: any, index: number) => void;
+  onClick: (item: T, index: number) => void;
   className?: string;
   tooltip?: string;
 }
 
-
-export interface DataTableProps {
+export interface DataTableProps<T> {
   title: string;
-  data: any[];
-  columns: TableColumn[];
-  actions?: TableAction[];
+  data: T[];
+  columns: TableColumn<T>[];
+  actions?: TableAction<T>[];
   isLoading?: boolean;
   isError?: boolean;
   addButtonText?: string;
@@ -38,17 +38,17 @@ export interface DataTableProps {
   emptyMessage?: string;
   errorMessage?: string;
   loadingMessage?: string;
-  rowClassName?: (item: any, index: number) => string;
+  rowClassName?: (item: T, index: number) => string;
   avatarConfig?: {
     enabled: boolean;
-    getAvatarUrl?: (item: any) => string;
-    getAvatarAlt?: (item: any) => string;
+    getAvatarUrl?: (item: T) => string;
+    getAvatarAlt?: (item: T) => string;
     nameKey?: string;
     subtitleKey?: string;
   };
 }
 
-export default function DataTable({
+export default function DataTable<T extends { id?: string | number }>({
   title,
   data = [],
   columns,
@@ -64,8 +64,7 @@ export default function DataTable({
   errorMessage = "Failed to load data.",
   loadingMessage = "Loading...",
   rowClassName,
-  avatarConfig
-}: DataTableProps) {
+ }: DataTableProps<T>) {
   const router = useRouter();
 
   const handleAddClick = () => {
@@ -76,18 +75,21 @@ export default function DataTable({
     }
   };
 
-  const defaultRowClassName = (item: any, index: number) => "hover:bg-[#9AE144]/20";
+const defaultRowClassName = () => "hover:bg-[#9AE144]/20";
   const getRowClassName = rowClassName || defaultRowClassName;
 
-  const renderCellContent = (item: any, column: TableColumn, index: number) => {
-    if (column.render) {
-      return column.render(item, index);
-    }
+const renderCellContent = (item: T, column: TableColumn<T>, index: number) => {
+  if (column.render) return column.render(item, index);
 
-    // Handle nested properties (e.g., "user.email")
-    const value = column.key.split('.').reduce((obj, key) => obj?.[key], item);
-    return value || "-";
-  };
+  const value = column.key
+    .split(".")
+    .reduce<unknown>((obj, key) => {
+      if (obj && typeof obj === "object") return (obj as Record<string, unknown>)[key];
+      return undefined;
+    }, item);
+
+  return value !== undefined && value !== null ? String(value) : "-";
+};
 
   return (
     <div className="p-6 bg-white rounded shadow-sm">
@@ -135,20 +137,18 @@ export default function DataTable({
                     {column.header}
                   </th>
                 ))}
-                {actions.length > 0 && (
-                  <th className="px-4 py-2">Actions</th>
-                )}
+                {actions.length > 0 && <th className="px-4 py-2">Actions</th>}
               </tr>
             </thead>
             <tbody>
               {data.map((item, index) => (
-                <tr key={item.id || index} className={getRowClassName(item, index)}>
+                <tr
+                  key={item.id ?? index}
+                  className={getRowClassName(item, index)}
+                >
                   {columns.map((column) => (
                     <td key={column.key} className="px-4 py-2">
-                      {/* Special handling for avatar column */}
-                      { 
-                        renderCellContent(item, column, index)
-                       }
+                      {renderCellContent(item, column, index)}
                     </td>
                   ))}
                   {actions.length > 0 && (
@@ -159,9 +159,11 @@ export default function DataTable({
                           return (
                             <IconComponent
                               key={actionIndex}
-                              className={`w-4 h-4 cursor-pointer ${action.className || ""}`}
+                              className={`w-4 h-4 cursor-pointer ${
+                                action.className || ""
+                              }`}
                               onClick={() => action.onClick(item, index)}
-                            aria-label={action.tooltip}
+                              aria-label={action.tooltip}
                             />
                           );
                         })}
@@ -189,7 +191,10 @@ export default function DataTable({
             >
               Prev
             </button>
-            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+            {Array.from(
+              { length: pagination.totalPages },
+              (_, i) => i + 1
+            ).map((page) => (
               <button
                 key={page}
                 onClick={() => pagination.onPageChange(page)}
@@ -210,8 +215,8 @@ export default function DataTable({
               Next
             </button>
           </div>
-       
-      </div> )}
+        </div>
+      )}
     </div>
   );
 }

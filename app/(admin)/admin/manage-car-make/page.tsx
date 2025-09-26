@@ -1,16 +1,31 @@
-"use client";
+'use client';
 
 import { Pencil, Eye, Trash2 } from "lucide-react";
 import { useGetAllCarMakesQuery, useDeleteCarMakeMutation } from "@/lib/redux/api/caeMakeApi";
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
 
+// Define proper type for Car Make
+interface CarMake {
+    id: number | string;
+    name: string;
+    created_at: string | number | Date;
+}
+
+interface TableRow {
+    id: number | string;
+    name: string;
+    createdAt: string;
+    raw: CarMake;
+}
+
 export default function ManageCarMake() {
     const { data, isLoading, isError } = useGetAllCarMakesQuery({});
-    const [deleteCarMake] = useDeleteCarMakeMutation(); // ✅ Hook at top level
+    const [deleteCarMake] = useDeleteCarMakeMutation(); 
     const router = useRouter();
 
-    const carMakes = (data?.data ?? []).map((carMake: any) => ({
+    // Map API response to table rows
+    const carMakes: TableRow[] = (data?.data ?? []).map((carMake: CarMake) => ({
         id: carMake.id,
         name: carMake.name ?? "N/A",
         createdAt: carMake.created_at
@@ -19,11 +34,12 @@ export default function ManageCarMake() {
         raw: carMake
     }));
 
+    // Define columns
     const columns: TableColumn[] = [
         {
             key: "name",
             header: "Car Make",
-            render: (value) => (
+            render: (value: TableRow) => (
                 <div className="flex row items-center gap-2">
                     <div className="size-10 rounded-full p-2 flex items-center text-white justify-center bg-blue-400">
                         {value.name
@@ -41,28 +57,28 @@ export default function ManageCarMake() {
         { key: "createdAt", header: "Created Date" }
     ];
 
+    // Define actions
     const actions: TableAction[] = [
         {
             icon: Pencil,
-            onClick: (carMake) => {
-                console.log("Edit Car Make:", carMake.raw);
+            onClick: (carMake: TableRow) => {
                 router.push(`/admin/manage-car-make/edit/${carMake.id}`);
             },
             tooltip: "Edit Car Make"
         },
         {
             icon: Eye,
-            onClick: (carMake) => {
+            onClick: (carMake: TableRow) => {
                 router.push(`/admin/manage-car-make/${carMake.id}`);
             },
             tooltip: "View Car Make"
         },
         {
             icon: Trash2,
-            onClick: async (carMake) => {
+            onClick: async (carMake: TableRow) => {
                 try {
                     await deleteCarMake(carMake.id).unwrap();
-                      console.log("Deleted successfully");
+                    console.log("Deleted successfully");
                 } catch (error) {
                     console.error("Delete failed", error);
                 }

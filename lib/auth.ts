@@ -25,7 +25,7 @@ const ROLES = {
     "manage:plan-add",
     "manage:plan-edit",
     "view:shipments",
-    "manage:shipments"
+    "manage:shipments",
      "view:service-center",
     "manage:service-center",
   ],

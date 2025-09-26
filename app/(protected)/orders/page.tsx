@@ -7,17 +7,47 @@ import { useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import { toast } from "react-hot-toast";
 
+
+interface ShippingAddress {
+	label: string;
+	address_line1: string;
+	city: string;
+	state: string;
+	zip: string;
+}
+
+interface OrderItem {
+	id: number;
+	name: string;
+	quantity: number;
+	price: number;
+}
+
+interface Order {
+	id: number;
+	created_at: string;
+	final_amount: number;
+	payment_method: string;
+	payment_status: string;
+	status: string;
+	order_items: OrderItem[];
+	shipping_address?: ShippingAddress;
+}
+
+
 interface TableColumn {
-	key: string;
+	key: keyof Order | string; // string for custom render keys
 	header: string;
-	render?: (value: any) => string | ReactElement;
+	render?: (order: Order) => string | ReactElement;
 }
 
 interface TableAction {
-	icon: React.ComponentType<any>;
-	onClick: (item: any) => void;
+	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+	onClick: (order: Order) => void;
 	tooltip: string;
 }
+
+
 
 export default function ManageOrders() {
 	const { user } = useAuth();
@@ -25,7 +55,7 @@ export default function ManageOrders() {
 
 	// Fetch orders
 	const { data, isLoading, isError } = useGetOrdersQuery({});
-	const orders = data ? data.data : [];
+	const orders: Order[] = data ? data.data : [];
 
 	// Helper function to get status colors
 	const getStatusStyle = (status: string) => {
@@ -306,7 +336,7 @@ export default function ManageOrders() {
 										</td>
 									</tr>
 								) : (
-									orders.map((order: any) => (
+									orders.map((order: Order) => (
 										<tr
 											key={order.id}
 											className="hover:bg-gray-50 transition-colors duration-150"
@@ -318,7 +348,8 @@ export default function ManageOrders() {
 												>
 													{column.render
 														? column.render(order)
-														: order[column.key] || "N/A"}
+														: (order as unknown as Record<string, string | number | undefined>)[column.key] ?? "N/A"}
+
 												</td>
 											))}
 											<td className="px-6 py-4 whitespace-nowrap">
@@ -381,7 +412,7 @@ export default function ManageOrders() {
 							</div>
 						) : (
 							<div className="divide-y divide-gray-200">
-								{orders.map((order: any) => (
+								{orders.map((order: Order) => (
 									<div key={order.id} className="p-4">
 										<div className="flex items-start justify-between mb-3">
 											<div className="flex items-center gap-3">

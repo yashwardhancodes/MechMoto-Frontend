@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from "react";
 import { z } from "zod";
@@ -20,6 +20,12 @@ const mechanicSchema = z.object({
 
 type FormData = z.infer<typeof mechanicSchema>;
 
+// Define Service Center type
+interface ServiceCenter {
+    id: number | string;
+    name: string;
+}
+
 const UpdateMechanic: React.FC = () => {
     const router = useRouter();
     const searchParams = useParams();
@@ -38,7 +44,10 @@ const UpdateMechanic: React.FC = () => {
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const { data: mechanic, isLoading: isMechanicLoading } = useGetMechanicQuery(mechanicId || "");
     const [updateMechanic, { isLoading: isUpdating }] = useUpdateMechanicMutation();
-    const { data: serviceCenters, isLoading: scLoading } = useGetAllServiceCentersQuery({});
+    const { data: serviceCentersData, isLoading: scLoading } = useGetAllServiceCentersQuery({});
+
+    // Typed service centers array
+    const serviceCenters: ServiceCenter[] = serviceCentersData?.data ?? [];
 
     // Populate form with mechanic data on load
     useEffect(() => {
@@ -91,7 +100,7 @@ const UpdateMechanic: React.FC = () => {
             } else {
                 toast.error("Failed to update mechanic.");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             if (err instanceof z.ZodError) {
                 const formattedErrors: { [key: string]: string } = {};
                 err.errors.forEach((e) => {
@@ -99,10 +108,14 @@ const UpdateMechanic: React.FC = () => {
                 });
                 setErrors(formattedErrors);
                 toast.error("Validation failed!");
+            } else if (typeof err === "object" && err !== null && "data" in err) {
+                const apiError = err as { data?: { message?: string } };
+                toast.error(apiError.data?.message || "Something went wrong!");
             } else {
-                toast.error(err?.data?.message || "Something went wrong!");
+                toast.error("Something went wrong!");
             }
         }
+
     };
 
     if (isMechanicLoading) {
@@ -186,7 +199,7 @@ const UpdateMechanic: React.FC = () => {
                                 {scLoading ? (
                                     <option disabled>Loading...</option>
                                 ) : (
-                                    serviceCenters?.data.map((sc: any) => (
+                                    serviceCenters.map((sc) => (
                                         <option key={sc.id} value={sc.id}>
                                             {sc.name}
                                         </option>

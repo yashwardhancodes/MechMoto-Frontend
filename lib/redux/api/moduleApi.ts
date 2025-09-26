@@ -4,7 +4,7 @@ export interface Module {
   id: number;
   name: string;
   description: string | null;
-  created_at: string; // 👈 should be string (API sends ISO string, not Date)
+  created_at: string;
 }
 
 export const moduleApi = createApi({
@@ -27,13 +27,16 @@ export const moduleApi = createApi({
         if (!params?.filter) {
           return "/modules";
         }
-        const filterString = Object.entries(params.filter)
-          .map(([key, value]) => `${key}=${value}`)
-          .join(",");
-        return `/modules?filter=[${filterString}]`;
+
+        // ✅ use URLSearchParams for correct encoding
+        const queryString = new URLSearchParams(
+          Object.entries(params.filter).map(([k, v]) => [k, String(v)])
+        ).toString();
+
+        return `/modules?${queryString}`;
       },
       transformResponse: (response: { success: boolean; data: Module[] }) =>
-        response.data, // 👈 unwrap only the array
+        response.data,
       providesTags: ["Module"],
     }),
   }),

@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { useGetPartBrandQuery, useUpdatePartBrandMutation } from "@/lib/redux/api/partBrandApi";
@@ -56,16 +55,19 @@ const UpdatePartBrand: React.FC = () => {
             } else {
                 toast.error("Failed to update Part Brand.");
             }
-        } catch (err: any) {
-            if (err instanceof z.ZodError) {
+        } catch (err: unknown) {
+            if (err instanceof ZodError) {
                 const formattedErrors: { [key: string]: string } = {};
                 err.errors.forEach((e) => {
-                    formattedErrors[e.path[0]] = e.message;
+                    formattedErrors[e.path[0] as string] = e.message;
                 });
                 setErrors(formattedErrors);
                 toast.error("Validation failed!");
+            } else if (typeof err === "object" && err !== null && "data" in err) {
+                const e = err as { data?: { message?: string } };
+                toast.error(e.data?.message || "Something went wrong!");
             } else {
-                toast.error(err?.data?.message || "Something went wrong!");
+                toast.error("Something went wrong!");
             }
         }
     };
@@ -112,4 +114,3 @@ const UpdatePartBrand: React.FC = () => {
 };
 
 export default UpdatePartBrand;
- 

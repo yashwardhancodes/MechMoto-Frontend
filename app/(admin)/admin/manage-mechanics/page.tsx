@@ -11,13 +11,24 @@ import DataTable, {
   TableAction,
 } from "@/components/SuperDashboard/Table";
 
+// ✅ Define API mechanic type
+interface MechanicAPI {
+  id: number | string;
+  full_name: string;
+  phone?: string;
+  city?: string;
+  rating?: string;
+  is_available?: boolean;
+  created_at?: string;
+}
+
 export default function ManageMechanics() {
   const { data, isLoading, isError } = useGetAllMechanicsQuery({});
   const [deleteMechanic] = useDeleteMechanicMutation();
   const router = useRouter();
 
   // ✅ Map backend response to table data
-  const mechanics = (data?.data ?? []).map((mechanic: any) => ({
+  const mechanics = (data?.data ?? []).map((mechanic: MechanicAPI) => ({
     id: mechanic.id,
     name: mechanic.full_name ?? "N/A",
     phone: mechanic.phone ?? "N/A",
@@ -60,21 +71,21 @@ export default function ManageMechanics() {
   const actions: TableAction[] = [
     {
       icon: Pencil,
-      onClick: (mechanic) => {
+      onClick: (mechanic: { id: string | number }) => {
         router.push(`/admin/manage-mechanics/edit/${mechanic.id}`);
       },
       tooltip: "Edit Mechanic",
     },
     {
       icon: Eye,
-      onClick: (mechanic) => {
+      onClick: (mechanic: { id: string | number }) => {
         router.push(`/admin/manage-mechanics/${mechanic.id}`);
       },
       tooltip: "View Mechanic",
     },
     {
       icon: Trash2,
-      onClick: async (mechanic) => {
+      onClick: async (mechanic: { id: string | number }) => {
         try {
           await deleteMechanic(mechanic.id).unwrap();
           window.location.reload();

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { z } from "zod";
-import { useCreateCarMakeMutation } from "@/lib/redux/api/caeMakeApi";// You'll need to create this API slice
+import { useCreateCarMakeMutation } from "@/lib/redux/api/caeMakeApi"; // You'll need to create this API slice
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
@@ -32,32 +32,39 @@ const AddCarMake: React.FC = () => {
 
             const result = await addCarMake(parsedData).unwrap();
             if (result?.success) {
-                
                 toast.success("Car Make added successfully!");
                 setFormData({ name: "" });
-                 router.push("/admin/manage-car-make?refresh=true");
+                router.push("/admin/manage-car-make?refresh=true");
             } else {
                 toast.error("Failed to add Car Make.");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             if (err instanceof z.ZodError) {
                 const formattedErrors: { [key: string]: string } = {};
                 err.errors.forEach((e) => {
-                    formattedErrors[e.path[0]] = e.message;
+                    formattedErrors[e.path[0] as string] = e.message;
                 });
                 setErrors(formattedErrors);
                 toast.error("Validation failed!");
+            } else if (
+                typeof err === "object" &&
+                err !== null &&
+                "data" in err &&
+                typeof (err as { data?: unknown }).data === "object" &&
+                (err as { data?: { message?: string } }).data?.message
+            ) {
+                toast.error((err as { data: { message: string } }).data.message);
             } else {
-                toast.error(err?.data?.message || "Something went wrong!");
+                toast.error("Something went wrong!");
             }
         }
     };
 
     return (
         <div className="h-[calc(100vh-140px)] overflow-y-auto bg-white shadow-sm py-16 px-12">
-            <div className=" mx-auto space-y-6">
+            <div className="mx-auto space-y-6">
                 <h2 className="text-xl font-semibold">Add Car Make</h2>
-                <div className="flex   gap-4 ">
+                <div className="flex gap-4">
                     <div>
                         <input
                             type="text"
@@ -70,7 +77,7 @@ const AddCarMake: React.FC = () => {
                         {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
                     </div>
 
-                    <div className="">
+                    <div>
                         <button
                             type="button"
                             onClick={handleSubmit}
@@ -79,7 +86,8 @@ const AddCarMake: React.FC = () => {
                         >
                             {isLoading ? "Adding..." : "Add Car Make"}
                         </button>
-                    </div></div>
+                    </div>
+                </div>
             </div>
         </div>
     );

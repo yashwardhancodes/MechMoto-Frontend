@@ -11,6 +11,8 @@ import { useGetAllVehiclesQuery } from "@/lib/redux/api/vehicleApi";
 import { useGetAllSubcategoriesQuery } from "@/lib/redux/api/subCategoriesApi";
 import { useGetAllPartBrandsQuery } from "@/lib/redux/api/partBrandApi";
 import { ChevronDown, X } from "lucide-react";
+import { RootState } from "@/lib/redux/store";
+import Image from "next/image";
 
 // Define interfaces
 interface CarMake {
@@ -66,6 +68,9 @@ interface FormErrors {
 }
 
 const AddPart: React.FC = () => {
+  const token = useSelector((state: RootState) => state.auth.token);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     vehicleId: "",
     subcategoryId: "",
@@ -91,16 +96,12 @@ const AddPart: React.FC = () => {
     partBrand: false,
     discount: false,
   });
-  const [createPart, { isLoading }] = useCreatePartMutation();
-  const token = useSelector((state: any) => state.auth.token);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
+  const [createPart, { isLoading }] = useCreatePartMutation();
   const { data: vehicles, isLoading: isVehiclesLoading, error: vehiclesError } = useGetAllVehiclesQuery({});
-  console.log("vehicle data", vehicles)
   const { data: subcategories, isLoading: isSubcategoriesLoading, error: subcategoriesError } = useGetAllSubcategoriesQuery({});
   const { data: partBrands, isLoading: isPartBrandsLoading, error: partBrandsError } = useGetAllPartBrandsQuery({});
-  const { data: discounts, isLoading: isDiscountsLoading, error: discountsError } = useGetAllVehiclesQuery({});
+  const { data: discounts, isLoading: isDiscountsLoading, error: discountsError } = useGetAllVehiclesQuery({}); // Note: This seems to be incorrectly querying vehicles instead of discounts
 
   useEffect(() => {
     if (files.length > 0) {
@@ -111,6 +112,15 @@ const AddPart: React.FC = () => {
       setPreviewUrls([]);
     }
   }, [files]);
+
+  // Early return after hooks
+  if (!token) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-140px)]">
+        <p className="text-red-500 text-lg">You are not logged in!</p>
+      </div>
+    );
+  }
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -197,18 +207,22 @@ const AddPart: React.FC = () => {
       } else {
         toast.error("Part addition failed. Please try again.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof z.ZodError) {
-        const formattedErrors: { [key: string]: string } = {};
+        const formattedErrors: Record<string, string> = {};
         err.errors.forEach((e) => {
-          formattedErrors[e.path[0]] = e.message;
+          formattedErrors[e.path[0] as string] = e.message;
         });
         setErrors(formattedErrors);
         toast.error("Validation failed!");
         console.log("❌ Validation Errors:", formattedErrors);
-      } else {
+      } else if (err && typeof err === "object" && "data" in err) {
+        const errorMessage = (err as { data?: { message?: string } }).data?.message;
+        toast.error(errorMessage || "Something went wrong!");
         console.error("❌ Error:", err);
-        toast.error(err?.data?.message || "Something went wrong!");
+      } else {
+        toast.error("Something went wrong!");
+        console.error("❌ Error:", err);
       }
     }
   };
@@ -322,15 +336,13 @@ const AddPart: React.FC = () => {
                             (v: Vehicle) => v.id === Number(formData.vehicleId)
                           );
                           return selected
-                            ? `${selected.car_make?.name || ""} ${selected.model_line || ""} ${selected.modification ? `(${selected.modification})` : ""
-                            } ${selected.engine_type?.name ? `- ${selected.engine_type.name}` : ""} [${selected.production_year}]`
+                            ? `${selected.car_make?.name || ""} ${selected.model_line || ""} ${selected.modification ? `(${selected.modification})` : ""} ${selected.engine_type?.name ? `- ${selected.engine_type.name}` : ""} [${selected.production_year}]`
                             : "Select a Vehicle";
                         })()
                         : "Select a Vehicle"}
                 </span>
                 <ChevronDown
-                  className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.vehicle ? "rotate-180" : ""
-                    }`}
+                  className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.vehicle ? "rotate-180" : ""}`}
                 />
               </button>
 
@@ -577,7 +589,7 @@ const AddPart: React.FC = () => {
                       onClick={handleImageClick}
                       title="Click to add more images"
                     >
-                      <img
+                      <Image
                         src={url}
                         alt={`Part preview ${index + 1}`}
                         className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
@@ -599,9 +611,7 @@ const AddPart: React.FC = () => {
                   ))
                 ) : (
                   <div
-                    className={`h-44 w-44 border-2 border-dashed rounded-lg p-4 flex items-center justify-center text-center transition-all duration-200 ${
-                      isDragging ? "border-[#9AE144] bg-[#9AE144]/10" : "border-[#808080]"
-                    }`}
+                    className={`h-44 w-44 border-2 border-dashed rounded-lg p-4 flex items-center justify-center text-center transition-all duration-200 ${isDragging ? "border-[#9AE144] bg-[#9AE144]/10" : "border-[#808080]"}`}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}

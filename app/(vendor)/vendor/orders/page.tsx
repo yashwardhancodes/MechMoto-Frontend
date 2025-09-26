@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Pencil } from "lucide-react";
+import { Eye } from "lucide-react";
 import { useGetOrdersQuery, useUpdateOrderStatusMutation } from "@/lib/redux/api/partApi";
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
@@ -68,7 +68,9 @@ export default function ManageOrders() {
 							updateOrderStatus({ id: value.id, status: newStatus })
 								.unwrap()
 								.then(() => toast.success("Order status updated successfully!"))
-								.catch((error) => toast.error("Failed to update order status."));
+								.catch((error) => {
+									console.error("Error updating order status:", error);
+									toast.error("Failed to update order status.")});
 						}}
 						className="border rounded p-1"
 					>

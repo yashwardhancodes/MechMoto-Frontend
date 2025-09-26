@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { User, setCredentials, logout } from "../slices/authSlice";
+import { setCredentials, logout } from "../slices/authSlice";
 
 export const rehydrateAuth = createAsyncThunk(
 	"auth/rehydrate",

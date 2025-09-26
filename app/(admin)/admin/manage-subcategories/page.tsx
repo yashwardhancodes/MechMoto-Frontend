@@ -6,6 +6,7 @@ import { useGetAllSubcategoriesQuery,useDeleteSubcategoryMutation } from "@/lib/
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
 import { toast } from "react-hot-toast";
+import Image from "next/image";
 
 export default function ManageSubcategories() {
   const { data, isLoading, isError } = useGetAllSubcategoriesQuery({});
@@ -25,7 +26,7 @@ export default function ManageSubcategories() {
       header: "Name",
       render: (value) => (
         <div className="flex row items-center gap-2">
-          <img
+          <Image
             src={value.img_src}
             alt={value.name}
             className="size-10 rounded-full object-cover"

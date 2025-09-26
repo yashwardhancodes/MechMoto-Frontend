@@ -9,7 +9,8 @@ import { useCreateServiceCenterMutation } from "@/lib/redux/api/serviceCenterApi
 import { useSelector } from "react-redux";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { RootState } from "@/lib/redux/store";
+
 
 interface FormData {
   name: string;
@@ -83,7 +84,7 @@ const AddServiceCenter: React.FC = () => {
   const [showMap, setShowMap] = useState(false);
   const router = useRouter();
   const [addServiceCenter, { isLoading }] = useCreateServiceCenterMutation();
-  const userId = useSelector((state: any) => state.auth?.user?.id);
+  const userId = useSelector((state: RootState) => state.auth?.user?.id);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -128,19 +129,20 @@ const AddServiceCenter: React.FC = () => {
       } else {
         toast.error(result?.message || "Failed to add Service Center.");
       }
-    } catch (err: any) {
-      if (err instanceof z.ZodError) {
-        const formattedErrors: Record<string, string> = {};
-        err.errors.forEach((e) => {
-          formattedErrors[e.path[0]] = e.message;
-        });
-        setErrors(formattedErrors);
-        toast.error("Validation failed!");
-      } else {
-        console.error(err);
-        toast.error("Something went wrong!");
-      }
-    }
+    }  catch (err: unknown) {
+  if (err instanceof z.ZodError) {
+    const formattedErrors: Record<string, string> = {};
+    err.errors.forEach((e) => {
+      formattedErrors[e.path[0] as string] = e.message;
+    });
+    setErrors(formattedErrors);
+    toast.error("Validation failed!");
+  } else {
+    console.error(err);
+    toast.error("Something went wrong!");
+  }
+}
+
   };
 
   return (

@@ -1,13 +1,13 @@
 "use client";
 
 import { Pencil, Eye, Trash2 } from "lucide-react";
-import { useGetAllPartsQuery,useDeletePartMutation } from "@/lib/redux/api/partApi";
-import { useRouter } from "next/navigation";
+import { useGetAllPartsQuery, useDeletePartMutation } from "@/lib/redux/api/partApi";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
+import Image from "next/image";
 
 export default function ManageParts() {
   const { data, isLoading, isError } = useGetAllPartsQuery({});
-  const router = useRouter();
+  const [deletePart] = useDeletePartMutation();
 
   // Log API data for debugging
   console.log("API data:", data);
@@ -22,7 +22,7 @@ export default function ManageParts() {
       header: "Part Number",
       render: (value) => (
         <div className="flex row items-center gap-2">
-          <img
+          <Image
             src={value.image_urls?.[0] || "/placeholder.png"}
             alt={value.part_number}
             className="size-10 rounded-full object-cover"
@@ -101,16 +101,16 @@ export default function ManageParts() {
     },
     {
       icon: Trash2,
-      onClick: (part) => {
+      onClick: async (part) => {
         console.log("Delete part:", part);
         if (part?.id && typeof part.id === 'number') {
           try {
-                     useDeletePartMutation(part.id);
-                    window.location.reload();
-                    console.log("Deleted successfully");
-                } catch (error) {
-                    console.error("Delete failed", error);
-                }
+           await deletePart(part.id).unwrap();
+            window.location.reload();
+            console.log("Deleted successfully");
+          } catch (error) {
+            console.error("Delete failed", error);
+          }
         } else {
           console.error("Invalid part ID for delete:", part);
         }

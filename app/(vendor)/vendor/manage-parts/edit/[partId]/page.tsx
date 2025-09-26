@@ -12,6 +12,8 @@ import { useGetAllSubcategoriesQuery } from "@/lib/redux/api/subCategoriesApi";
 import { useGetAllPartBrandsQuery } from "@/lib/redux/api/partBrandApi";
 import { ChevronDown, X } from "lucide-react";
 import { useParams } from "next/navigation";
+import { RootState } from "@/lib/redux/store";
+import Image from "next/image";
 
 interface FormData {
   vehicleId: string;
@@ -89,7 +91,7 @@ const UpdatePart: React.FC = () => {
   const [updatePart, { isLoading }] = useUpdatePartMutation();
   const { data: part, isLoading: isPartLoading, error: partError } = useGetPartQuery(partId);
   console.log("Part data:", part);
-  const token = useSelector((state: any) => state.auth.token);
+  const token = useSelector((state: RootState) => state.auth.token);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -130,6 +132,12 @@ const UpdatePart: React.FC = () => {
       setPreviewUrls([]);
     }
   }, [files, formData.imageUrls]);
+
+  // Handle token check after all Hooks
+  if (!token) {
+    toast.error("You are not logged in!");
+    return null; // or redirect, e.g., <Redirect to="/login" />
+  }
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -220,18 +228,22 @@ const UpdatePart: React.FC = () => {
       } else {
         toast.error("Part update failed. Please try again.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof z.ZodError) {
-        const formattedErrors: { [key: string]: string } = {};
+        const formattedErrors: Record<string, string> = {};
         err.errors.forEach((e) => {
-          formattedErrors[e.path[0]] = e.message;
+          formattedErrors[e.path[0] as string] = e.message;
         });
         setErrors(formattedErrors);
         toast.error("Validation failed!");
         console.log("❌ Validation Errors:", formattedErrors);
-      } else {
+      } else if (err && typeof err === "object" && "data" in err) {
+        const errorMessage = (err as { data?: { message?: string } }).data?.message;
+        toast.error(errorMessage || "Something went wrong!");
         console.error("❌ Error:", err);
-        toast.error(err?.data?.message || "Something went wrong!");
+      } else {
+        toast.error("Something went wrong!");
+        console.error("❌ Error:", err);
       }
     }
   };
@@ -338,21 +350,19 @@ const UpdatePart: React.FC = () => {
                 {isVehiclesLoading
                   ? "Loading vehicles..."
                   : vehiclesError
-                  ? "Error loading vehicles"
-                  : formData.vehicleId && Array.isArray(vehicles?.data)
-                  ? (() => {
-                      const selected = vehicles.data.find(
-                        (v: Vehicle) => v.id === Number(formData.vehicleId)
-                      );
-                      return selected
-                        ? `${selected.car_make?.name || ""} ${selected.model_line || ""} ${
-                            selected.modification ? `(${selected.modification})` : ""
-                          } ${selected.engine_type?.name ? `- ${selected.engine_type.name}` : ""} [${
-                            selected.production_year || ""
-                          }]`
-                        : "Select a Vehicle";
-                    })()
-                  : "Select a Vehicle"}
+                    ? "Error loading vehicles"
+                    : formData.vehicleId && Array.isArray(vehicles?.data)
+                      ? (() => {
+                          const selected = vehicles.data.find(
+                            (v: Vehicle) => v.id === Number(formData.vehicleId)
+                          );
+                          return selected
+                            ? `${selected.car_make?.name || ""} ${selected.model_line || ""} ${selected.modification ? `(${selected.modification})` : ""
+                            } ${selected.engine_type?.name ? `- ${selected.engine_type.name}` : ""} [${selected.production_year || ""
+                            }]`
+                            : "Select a Vehicle";
+                        })()
+                      : "Select a Vehicle"}
               </span>
               <ChevronDown
                 className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.vehicle ? "rotate-180" : ""}`}
@@ -396,10 +406,10 @@ const UpdatePart: React.FC = () => {
                   {isSubcategoriesLoading
                     ? "Loading subcategories..."
                     : subcategoriesError
-                    ? "Error loading subcategories"
-                    : formData.subcategoryId && Array.isArray(subcategories?.data)
-                    ? subcategories.data.find((s: Subcategory) => s.id === Number(formData.subcategoryId))?.name || "Select a Subcategory"
-                    : "Select a Subcategory"}
+                      ? "Error loading subcategories"
+                      : formData.subcategoryId && Array.isArray(subcategories?.data)
+                        ? subcategories.data.find((s: Subcategory) => s.id === Number(formData.subcategoryId))?.name || "Select a Subcategory"
+                        : "Select a Subcategory"}
                 </span>
                 <ChevronDown
                   className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.subcategory ? "rotate-180" : ""}`}
@@ -440,10 +450,10 @@ const UpdatePart: React.FC = () => {
                   {isPartBrandsLoading
                     ? "Loading part brands..."
                     : partBrandsError
-                    ? "Error loading part brands"
-                    : formData.partBrandId && Array.isArray(partBrands?.data)
-                    ? partBrands.data.find((pb: PartBrand) => pb.id === Number(formData.partBrandId))?.name || "Select a Part Brand"
-                    : "Select a Part Brand"}
+                      ? "Error loading part brands"
+                      : formData.partBrandId && Array.isArray(partBrands?.data)
+                        ? partBrands.data.find((pb: PartBrand) => pb.id === Number(formData.partBrandId))?.name || "Select a Part Brand"
+                        : "Select a Part Brand"}
                 </span>
                 <ChevronDown
                   className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.partBrand ? "rotate-180" : ""}`}
@@ -484,10 +494,10 @@ const UpdatePart: React.FC = () => {
                   {isDiscountsLoading
                     ? "Loading discounts..."
                     : discountsError
-                    ? "Error loading discounts"
-                    : formData.discountId && Array.isArray(discounts?.data)
-                    ? discounts.data.find((d: Discount) => d.id === Number(formData.discountId))?.name || "Select a Discount"
-                    : "Select a Discount"}
+                      ? "Error loading discounts"
+                      : formData.discountId && Array.isArray(discounts?.data)
+                        ? discounts.data.find((d: Discount) => d.id === Number(formData.discountId))?.name || "Select a Discount"
+                        : "Select a Discount"}
                 </span>
                 <ChevronDown
                   className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.discount ? "rotate-180" : ""}`}
@@ -552,7 +562,7 @@ const UpdatePart: React.FC = () => {
                 onClick={() => setDropdownOpen((prev) => ({ ...prev, origin: !prev.origin }))}
                 className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
               >
-                <span className={formData.origin ? "text-gray-400" : "text-gray-400"}>
+                <span className={formData.origin ? "text-gray-700" : "text-gray-400"}>
                   {formData.origin || "Select Origin"}
                 </span>
                 <ChevronDown
@@ -591,7 +601,7 @@ const UpdatePart: React.FC = () => {
                       onClick={handleImageClick}
                       title="Click to add more images"
                     >
-                      <img
+                      <Image
                         src={url}
                         alt={`Part preview ${index + 1}`}
                         className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
@@ -613,9 +623,8 @@ const UpdatePart: React.FC = () => {
                   ))
                 ) : (
                   <div
-                    className={`h-44 w-44 border-2 border-dashed rounded-lg p-4 flex items-center justify-center text-center transition-all duration-200 ${
-                      isDragging ? "border-[#9AE144] bg-[#9AE144]/10" : "border-[#808080]"
-                    }`}
+                    className={`h-44 w-44 border-2 border-dashed rounded-lg p-4 flex items-center justify-center text-center transition-all duration-200 ${isDragging ? "border-[#9AE144] bg-[#9AE144]/10" : "border-[#808080]"
+                      }`}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
