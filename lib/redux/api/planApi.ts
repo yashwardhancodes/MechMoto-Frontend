@@ -1,17 +1,44 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { RootState } from "../store"; // Adjust path to your store
 
+
+interface Module {
+	id: number;
+	name: string;
+	description: string | null;
+	created_at: string;
+}
+
+interface PlanModule {
+	id: number;
+	planId: number;
+	moduleId: number;
+	quota: number;
+	quota_unit: string | null;
+	module: Module;
+}
+
 // Define interfaces for type safety
 interface Plan {
-  id: string;
-  name: string;
-  price: number;
-  // Add other fields based on your API response
+	id: string;
+	name: string;
+	price: number;
+	success?: any;
+	description: string | null;
+	period: "monthly" | "yearly";
+	interval: number;
+	razorpay_plan_id: string | null;
+	status: "PENDING" | "ACTIVE";
+	is_active: boolean;
+	created_at: string;
+	updated_at: string;
+	plan_modules: PlanModule[];
+	// Add other fields based on your API response
 }
 
 interface PlanInput {
-  name: string;
-  price: number;
+  name?: string;
+  price?: number;
   // Add other fields as needed
 }
 

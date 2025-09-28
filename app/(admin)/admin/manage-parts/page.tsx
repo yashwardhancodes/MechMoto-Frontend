@@ -26,6 +26,8 @@ export default function ManageParts() {
             src={value.image_urls?.[0] || "/placeholder.png"}
             alt={value.part_number}
             className="size-10 rounded-full object-cover"
+            width={100}
+            height={100}
           />
           <div className="flex flex-col">
             <span className="font-semibold">{value.part_number}</span>

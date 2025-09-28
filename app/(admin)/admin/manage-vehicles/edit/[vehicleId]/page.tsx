@@ -14,6 +14,7 @@ import { useRouter, useParams } from 'next/navigation';
 interface CarMake {
   id: number;
   name: string;
+  data?: any
 }
 
 interface EngineType {
@@ -50,7 +51,7 @@ const UpdateVehicle: React.FC = () => {
   const { data: vehicleResponse, isLoading: vehicleLoading, error: vehicleError } = useGetVehicleQuery(vehicleIdStr, {
     skip: !vehicleIdStr || vehicleIdStr === 'undefined',
   });
-  const { data: carMakesResponse, isLoading: carMakesLoading, error: carMakesError } = useGetAllCarMakesQuery({});
+  const { data: carMakesResponse, isLoading: carMakesLoading, error: carMakesError } = useGetAllCarMakesQuery();
   const { data: engineTypesResponse, isLoading: engineTypesLoading, error: engineTypesError } = useGetAllEngineTypesQuery({});
   const [updateVehicle, { isLoading: isUpdating }] = useUpdateVehicleMutation();
 

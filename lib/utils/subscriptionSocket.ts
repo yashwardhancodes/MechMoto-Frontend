@@ -5,7 +5,7 @@ const socket = io("http://localhost:5000", {
 });
 
 // Authenticate connection (optional: use JWT userId)
-export const joinUserRoom = (userId: string) => {
+export const joinUserRoom = (userId: string | number) => {
     
   socket.emit("join", { userId });
 };

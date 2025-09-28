@@ -52,7 +52,7 @@ interface Subcategory {
 }
 
 interface PartBrand {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -100,7 +100,7 @@ const AddPart: React.FC = () => {
   const { data: subcategories, isLoading: isSubcategoriesLoading, error: subcategoriesError } =
     useGetAllSubcategoriesQuery({});
   const { data: partBrands, isLoading: isPartBrandsLoading, error: partBrandsError } =
-    useGetAllPartBrandsQuery({});
+    useGetAllPartBrandsQuery();
   const { data: discounts, isLoading: isDiscountsLoading, error: discountsError } =
     useGetAllVehiclesQuery({}); // ⚠️ looks like this should be useGetAllDiscountsQuery?
 
@@ -422,7 +422,7 @@ const AddPart: React.FC = () => {
                     : partBrandsError
                       ? "Error loading part brands"
                       : formData.partBrandId && Array.isArray(partBrands?.data)
-                        ? partBrands.data.find((pb: PartBrand) => pb.id === Number(formData.partBrandId))?.name || "Select a Part Brand"
+                        ? partBrands.data.find((pb: PartBrand) => pb.id === formData.partBrandId)?.name || "Select a Part Brand"
                         : "Select a Part Brand"}
                 </span>
                 <ChevronDown
@@ -583,6 +583,8 @@ const AddPart: React.FC = () => {
                         src={url}
                         alt={`Part preview ${index + 1}`}
                         className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
+                        width={100}
+                        height={100}
                       />
                       <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-[#9AE144] bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <span className="text-black font-medium text-sm">Update Images</span>

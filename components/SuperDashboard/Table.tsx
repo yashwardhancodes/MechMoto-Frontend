@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 import React from "react";
 
 // Types for the table component
-export interface TableColumn<T> {
+export interface TableColumn {
   key: string;
   header: string;
-  render?: (item: T, index: number) => React.ReactNode;
+  render?: (item: any, index: number) => React.ReactNode;
   sortable?: boolean;
 }
 
-export interface TableAction<T> {
+export interface TableAction {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  onClick: (item: T, index: number) => void;
+  onClick: (item: any, index: number) => void;
   className?: string;
   tooltip?: string;
 }
@@ -22,8 +22,8 @@ export interface TableAction<T> {
 export interface DataTableProps<T> {
   title: string;
   data: T[];
-  columns: TableColumn<T>[];
-  actions?: TableAction<T>[];
+  columns: TableColumn[];
+  actions?: TableAction[];
   isLoading?: boolean;
   isError?: boolean;
   addButtonText?: string;
@@ -48,7 +48,7 @@ export interface DataTableProps<T> {
   };
 }
 
-export default function DataTable<T extends { id?: string | number }>({
+export default function DataTable<T extends { id?: string | number, code?: any, image_urls?: any, part_number?: any }>({
   title,
   data = [],
   columns,
@@ -78,7 +78,7 @@ export default function DataTable<T extends { id?: string | number }>({
 const defaultRowClassName = () => "hover:bg-[#9AE144]/20";
   const getRowClassName = rowClassName || defaultRowClassName;
 
-const renderCellContent = (item: T, column: TableColumn<T>, index: number) => {
+const renderCellContent = (item: T, column: TableColumn, index: number) => {
   if (column.render) return column.render(item, index);
 
   const value = column.key

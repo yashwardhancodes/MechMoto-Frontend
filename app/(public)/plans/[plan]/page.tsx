@@ -31,7 +31,7 @@ interface PlanModule {
 }
 
 interface Plan {
-  id: number;
+  id: string;
   name: string;
   description: string | null;
   price: number;
@@ -63,7 +63,7 @@ export default function PlanPage() {
 
   console.log("subscriptionId plan page", subscriptionId);
 
-  const { data: allPlans, isLoading, isError } = useGetAllPlansQuery({});
+  const { data: allPlans, isLoading, isError } = useGetAllPlansQuery();
   const [createSubscription, { isLoading: isCreating }] =
     useCreateSubscriptionMutation();
 

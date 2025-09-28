@@ -5,14 +5,14 @@ import type { RootState } from "../store";
 interface ModelLine {
   id: string | number; // Adjust based on your actual data structure
   name: string;       // Add other relevant fields
-  [key: string]: any; // For flexibility, if needed; replace with specific fields if possible
+  [key: string]: unknown; // For flexibility, if needed; replace with specific fields if possible
 }
 
 // Define the expected response structure
 interface ModelLinesResponse {
   data: ModelLine[];
   total: number; // Adjust based on your API response
-  [key: string]: any; // For flexibility, if needed
+  [key: string]: unknown; // For flexibility, if needed
 }
 
 // Optional stricter filter type

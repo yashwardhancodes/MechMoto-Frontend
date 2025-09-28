@@ -52,7 +52,7 @@ const BuyParts = () => {
   const [selectedModification, setSelectedModification] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<Vehicle[]>([]);
 
-  const { data: carMakesData, isLoading: carMakeLoading } = useGetAllCarMakesQuery({});
+  const { data: carMakesData, isLoading: carMakeLoading } = useGetAllCarMakesQuery();
   const [triggerGetModels, { data: modelLineData, isFetching: modelLineLoading }] =
     useLazyGetModelLinesQuery();
   const [
@@ -240,13 +240,13 @@ const BuyParts = () => {
               >
                 {modelLineLoading ? "Loading..." : "🏎️ Select Model"}
               </option>
-              {modelLineData?.data?.map((model: string, idx: number) => (
+              {modelLineData?.data?.map((model: { id: string | number; name: string }, idx: number) => (
                 <option
-                  key={idx}
-                  value={model}
+                  key={model.id ?? idx}
+                  value={model.name}
                   className="bg-white text-gray-800 py-3 hover:bg-green-50 hover:text-green-800 font-medium transition-colors duration-150"
                 >
-                  {model}
+                  {model.name}
                 </option>
               ))}
             </select>

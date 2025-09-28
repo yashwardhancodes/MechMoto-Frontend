@@ -123,7 +123,7 @@ export default function ManageOrders() {
 				nameKey: "user.profiles.full_name",
 				subtitleKey: "id",
 				getAvatarUrl: () => "/placeholder.png", // Replace with actual avatar if available
-				getAvatarAlt: (item) => item.user?.profiles?.full_name || "Order",
+				getAvatarAlt: (item) => (item as any).user?.profiles?.full_name || "Order",
 			}}
 		/>
 	);

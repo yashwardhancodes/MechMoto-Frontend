@@ -115,8 +115,8 @@ export default function ManageSubcategories() {
         enabled: true,
         nameKey: "name",
         subtitleKey: "description",
-        getAvatarUrl: (item) => item.img_src,  
-        getAvatarAlt: (item) => item.name
+        getAvatarUrl: (item) => (item as any).img_src,  
+        getAvatarAlt: (item) => (item as any).name
       }}
     />
   );

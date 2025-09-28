@@ -9,7 +9,7 @@ import { z } from "zod";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import logo from "@/public/assets/logo.png";
-import google from "@/public/assets/google.png"; // Fixed typo in file name
+import google from "@/public/assets/Google.png"; // Fixed typo in file name
 import { ROLES } from "@/constants/roles";
 import useAuth from "@/hooks/useAuth";
 import { useDispatch, useSelector } from "react-redux";

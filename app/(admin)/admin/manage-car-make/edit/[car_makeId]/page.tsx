@@ -34,8 +34,8 @@ const UpdateCarMake: React.FC = () => {
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
     useEffect(() => {
-        if (data?.success && data?.data) {
-            setFormData({ name: data.data.name });
+        if (data) {
+            setFormData({ name: data.name });
         }
     }, [data]);
 
@@ -48,7 +48,7 @@ const UpdateCarMake: React.FC = () => {
             setErrors({});
             const parsedData = carMakeSchema.parse(formData);
 
-            const result = await updateCarMake({ id, ...parsedData }).unwrap();
+            const result = await updateCarMake({ id, name: parsedData.name }).unwrap();
             if (result?.success) {
                 toast.success("Car Make updated successfully!");
                 router.push("/admin/manage-car-make/");

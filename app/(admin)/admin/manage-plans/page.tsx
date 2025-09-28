@@ -16,13 +16,13 @@ interface PlanModule {
 
 
 export default function ManagePlans() {
-  const { data, isLoading, isError } = useGetAllPlansQuery({});
+  const { data, isLoading, isError } = useGetAllPlansQuery();
 
   // Log API data for debugging
   console.log("API data:", data);
 
   // Safely extract plans array from API response
-  const plans = Array.isArray(data) ? data : data?.data ?? [];
+  const plans = Array.isArray(data) ? data : (data && typeof data === 'object' && 'data' in data ? (data as any).data : []) ?? [];
 
   // Define table columns
   const columns: TableColumn[] = [

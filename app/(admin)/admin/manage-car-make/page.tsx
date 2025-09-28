@@ -9,7 +9,7 @@ import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard
 interface CarMake {
     id: number | string;
     name: string;
-    created_at: string | number | Date;
+    created_at?: string | number | Date;
 }
 
 interface TableRow {
@@ -20,7 +20,7 @@ interface TableRow {
 }
 
 export default function ManageCarMake() {
-    const { data, isLoading, isError } = useGetAllCarMakesQuery({});
+    const { data, isLoading, isError } = useGetAllCarMakesQuery();
     const [deleteCarMake] = useDeleteCarMakeMutation(); 
     const router = useRouter();
 

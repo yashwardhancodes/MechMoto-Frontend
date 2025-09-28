@@ -39,7 +39,7 @@ interface Subcategory {
 }
 
 interface PartBrand {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -100,7 +100,7 @@ const AddPart: React.FC = () => {
   const [createPart, { isLoading }] = useCreatePartMutation();
   const { data: vehicles, isLoading: isVehiclesLoading, error: vehiclesError } = useGetAllVehiclesQuery({});
   const { data: subcategories, isLoading: isSubcategoriesLoading, error: subcategoriesError } = useGetAllSubcategoriesQuery({});
-  const { data: partBrands, isLoading: isPartBrandsLoading, error: partBrandsError } = useGetAllPartBrandsQuery({});
+  const { data: partBrands, isLoading: isPartBrandsLoading, error: partBrandsError } = useGetAllPartBrandsQuery();
   const { data: discounts, isLoading: isDiscountsLoading, error: discountsError } = useGetAllVehiclesQuery({}); // Note: This seems to be incorrectly querying vehicles instead of discounts
 
   useEffect(() => {
@@ -440,7 +440,7 @@ const AddPart: React.FC = () => {
                     : partBrandsError
                       ? "Error loading part brands"
                       : formData.partBrandId && Array.isArray(partBrands?.data)
-                        ? partBrands.data.find((pb: PartBrand) => pb.id === Number(formData.partBrandId))?.name || "Select a Part Brand"
+                        ? partBrands.data.find((pb: PartBrand) => pb.id.toString() === formData.partBrandId)?.name || "Select a Part Brand"
                         : "Select a Part Brand"}
                 </span>
                 <ChevronDown
@@ -593,6 +593,8 @@ const AddPart: React.FC = () => {
                         src={url}
                         alt={`Part preview ${index + 1}`}
                         className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
+                        width={100}
+                        height={100}
                       />
                       <button
                         onClick={(e) => {

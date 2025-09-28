@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 
 
 export default function ManageBrands() {
-    const { data, isLoading, isError } = useGetAllPartBrandsQuery({});
+    const { data, isLoading, isError } = useGetAllPartBrandsQuery();
     const router = useRouter();
     const [deletePartBrand] = useDeletePartBrandMutation();
 

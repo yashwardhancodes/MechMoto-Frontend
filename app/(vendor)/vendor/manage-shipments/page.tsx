@@ -182,7 +182,7 @@ export default function VendorShipments() {
           : undefined,
         delivered_at: formData.delivered_at ? new Date(formData.delivered_at).toISOString() : undefined,
       });
-      await updateShipment({ id: selectedShipment!.id, data: parsedData }).unwrap();
+      await updateShipment({ id: String(selectedShipment!.id), data: parsedData }).unwrap();
       toast.success("Shipment updated successfully!");
       setIsModalOpen(false);
     } catch (err: unknown) {
@@ -232,7 +232,7 @@ export default function VendorShipments() {
               nameKey: "order.id",
               subtitleKey: "order.user.profiles.full_name",
               getAvatarUrl: () => "/placeholder.png",
-              getAvatarAlt: (item) => `Order #${item.order.id}`,
+              getAvatarAlt: (item: Shipment) => `Order #${item.order.id}`,
             }}
           />
 

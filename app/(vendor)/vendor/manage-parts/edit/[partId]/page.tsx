@@ -50,7 +50,7 @@ interface Subcategory {
 }
 
 interface PartBrand {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -97,7 +97,7 @@ const UpdatePart: React.FC = () => {
 
   const { data: vehicles, isLoading: isVehiclesLoading, error: vehiclesError } = useGetAllVehiclesQuery({});
   const { data: subcategories, isLoading: isSubcategoriesLoading, error: subcategoriesError } = useGetAllSubcategoriesQuery({});
-  const { data: partBrands, isLoading: isPartBrandsLoading, error: partBrandsError } = useGetAllPartBrandsQuery({});
+  const { data: partBrands, isLoading: isPartBrandsLoading, error: partBrandsError } = useGetAllPartBrandsQuery();
   const { data: discounts, isLoading: isDiscountsLoading, error: discountsError } = useGetAllVehiclesQuery({});
 
   // Populate form with existing part data
@@ -452,7 +452,7 @@ const UpdatePart: React.FC = () => {
                     : partBrandsError
                       ? "Error loading part brands"
                       : formData.partBrandId && Array.isArray(partBrands?.data)
-                        ? partBrands.data.find((pb: PartBrand) => pb.id === Number(formData.partBrandId))?.name || "Select a Part Brand"
+                        ? partBrands.data.find((pb: PartBrand) => pb.id.toString() === formData.partBrandId)?.name || "Select a Part Brand"
                         : "Select a Part Brand"}
                 </span>
                 <ChevronDown

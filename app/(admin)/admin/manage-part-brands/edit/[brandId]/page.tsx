@@ -48,7 +48,7 @@ const UpdatePartBrand: React.FC = () => {
             setErrors({});
             const parsedData = partBrandSchema.parse(formData);
 
-            const result = await updatePartBrand({ id: brandId, ...parsedData }).unwrap();
+            const result = await updatePartBrand({ id: brandId, data: parsedData }).unwrap();
             if (result?.success) {
                 toast.success("Part Brand updated successfully!");
                 router.push("/admin/manage-part-brands/");

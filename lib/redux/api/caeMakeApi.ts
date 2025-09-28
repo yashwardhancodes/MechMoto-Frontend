@@ -1,16 +1,22 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { RootState } from "../store";
 
+interface CarMakeResponse {
+	success: boolean;
+	data: CarMake[];
+}
+
 // Define proper types
 export interface CarMake {
   id: number;
   name: string;
   created_at?: string;
   updated_at?: string;
+  success?: any;
 }
 
 export interface CreateCarMakeDto {
-  name: string;
+  name?: string;
 }
 
 export interface UpdateCarMakeDto {
@@ -31,7 +37,7 @@ export const carMakeApi = createApi({
   }),
   tagTypes: ["CarMake"],
   endpoints: (builder) => ({
-    getAllCarMakes: builder.query<CarMake[], void>({
+    getAllCarMakes: builder.query<CarMakeResponse, void>({
       query: () => "car_makes",
       providesTags: ["CarMake"],
     }),
