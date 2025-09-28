@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState } from "react";
 import { z } from "zod";
@@ -20,6 +20,19 @@ const mechanicSchema = z.object({
 
 type FormData = z.infer<typeof mechanicSchema>;
 
+// Define Service Center type
+interface ServiceCenter {
+    id: number | string;
+    name: string;
+}
+
+// Type for RTK Query error
+interface ApiError {
+    data?: {
+        message?: string;
+    };
+}
+
 const AddMechanic: React.FC = () => {
     const [formData, setFormData] = useState<FormData>({
         email: "",
@@ -33,8 +46,10 @@ const AddMechanic: React.FC = () => {
 
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [createMechanic, { isLoading }] = useCreateMechanicMutation();
-    const { data: serviceCenters, isLoading: scLoading } = useGetAllServiceCentersQuery({});
+    const { data: serviceCentersData, isLoading: scLoading } = useGetAllServiceCentersQuery({});
     const router = useRouter();
+
+    const serviceCenters: ServiceCenter[] = serviceCentersData?.data ?? [];
 
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -65,7 +80,7 @@ const AddMechanic: React.FC = () => {
             };
 
             const result = await createMechanic(payload).unwrap();
-            if (result?.data.id) {
+            if (result?.data?.id) {
                 toast.success("Mechanic added successfully!");
                 setFormData({
                     email: "",
@@ -80,16 +95,17 @@ const AddMechanic: React.FC = () => {
             } else {
                 toast.error("Failed to add mechanic.");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             if (err instanceof z.ZodError) {
                 const formattedErrors: { [key: string]: string } = {};
                 err.errors.forEach((e) => {
-                    formattedErrors[e.path[0]] = e.message;
+                    formattedErrors[e.path[0] as string] = e.message;
                 });
                 setErrors(formattedErrors);
                 toast.error("Validation failed!");
             } else {
-                toast.error(err?.data?.message || "Something went wrong!");
+                const apiErr = err as ApiError;
+                toast.error(apiErr.data?.message || "Something went wrong!");
             }
         }
     };
@@ -154,7 +170,7 @@ const AddMechanic: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Service Center (Dropdown) + Availability */}
+                    {/* Service Center + Availability */}
                     <div className="grid grid-cols-2 gap-6">
                         <div>
                             <select
@@ -167,7 +183,7 @@ const AddMechanic: React.FC = () => {
                                 {scLoading ? (
                                     <option disabled>Loading...</option>
                                 ) : (
-                                    serviceCenters?.data.map((sc: any) => (
+                                    serviceCenters.map((sc) => (
                                         <option key={sc.id} value={sc.id}>
                                             {sc.name}
                                         </option>

@@ -10,6 +10,8 @@ import { createSubcategorySchema } from "@/lib/schema/subcategorySchema";
 import { useGetAllCategoriesQuery } from "@/lib/redux/api/categoriesApi";
 import { ChevronDown } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
+import { RootState } from "@/lib/redux/store";
+import Image from "next/image";
 
 interface FormData {
   name: string;
@@ -44,9 +46,17 @@ const UpdateSubcategory: React.FC = () => {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [updateSubcategory, { isLoading }] = useUpdateSubcategoryMutation();
   const { data: subcategory, isLoading: isSubcategoryLoading, error: subcategoryError } = useGetSubcategoryQuery(subcategoryId);
-  const token = useSelector((state: any) => state.auth.token);
+  const token = useSelector((state: RootState) => state.auth.token);
+
   const { data: categories, isLoading: isCategoriesLoading, error: categoriesError } = useGetAllCategoriesQuery({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!token) {
+      toast.error("You are not logged in!");
+      router.push("/login");
+    }
+  }, [token, router]);
 
   useEffect(() => {
     if (subcategory) {
@@ -103,6 +113,12 @@ const UpdateSubcategory: React.FC = () => {
   const handleSubmit = async () => {
     try {
       setErrors({});
+      if (!token) {
+        toast.error("You are not logged in!");
+        router.push("/login");
+        return;
+      }
+
       let imgSrc = formData.imgSrc;
       if (file) {
         imgSrc = await uploadImageToBackend(file, token);
@@ -123,20 +139,25 @@ const UpdateSubcategory: React.FC = () => {
       } else {
         toast.error("Subcategory update failed. Please try again.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof z.ZodError) {
-        const formattedErrors: { [key: string]: string } = {};
+        const formattedErrors: FormErrors = {};
         err.errors.forEach((e) => {
-          formattedErrors[e.path[0]] = e.message;
+          const key = e.path[0] as string;
+          formattedErrors[key] = e.message;
         });
         setErrors(formattedErrors);
         toast.error("Validation failed!");
         console.log("❌ Validation Errors:", formattedErrors);
       } else {
         console.error("❌ Error:", err);
-        toast.error(err?.data?.message || "Something went wrong!");
+        toast.error(
+          (err as { data?: { message?: string } })?.data?.message ||
+          "Something went wrong!"
+        );
       }
     }
+
   };
 
   if (isSubcategoryLoading) {
@@ -199,17 +220,16 @@ const UpdateSubcategory: React.FC = () => {
                 {isCategoriesLoading
                   ? "Loading categories..."
                   : categoriesError
-                  ? "Error loading categories"
-                  : formData.categoryId && Array.isArray(categories?.data)
-                  ? categories.data.find(
-                      (c: Category) => c.id === Number(formData.categoryId)
-                    )?.name || "Select a Category"
-                  : "Select a Category"}
+                    ? "Error loading categories"
+                    : formData.categoryId && Array.isArray(categories?.data)
+                      ? categories.data.find(
+                        (c: Category) => c.id === Number(formData.categoryId)
+                      )?.name || "Select a Category"
+                      : "Select a Category"}
               </span>
               <ChevronDown
-                className={`w-5 h-5 text-[#9AE144] ${
-                  categoryDropdownOpen ? "rotate-180" : ""
-                }`}
+                className={`w-5 h-5 text-[#9AE144] ${categoryDropdownOpen ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
@@ -255,7 +275,7 @@ const UpdateSubcategory: React.FC = () => {
                   onClick={handleImageClick}
                   title="Click to update image"
                 >
-                  <img
+                  <Image
                     src={previewUrl}
                     alt="Subcategory preview"
                     className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"

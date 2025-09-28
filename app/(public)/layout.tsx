@@ -1,7 +1,7 @@
 "use client";
 
 import Navbar from "@/components/Navbar";
- import { useEffect } from "react";
+import { useEffect } from "react";
 import { ROLES } from "@/constants/roles";
 import { useRouter, usePathname } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
@@ -9,10 +9,11 @@ import useAuth from "@/hooks/useAuth";
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, role } = useAuth();
-  const publicPaths = ["/", "/products/[subcategory]"];
   const currentPath = usePathname();
 
   useEffect(() => {
+    const publicPaths = ["/", "/products/[subcategory]"]; // moved inside useEffect
+
     if (user) {
       if (publicPaths.includes(currentPath)) {
         let redirectPath = "/";
@@ -26,18 +27,14 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         router.push(redirectPath);
       }
     }
-  }, [user, router, role, currentPath]);
+  }, [user, router, role, currentPath]); // no need to include publicPaths here
 
   return (
     <>
       <Navbar />
-      {/* Breadcrumb added here */}
- 		<div className=" mt-[40px] md:mt-[50px] lg:mt-[56px]">
-
+      <div className="mt-[40px] md:mt-[50px] lg:mt-[56px]">
         {children}
-
-		</div> 
-    
+      </div>
     </>
   );
 }

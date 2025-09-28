@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { z } from "zod";
 import { serviceCenterSchema } from "@/lib/schema/serviceCenterSchema";
@@ -12,8 +12,9 @@ import {
 import { useSelector } from "react-redux";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { useParams } from "next/navigation";
+// import RootState from your Redux store definition
+import { RootState } from "@/lib/redux/store";
 
 interface FormData {
   name: string;
@@ -76,7 +77,7 @@ const EditServiceCenter: React.FC = () => {
 
   console.log("Editing Service Center ID:", serviceCenterId);
   const router = useRouter();
-  const userId = useSelector((state: any) => state.auth?.user?.id);
+  const userId = useSelector((state: RootState) => state.auth?.user?.id);
 
   // ✅ only fetch when ID is present
   const { data: serviceCenter, isLoading: fetching } = useGetServiceCenterQuery(
@@ -155,7 +156,7 @@ const EditServiceCenter: React.FC = () => {
       } else {
         toast.error(result?.message || "Failed to update Service Center.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof z.ZodError) {
         const formattedErrors: Record<string, string> = {};
         err.errors.forEach((e) => {
@@ -163,11 +164,15 @@ const EditServiceCenter: React.FC = () => {
         });
         setErrors(formattedErrors);
         toast.error("Validation failed!");
+      } else if (err instanceof Error) {
+        console.error(err.message);
+        toast.error(err.message);
       } else {
         console.error(err);
         toast.error("Something went wrong!");
       }
     }
+
   };
 
   if (fetching) return <p className="text-center mt-10">Loading...</p>;

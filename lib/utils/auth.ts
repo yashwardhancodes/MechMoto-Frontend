@@ -1,11 +1,12 @@
-// utils/auth.ts
-export type AuthData = {
+export interface User {
+  id: string;
+  [key: string]: unknown;  
+}
+
+export interface AuthData {
   token: string;
-  user: {
-    id: string;
-    [key: string]: any; // extendable for other user props
-  };
-};
+  user: User;
+}
 
 export function getAuth(): AuthData | null {
   try {

@@ -1,17 +1,40 @@
 "use client";
 import React, { useState } from "react";
-import { ShoppingCart, Plus, Minus, Clock, Truck, ChevronRight, Trash } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Trash } from "lucide-react";
 import { FaCheck } from "react-icons/fa";
 import TrendingProducts from "@/components/TrendingProducts";
 import { useRouter } from "next/navigation";
 import CheckoutPopup from "@/components/PopUp/CheckoutPopup";
+import Image from "next/image";
 import {
 	useGetCartItemsQuery,
-	useAddToCartMutation,
 	useUpdateCartItemMutation,
 	useRemoveFromCartMutation,
 } from "@/lib/redux/api/partApi";
 import useAuth from "@/hooks/useAuth";
+
+interface Discount {
+	discount_value: number;
+}
+
+interface Subcategory {
+	name: string;
+}
+
+interface Part {
+	id: number;
+	price: number;
+	image_urls: string[];
+	subcategory?: Subcategory;
+	discount?: Discount;
+}
+
+interface CartItem {
+	id: number;
+	quantity: number;
+	part: Part;
+}
+
 
 const Page: React.FC = () => {
 	const router = useRouter();
@@ -26,14 +49,13 @@ const Page: React.FC = () => {
 	} = useGetCartItemsQuery(undefined, {
 		skip: !isLoggedIn,
 	});
-	const [addToCart] = useAddToCartMutation();
 	const [updateCartItem] = useUpdateCartItemMutation();
 	const [removeFromCart] = useRemoveFromCartMutation();
 
-	const cartItems = cartItemsData?.data || [];
+	const cartItems: CartItem[] = cartItemsData?.data || [];
 
 	const updateQuantity = async (id: number, change: number) => {
-		const cartItem = cartItems.find((item: any) => item.id === id);
+		const cartItem = cartItems.find((item) => item.id === id);
 		if (!cartItem) return;
 
 		const newQuantity = Math.max(0, cartItem.quantity + change);
@@ -49,7 +71,7 @@ const Page: React.FC = () => {
 	};
 
 	const itemsTotal = cartItems.reduce(
-		(sum: number, item: any) => sum + item.part.price * item.quantity,
+		(sum: number, item: CartItem) => sum + item.part.price * item.quantity,
 		0,
 	);
 	const deliveryFee = 5.78;
@@ -82,7 +104,7 @@ const Page: React.FC = () => {
 					<div className="bg-white rounded-xl border border-[rgba(0,0,0,0.14)] p-6 mb-6">
 						<div className="space-y-4">
 							<div className="text-sm font-medium text-gray-600 mb-4">Cart Items</div>
-							{cartItems.map((item: any) => (
+							{cartItems.map((item: CartItem) => (
 								<div
 									key={item.id}
 									className="flex items-center justify-between py-4 border-b border-[rgba(0,0,0,0.14)] last:border-b-0"
@@ -91,12 +113,13 @@ const Page: React.FC = () => {
 									<div className="flex items-center justify-between w-full sm:hidden">
 										<div className="flex items-center">
 											<div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mr-3 text-2xl">
-												<img
+												<Image
 													src={
 														item.part.image_urls[0] ||
 														"https://via.placeholder.com/150"
 													}
-													alt={item.part.subcategory?.name}
+													alt={item.part.subcategory?.name || "Part Image"}
+
 													className="w-full h-full object-contain"
 												/>
 											</div>
@@ -152,12 +175,13 @@ const Page: React.FC = () => {
 									{/* Desktop/Tablet Layout */}
 									<div className="hidden sm:flex items-center flex-1">
 										<div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mr-4 text-2xl">
-											<img
+											<Image
 												src={
 													item.part.image_urls[0] ||
 													"https://via.placeholder.com/150"
 												}
-												alt={item.part.subcategory?.name}
+												alt={item.part.subcategory?.name || "Part Image"}
+
 												className="w-full h-full object-contain"
 											/>
 										</div>

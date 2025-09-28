@@ -2,18 +2,27 @@
 
 import { Pencil, Eye, Trash2 } from "lucide-react";
 import { useGetAllPlansQuery } from "@/lib/redux/api/planApi";
-import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
 
+interface PlanModule {
+  id: number;
+  quota: number;
+  quota_unit?: string;
+  module: {
+    id: number;
+    name: string;
+  };
+}
+
+
 export default function ManagePlans() {
-  const { data, isLoading, isError } = useGetAllPlansQuery({});
-  const router = useRouter();
+  const { data, isLoading, isError } = useGetAllPlansQuery();
 
   // Log API data for debugging
   console.log("API data:", data);
 
   // Safely extract plans array from API response
-  const plans = Array.isArray(data) ? data : data?.data ?? [];
+  const plans = Array.isArray(data) ? data : (data && typeof data === 'object' && 'data' in data ? (data as any).data : []) ?? [];
 
   // Define table columns
   const columns: TableColumn[] = [
@@ -43,11 +52,12 @@ export default function ManagePlans() {
       render: (value) => (
         <div className="flex flex-col">
           {value.plan_modules?.length > 0 ? (
-            value.plan_modules.map((module: any) => (
+            value.plan_modules.map((module: PlanModule) => (
               <span key={module.id} className="text-sm">
                 {module.module.name}: {module.quota} {module.quota_unit || "units"}
               </span>
             ))
+
           ) : (
             <span>No modules</span>
           )}

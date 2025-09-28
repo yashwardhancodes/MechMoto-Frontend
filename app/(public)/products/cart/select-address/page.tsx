@@ -8,6 +8,19 @@ import { setSelectedAddress } from "@/lib/redux/slices/checkoutSlice";
 import { useGetAddressesQuery, useDeleteAddressMutation } from "@/lib/redux/api/partApi";
 import useAuth from "@/hooks/useAuth";
 
+interface Address {
+  id: number;
+  label?: string;
+  fullName?: string;
+  mobile?: string;
+  email?: string;
+  address_line1?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+}
+
+
 export default function SelectAddress() {
 	const { isLoggedIn } = useAuth();
 	const router = useRouter();
@@ -35,7 +48,7 @@ export default function SelectAddress() {
 			await deleteAddress(id).unwrap();
 			setShowConfirmDelete(null);
 			if (selected === id) setSelected(null);
-		} catch (err) {
+		} catch   {
 			setErrorMessage("Failed to delete address.");
 		}
 	};
@@ -57,7 +70,7 @@ export default function SelectAddress() {
 			<h3 className="text-lg sm:text-xl font-semibold mb-4">My Addresses</h3>
 
 			<div className="space-y-4">
-				{addresses.map((item: any) => (
+				{addresses.map((item: Address) => (
 					<div
 						key={item.id}
 						onClick={() => handleSelect(item.id)}

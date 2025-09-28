@@ -113,7 +113,7 @@ export default function Service() {
         />
         <div className="absolute top-5 md:top-10 left-10 md:left-25 lg:left-55">
           <h2 className="text-white text-xl md:text-3xl lg:text-5xl font-bold font-sans leading-snug max-w-[280px] md:max-w-[420px] lg:max-w-3xl">
-            Thanks for <span className="text-[#9AE144]">subscribing!</span> We're
+            Thanks for <span className="text-[#9AE144]">subscribing!</span> We&apos;re
             here to support you. What do <br />
             <span className="text-[#9AE144]">you need help with?</span>
           </h2>
@@ -215,22 +215,20 @@ export default function Service() {
             {statusSteps.map((step, index) => (
               <div key={index} className="flex flex-col items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    currentStatus === step
-                      ? "bg-[#9AE144] text-black"
-                      : "bg-gray-200 text-gray-600"
-                  }`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStatus === step
+                    ? "bg-[#9AE144] text-black"
+                    : "bg-gray-200 text-gray-600"
+                    }`}
                 >
                   {index + 1}
                 </div>
                 <p className="text-sm mt-2">{step}</p>
                 {index < statusSteps.length - 1 && (
                   <div
-                    className={`h-1 w-16 md:w-24 mt-2 ${
-                      statusSteps.indexOf(currentStatus) > index
-                        ? "bg-[#9AE144]"
-                        : "bg-gray-200"
-                    }`}
+                    className={`h-1 w-16 md:w-24 mt-2 ${statusSteps.indexOf(currentStatus) > index
+                      ? "bg-[#9AE144]"
+                      : "bg-gray-200"
+                      }`}
                   ></div>
                 )}
               </div>
@@ -264,24 +262,22 @@ export default function Service() {
                 {issues.map((issue, index) => (
                   <tr
                     key={issue.id}
-                    className={`text-sm ${
-                      index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    } hover:bg-gray-100 transition`}
+                    className={`text-sm ${index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                      } hover:bg-gray-100 transition`}
                   >
                     <td className="p-3 font-medium text-gray-900">{issue.title}</td>
                     <td className="p-3 text-gray-700">{issue.description}</td>
                     <td className="p-3 text-gray-500">{issue.date}</td>
                     <td className="p-3">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          issue.status === "Resolved"
-                            ? "bg-green-100 text-green-700"
-                            : issue.status === "In Progress"
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${issue.status === "Resolved"
+                          ? "bg-green-100 text-green-700"
+                          : issue.status === "In Progress"
                             ? "bg-yellow-100 text-yellow-700"
                             : issue.status === "Technician Assigned"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-gray-200 text-gray-700"
-                        }`}
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-gray-200 text-gray-700"
+                          }`}
                       >
                         {issue.status}
                       </span>

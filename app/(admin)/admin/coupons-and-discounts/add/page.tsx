@@ -2,41 +2,33 @@
 
 import React, { useState } from "react";
 import { useCreateCouponMutation } from "@/lib/redux/api/partApi";
-import { useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
 import { z } from "zod";
 import { createCouponSchema } from "@/lib/schema/couponSchema";
 import { ChevronDown } from "lucide-react";
+import { isApiError } from "@/lib/utils/typeError";
 
-interface FormData {
-	code: string;
-	description: string;
-	discount_type: string;
-	discount_value: string;
-	max_discount: string;
-	min_order_amount: string;
-	valid_from: string;
-	valid_until: string;
-	usage_limit: string;
-	is_active: string;
-}
+// Infer form type directly from schema
+type FormData = z.infer<typeof createCouponSchema>;
 
-interface FormErrors {
-	[key: string]: string;
-}
+// Errors are now tied to schema keys
+type FormErrors = Partial<Record<keyof FormData, string>>;
+
+// API error shape
+
 
 const AddCoupon: React.FC = () => {
 	const [formData, setFormData] = useState<FormData>({
 		code: "",
 		description: "",
 		discount_type: "percentage",
-		discount_value: "",
-		max_discount: "",
-		min_order_amount: "",
+		discount_value: 0,
+		max_discount: 0,
+		min_order_amount: 0,
 		valid_from: "",
 		valid_until: "",
-		usage_limit: "",
-		is_active: "true",
+		usage_limit: 0,
+		is_active: true,
 	});
 	const [errors, setErrors] = useState<FormErrors>({});
 	const [dropdownOpen, setDropdownOpen] = useState({
@@ -44,10 +36,9 @@ const AddCoupon: React.FC = () => {
 		is_active: false,
 	});
 	const [createCoupon, { isLoading }] = useCreateCouponMutation();
-	const token = useSelector((state: any) => state.auth.token);
 
 	const handleInputChange = (
-		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
 	) => {
 		const { name, value } = e.target;
 		setFormData((prev) => ({
@@ -56,7 +47,7 @@ const AddCoupon: React.FC = () => {
 		}));
 	};
 
-	const handleSelectChange = (name: string, value: string) => {
+	const handleSelectChange = (name: keyof FormData, value: string | boolean) => {
 		setFormData((prev) => ({
 			...prev,
 			[name]: value,
@@ -70,15 +61,16 @@ const AddCoupon: React.FC = () => {
 	const handleSubmit = async () => {
 		try {
 			setErrors({});
-            console.log("formData.valid_from", formData.valid_from);
+			console.log("formData.valid_from", formData.valid_from);
+
 			const parsedData = createCouponSchema.parse({
 				...formData,
 				discount_value: formData.discount_value
-					? parseFloat(formData.discount_value)
+					? Number(formData.discount_value)
 					: undefined,
-				max_discount: formData.max_discount ? parseFloat(formData.max_discount) : undefined,
+				max_discount: formData.max_discount ? Number(formData.max_discount) : undefined,
 				min_order_amount: formData.min_order_amount
-					? parseFloat(formData.min_order_amount)
+					? Number(formData.min_order_amount)
 					: undefined,
 				valid_from: formData.valid_from
 					? new Date(formData.valid_from).toISOString()
@@ -86,9 +78,10 @@ const AddCoupon: React.FC = () => {
 				valid_until: formData.valid_until
 					? new Date(formData.valid_until).toISOString()
 					: undefined,
-				usage_limit: formData.usage_limit ? parseInt(formData.usage_limit) : undefined,
-				is_active: formData.is_active === "true",
+				usage_limit: formData.usage_limit ? Number(formData.usage_limit) : undefined,
+				is_active: formData.is_active,
 			});
+
 			console.log("✅ Valid Data:", parsedData);
 
 			const result = await createCoupon(parsedData).unwrap();
@@ -100,18 +93,25 @@ const AddCoupon: React.FC = () => {
 			} else {
 				toast.error("Coupon creation failed. Please try again.");
 			}
-		} catch (err: any) {
+		} catch (err) {
 			if (err instanceof z.ZodError) {
-				const formattedErrors: { [key: string]: string } = {};
+				const formattedErrors: FormErrors = {};
 				err.errors.forEach((e) => {
-					formattedErrors[e.path[0]] = e.message;
+					const key = e.path[0] as keyof FormData;
+					formattedErrors[key] = e.message;
 				});
 				setErrors(formattedErrors);
 				toast.error("Validation failed!");
 				console.log("❌ Validation Errors:", formattedErrors);
 			} else {
 				console.error("❌ Error:", err);
-				toast.error(err?.data?.message || "Something went wrong!");
+
+				let errorMessage = "Something went wrong!";
+				if (isApiError(err) && err.data?.message) {
+					errorMessage = err.data.message;
+				}
+
+				toast.error(errorMessage);
 			}
 		}
 	};
@@ -134,8 +134,8 @@ const AddCoupon: React.FC = () => {
 								onChange={handleInputChange}
 								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
 							/>
-							{errors["code"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["code"]}</p>
+							{errors.code && (
+								<p className="text-red-500 text-sm mt-1">{errors.code}</p>
 							)}
 						</div>
 						<div className="relative">
@@ -178,9 +178,9 @@ const AddCoupon: React.FC = () => {
 									))}
 								</div>
 							)}
-							{errors["discount_type"] && (
+							{errors.discount_type && (
 								<p className="text-red-500 text-sm mt-1">
-									{errors["discount_type"]}
+									{errors.discount_type}
 								</p>
 							)}
 						</div>
@@ -194,9 +194,9 @@ const AddCoupon: React.FC = () => {
 								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
 								step="0.01"
 							/>
-							{errors["discount_value"] && (
+							{errors.discount_value && (
 								<p className="text-red-500 text-sm mt-1">
-									{errors["discount_value"]}
+									{errors.discount_value}
 								</p>
 							)}
 						</div>
@@ -214,9 +214,9 @@ const AddCoupon: React.FC = () => {
 								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
 								step="0.01"
 							/>
-							{errors["max_discount"] && (
+							{errors.max_discount && (
 								<p className="text-red-500 text-sm mt-1">
-									{errors["max_discount"]}
+									{errors.max_discount}
 								</p>
 							)}
 						</div>
@@ -230,9 +230,9 @@ const AddCoupon: React.FC = () => {
 								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
 								step="0.01"
 							/>
-							{errors["min_order_amount"] && (
+							{errors.min_order_amount && (
 								<p className="text-red-500 text-sm mt-1">
-									{errors["min_order_amount"]}
+									{errors.min_order_amount}
 								</p>
 							)}
 						</div>
@@ -245,8 +245,10 @@ const AddCoupon: React.FC = () => {
 								onChange={handleInputChange}
 								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
 							/>
-							{errors["usage_limit"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["usage_limit"]}</p>
+							{errors.usage_limit && (
+								<p className="text-red-500 text-sm mt-1">
+									{errors.usage_limit}
+								</p>
 							)}
 						</div>
 					</div>
@@ -261,8 +263,8 @@ const AddCoupon: React.FC = () => {
 								onChange={handleInputChange}
 								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
 							/>
-							{errors["valid_from"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["valid_from"]}</p>
+							{errors.valid_from && (
+								<p className="text-red-500 text-sm mt-1">{errors.valid_from}</p>
 							)}
 						</div>
 						<div>
@@ -273,8 +275,10 @@ const AddCoupon: React.FC = () => {
 								onChange={handleInputChange}
 								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
 							/>
-							{errors["valid_until"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["valid_until"]}</p>
+							{errors.valid_until && (
+								<p className="text-red-500 text-sm mt-1">
+									{errors.valid_until}
+								</p>
 							)}
 						</div>
 						<div className="relative">
@@ -288,16 +292,8 @@ const AddCoupon: React.FC = () => {
 								}
 								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
 							>
-								<span
-									className={
-										formData.is_active ? "text-gray-700" : "text-gray-400"
-									}
-								>
-									{formData.is_active === "true"
-										? "Active"
-										: formData.is_active === "false"
-										? "Inactive"
-										: "Select Status"}
+								<span className={formData.is_active ? "text-gray-700" : "text-gray-400"}>
+									{formData.is_active ? "Active" : "Inactive"}
 								</span>
 								<ChevronDown
 									className={`w-5 h-5 text-[#9AE144] ${
@@ -311,7 +307,9 @@ const AddCoupon: React.FC = () => {
 										<button
 											key={option}
 											type="button"
-											onClick={() => handleSelectChange("is_active", option)}
+											onClick={() =>
+												handleSelectChange("is_active", option === "true")
+											}
 											className="w-full px-4 py-2 text-left hover:bg-gray-50"
 										>
 											{option === "true" ? "Active" : "Inactive"}
@@ -319,8 +317,8 @@ const AddCoupon: React.FC = () => {
 									))}
 								</div>
 							)}
-							{errors["is_active"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["is_active"]}</p>
+							{errors.is_active && (
+								<p className="text-red-500 text-sm mt-1">{errors.is_active}</p>
 							)}
 						</div>
 					</div>
@@ -336,8 +334,8 @@ const AddCoupon: React.FC = () => {
 								onChange={handleInputChange}
 								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400 resize-none"
 							/>
-							{errors["description"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["description"]}</p>
+							{errors.description && (
+								<p className="text-red-500 text-sm mt-1">{errors.description}</p>
 							)}
 						</div>
 						<div className="flex justify-end pt-3 pl-4">

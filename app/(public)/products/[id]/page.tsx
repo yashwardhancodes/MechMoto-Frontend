@@ -9,6 +9,20 @@ import { useDispatch } from "react-redux";
 import { setBreadcrumbs } from "@/lib/redux/slices/breadcrumbSlice";
 import { useAddToCartMutation } from "@/lib/redux/api/partApi";
 import useAuth from "@/hooks/useAuth";
+import toast from "react-hot-toast";
+import Image from "next/image";
+
+interface AuthWindow extends Window {
+	auth?: {
+		token?: string;
+	};
+}
+
+interface WishlistItem {
+	partId: number;
+	// Add other properties if you need
+}
+
 
 export default function ToyotaNexusBelt() {
 	const { id } = useParams();
@@ -23,8 +37,8 @@ export default function ToyotaNexusBelt() {
 	const images = part?.image_urls?.length
 		? part.image_urls
 		: [
-				"https://png.pngtree.com/png-clipart/20240927/original/pngtree-car-engine-against-transparent-background-png-image_16100504.png",
-		  ];
+			"https://png.pngtree.com/png-clipart/20240927/original/pngtree-car-engine-against-transparent-background-png-image_16100504.png",
+		];
 
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [isInWishlist, setIsInWishlist] = useState(false);
@@ -48,6 +62,8 @@ export default function ToyotaNexusBelt() {
 			alert("Item added to cart!");
 		} catch (error) {
 			alert("Failed to add item to cart.");
+			console.error("Failed to add item to cart:", error);
+			toast.error("Failed to add item to cart.");
 		}
 	};
 
@@ -65,7 +81,8 @@ export default function ToyotaNexusBelt() {
 		} catch (error) {
 			// Revert UI on failure
 			setIsInWishlist(previousState);
-			alert("Failed to toggle wishlist item.");
+			toast.error("Failed to toggle wishlist item.");
+			console.error("Failed to toggle wishlist item:", error);
 		}
 	};
 
@@ -88,21 +105,24 @@ export default function ToyotaNexusBelt() {
 			// Check if the part is in the wishlist
 			const checkWishlist = async () => {
 				try {
+					const token = (window as AuthWindow).auth?.token;
 					const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/wishlist`, {
 						headers: {
-							Authorization: `Bearer ${(window as any).auth?.token}`,
+							Authorization: `Bearer ${token}`,
 							"Content-Type": "application/json",
 						},
 					});
-					const wishlists = await response.json();
+					const wishlists: WishlistItem[] = await response.json();
 					const isWishlisted = wishlists.some(
-						(item: any) => item.partId === parseInt(id as string),
+						(item) => item.partId === parseInt(id as string),
 					);
 					setIsInWishlist(isWishlisted);
-				} catch (error) {
+				} catch (error: unknown) {
 					console.error("Failed to check wishlist status:", error);
+					toast.error("Failed to check wishlist status");
 				}
 			};
+
 			if (isLoggedIn) {
 				checkWishlist();
 			}
@@ -221,7 +241,7 @@ export default function ToyotaNexusBelt() {
 						{/* Right Column */}
 						<div className="flex flex-col md:flex-row order-1 lg:order-2">
 							<div className="bg-[#F5F5F5] h-72 md:h-full w-full md:p-4 lg:p-8 relative flex flex-col items-center justify-center overflow-hidden">
-								<img
+								<Image
 									src={images[currentIndex]}
 									alt="Product"
 									className="max-h-48 sm:max-h-64 lg:max-h-72 object-contain mb-4 transition-all duration-500"
@@ -248,17 +268,16 @@ export default function ToyotaNexusBelt() {
 								</button>
 							</div>
 							<div className="border-gray-200 flex mt-2 md:mt-0 md:flex-col md:pl-2 sm:pl-3 space-y-2 sm:space-y-3">
-								{images.map((img: string, index: any) => (
+								{images.map((img: string, index: number) => (
 									<div
 										key={index}
 										onClick={() => setCurrentIndex(index)}
-										className={`size-20 md:size-28 lg:size-32 rounded bg-[#F5F5F5] flex items-center justify-center cursor-pointer border-2 ${
-											currentIndex === index
+										className={`size-20 md:size-28 lg:size-32 rounded bg-[#F5F5F5] flex items-center justify-center cursor-pointer border-2 ${currentIndex === index
 												? "border-[#9AE144]"
 												: "border-transparent"
-										}`}
+											}`}
 									>
-										<img
+										<Image
 											src={img}
 											alt={`Thumbnail ${index}`}
 											className="w-16 h-16 object-contain"
@@ -273,9 +292,8 @@ export default function ToyotaNexusBelt() {
 			<div className="flex text-left justify-center sm:justify-end pr-0 sm:pr-12 items-center gap-2 text-black cursor-pointer pt-4 sm:pt-0">
 				<Heart
 					onClick={handleToggleWishlist}
-					className={`size-5 sm:size-6 ${
-						isInWishlist ? "fill-red-500 text-red-500" : "text-black"
-					}`}
+					className={`size-5 sm:size-6 ${isInWishlist ? "fill-red-500 text-red-500" : "text-black"
+						}`}
 				/>
 				<h1 className="text-lg sm:text-xl font-bold">
 					{isInWishlist ? "Remove from wishlist" : "Add to wishlist"}

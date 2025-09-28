@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useGetOrderQuery } from "@/lib/redux/api/partApi";
 import useAuth from "@/hooks/useAuth";
 import { toast } from "react-hot-toast";
+import Image from "next/image";
 import {
 	ArrowLeft,
 	Package,
@@ -20,6 +21,71 @@ import {
 } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 
+interface Address {
+	address_line1: string;
+	address_line2?: string;
+	city: string;
+	state: string;
+	zip: string;
+	country: string;
+}
+
+interface Coupon {
+	code: string;
+	discount_type: "percentage" | "fixed";
+	discount_value: number;
+}
+
+interface OrderItem {
+	id: string;
+	quantity: number;
+	price: number;
+	subtotal: number;
+	discount_amount: number;
+	part?: {
+		image_urls?: string[];
+		subcategory?: {
+			name: string;
+		};
+	};
+}
+
+interface Shipment {
+	id: string;
+	carrier?: string;
+	tracking_number?: string;
+	status: string;
+	shipped_at?: string;
+	estimated_delivery?: string;
+}
+
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
+  | "paid"
+  | "in_transit";
+
+
+interface Order {
+	id: string;
+	created_at: string;
+ 	payment_status: string;
+	payment_method?: string;
+	total_amount: number;
+	discount_amount: number;
+	final_amount: number;
+	coupon?: Coupon;
+	order_items?: OrderItem[];
+	shipments?: Shipment[];
+	status: OrderStatus;
+	shipping_address?: Address;
+	billing_address?: Address;
+}
+
+
 export default function OrderDetails() {
 	const { user } = useAuth();
 	const router = useRouter();
@@ -28,7 +94,8 @@ export default function OrderDetails() {
 
 	// Fetch order details
 	const { data, isLoading, isError } = useGetOrderQuery(orderId);
-	const order = data?.data;
+	const order: Order | undefined = data?.data;
+
 
 	// Redirect to login if not authenticated
 	if (!user) {
@@ -65,14 +132,13 @@ export default function OrderDetails() {
 		);
 	}
 
-	const formatAddress = (address: any) =>
+	const formatAddress = (address?: Address) =>
 		address
-			? `${address.address_line1}, ${
-					address.address_line2 ? address.address_line2 + ", " : ""
-			  }${address.city}, ${address.state} ${address.zip}, ${address.country}`
+			? `${address.address_line1}, ${address.address_line2 ? address.address_line2 + ", " : ""
+			}${address.city}, ${address.state} ${address.zip}, ${address.country}`
 			: "N/A";
 
-	const getStatusConfig = (status: any) => {
+	const getStatusConfig = (status: OrderStatus | string) => {
 		const configs = {
 			pending: {
 				bg: "bg-amber-50",
@@ -127,7 +193,7 @@ export default function OrderDetails() {
 		return configs[status as keyof typeof configs] || configs.pending;
 	};
 
-	const StatusBadge = ({ status, size = "md" }: {status: string, size?: "sm" | "md"}) => {
+	const StatusBadge = ({ status, size = "md" }: { status: OrderStatus | string, size?: "sm" | "md" }) => {
 		const config = getStatusConfig(status);
 		const Icon = config.icon;
 		const sizeClasses = size === "sm" ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm";
@@ -214,12 +280,12 @@ export default function OrderDetails() {
 								<div className="p-6">
 									<div className="space-y-4">
 										{order.order_items && order.order_items.length > 0 ? (
-											order.order_items.map((item: any, index: any) => (
+											order.order_items.map((item: OrderItem ) => (
 												<div
 													key={item.id}
 													className="flex gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100"
 												>
-													<img
+													<Image
 														src={
 															item.part?.image_urls?.[0] ||
 															"https://via.placeholder.com/150"
@@ -275,7 +341,7 @@ export default function OrderDetails() {
 										</h3>
 									</div>
 									<div className="p-6">
-										{order.shipments.map((shipment: any) => (
+										{order.shipments.map((shipment: Shipment) => (
 											<div key={shipment.id} className="space-y-4">
 												<div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
 													<div className="flex items-center gap-3">

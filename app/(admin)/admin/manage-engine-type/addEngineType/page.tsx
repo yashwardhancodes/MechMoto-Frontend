@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from "react";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { useCreateEngineTypeMutation } from "@/lib/redux/api/engineTypeApi"; // You'll need to create this API slice
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { ApiError } from "@/lib/utils/typeError";
 
 // Validation Schema
 const engineTypeSchema = z.object({
@@ -38,16 +39,17 @@ const AddEngineType: React.FC = () => {
             } else {
                 toast.error("Failed to add Engine Type.");
             }
-        } catch (err: any) {
-            if (err instanceof z.ZodError) {
+        } catch (err) {
+            if (err instanceof ZodError) {
                 const formattedErrors: { [key: string]: string } = {};
                 err.errors.forEach((e) => {
-                    formattedErrors[e.path[0]] = e.message;
+                    formattedErrors[e.path[0] as string] = e.message;
                 });
                 setErrors(formattedErrors);
                 toast.error("Validation failed!");
             } else {
-                toast.error(err?.data?.message || "Something went wrong!");
+                const apiError = err as ApiError;
+                toast.error(apiError?.data?.message || apiError.message || "Something went wrong!");
             }
         }
     };

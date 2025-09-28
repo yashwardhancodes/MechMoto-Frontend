@@ -19,6 +19,7 @@ export interface User {
 	fullName?: string;
 	phone?: string;
 	razorpaySubscriptionId?: string | null; // ✅ added here
+	token?: string
 }
 
 export interface AuthState {

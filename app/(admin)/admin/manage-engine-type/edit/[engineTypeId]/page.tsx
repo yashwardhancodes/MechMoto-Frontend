@@ -1,104 +1,111 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { useGetEngineTypeQuery, useUpdateEngineTypeMutation } from "@/lib/redux/api/engineTypeApi";
 
 // ✅ Validation Schema
 const engineTypeSchema = z.object({
-    name: z.string().min(1, "Engine type name is required"),
+  name: z.string().min(1, "Engine type name is required"),
 });
 
 interface FormData {
-    name: string;
+  name: string;
+}
+
+interface ApiError {
+  data?: {
+    message?: string;
+  };
+  message?: string;
 }
 
 const UpdateEngineType: React.FC = () => {
-    const router = useRouter();
-    const params = useParams();
-    const id = params?.engineTypeId as string; // ✅ match your dynamic route
-    console.log("Engine Type ID from params:", id);
+  const router = useRouter();
+  const params = useParams();
+  const id = params?.engineTypeId as string;
 
-    const { data, isLoading: isFetching } = useGetEngineTypeQuery(id, { skip: !id });
-    const [updateEngineType, { isLoading: isUpdating }] = useUpdateEngineTypeMutation();
+  const { data, isLoading: isFetching } = useGetEngineTypeQuery(id, { skip: !id });
+  const [updateEngineType, { isLoading: isUpdating }] = useUpdateEngineTypeMutation();
 
-    const [formData, setFormData] = useState<FormData>({ name: "" });
-    const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [formData, setFormData] = useState<FormData>({ name: "" });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-    // ✅ Load existing engine type
-    useEffect(() => {
-        if (data?.success && data?.data) {
-            setFormData({ name: data.data.name });
-        }
-    }, [data]);
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = async () => {
-        try {
-            setErrors({});
-            const parsedData = engineTypeSchema.parse(formData);
-
-            const result = await updateEngineType({ id, ...parsedData }).unwrap();
-            if (result?.success) {
-                toast.success("Engine Type updated successfully!");
-                router.push("/admin/manage-engine-type/");
-            } else {
-                toast.error("Failed to update Engine Type.");
-            }
-        } catch (err: any) {
-            if (err instanceof z.ZodError) {
-                const formattedErrors: { [key: string]: string } = {};
-                err.errors.forEach((e) => {
-                    formattedErrors[e.path[0]] = e.message;
-                });
-                setErrors(formattedErrors);
-                toast.error("Validation failed!");
-            } else {
-                toast.error(err?.data?.message || "Something went wrong!");
-            }
-        }
-    };
-
-    if (isFetching) {
-        return <div className="p-6">Loading engine type details...</div>;
+  // Load existing engine type
+  useEffect(() => {
+    if (data?.success && data?.data) {
+      setFormData({ name: data.data.name });
     }
+  }, [data]);
 
-    return (
-        <div className="h-[calc(100vh-140px)] overflow-y-auto bg-white shadow-sm py-16 px-12">
-            <div className="mx-auto space-y-6">
-                <h2 className="text-xl font-semibold">Update Engine Type</h2>
-                <div className="flex gap-4">
-                    <div>
-                        <input
-                            type="text"
-                            name="name"
-                            placeholder="Engine Type (e.g., V7)"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            className="w-[800px] px-4 py-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
-                        />
-                        {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                    </div>
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-                    <div>
-                        <button
-                            type="button"
-                            onClick={handleSubmit}
-                            disabled={isUpdating}
-                            className="px-8 py-3 bg-[#9AE144] text-black font-medium rounded-lg hover:bg-[#8cd63d] transition-colors duration-200 focus:ring-2 focus:ring-[#9AE144] focus:ring-offset-2 outline-none disabled:opacity-50"
-                        >
-                            {isUpdating ? "Updating..." : "Update Engine Type"}
-                        </button>
-                    </div>
-                </div>
-            </div>
+  const handleSubmit = async () => {
+    try {
+      setErrors({});
+      const parsedData = engineTypeSchema.parse(formData);
+
+      const result = await updateEngineType({ id, ...parsedData }).unwrap();
+      if (result?.success) {
+        toast.success("Engine Type updated successfully!");
+        router.push("/admin/manage-engine-type/");
+      } else {
+        toast.error("Failed to update Engine Type.");
+      }
+    } catch (err) {
+      if (err instanceof ZodError) {
+        const formattedErrors: { [key: string]: string } = {};
+        err.errors.forEach((e) => {
+          formattedErrors[e.path[0] as string] = e.message;
+        });
+        setErrors(formattedErrors);
+        toast.error("Validation failed!");
+      } else {
+        const apiError = err as ApiError;
+        toast.error(apiError?.data?.message || apiError.message || "Something went wrong!");
+      }
+    }
+  };
+
+  if (isFetching) {
+    return <div className="p-6">Loading engine type details...</div>;
+  }
+
+  return (
+    <div className="h-[calc(100vh-140px)] overflow-y-auto bg-white shadow-sm py-16 px-12">
+      <div className="mx-auto space-y-6">
+        <h2 className="text-xl font-semibold">Update Engine Type</h2>
+        <div className="flex gap-4">
+          <div>
+            <input
+              type="text"
+              name="name"
+              placeholder="Engine Type (e.g., V7)"
+              value={formData.name}
+              onChange={handleInputChange}
+              className="w-[800px] px-4 py-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
+            />
+            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isUpdating}
+              className="px-8 py-3 bg-[#9AE144] text-black font-medium rounded-lg hover:bg-[#8cd63d] transition-colors duration-200 focus:ring-2 focus:ring-[#9AE144] focus:ring-offset-2 outline-none disabled:opacity-50"
+            >
+              {isUpdating ? "Updating..." : "Update Engine Type"}
+            </button>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default UpdateEngineType;

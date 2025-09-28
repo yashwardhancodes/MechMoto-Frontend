@@ -1,11 +1,12 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import type { RootState } from "../store"; // adjust path!
 
 export const mechanicApi = createApi({
   reducerPath: "mechanicApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/v1/",
+    baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as any).auth?.token;
+      const token = (getState() as RootState).auth?.token;  
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
@@ -15,13 +16,10 @@ export const mechanicApi = createApi({
   }),
   tagTypes: ["Mechanic"],
   endpoints: (builder) => ({
-    // ✅ Get all mechanics
     getAllMechanics: builder.query({
       query: () => "mechanics",
       providesTags: ["Mechanic"],
     }),
-
-    // ✅ Create new mechanic
     createMechanic: builder.mutation({
       query: (mechanicData) => ({
         url: "mechanics",
@@ -30,14 +28,10 @@ export const mechanicApi = createApi({
       }),
       invalidatesTags: ["Mechanic"],
     }),
-
-    // ✅ Get single mechanic by id
     getMechanic: builder.query({
       query: (id) => `mechanics/${id}`,
       providesTags: ["Mechanic"],
     }),
-
-    // ✅ Update mechanic
     updateMechanic: builder.mutation({
       query: ({ id, ...data }) => ({
         url: `mechanics/${id}`,
@@ -46,8 +40,6 @@ export const mechanicApi = createApi({
       }),
       invalidatesTags: ["Mechanic"],
     }),
-
-    // ✅ Delete mechanic
     deleteMechanic: builder.mutation({
       query: (id) => ({
         url: `mechanics/${id}`,

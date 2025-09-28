@@ -1,11 +1,19 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+// Define the type for the Redux state
+interface RootState {
+  auth: {
+    token?: string; // Token is optional, as it might not always be present
+  };
+}
+
 export const serviceCenterApi = createApi({
   reducerPath: "serviceCenterApi",
   baseQuery: fetchBaseQuery({
     baseUrl: `${process.env.NEXT_PUBLIC_BASE_URL}service_centers/`,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as any).auth.token;
+      const state = getState() as RootState; // Specify the RootState type
+      const token = state.auth.token;
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
@@ -15,13 +23,13 @@ export const serviceCenterApi = createApi({
   }),
   tagTypes: ["ServiceCenter"],
   endpoints: (builder) => ({
-    // ✅ Get all service centers
+    // Get all service centers
     getAllServiceCenters: builder.query({
       query: () => "",
       providesTags: ["ServiceCenter"],
     }),
 
-    // ✅ Create a new service center
+    // Create a new service center
     createServiceCenter: builder.mutation({
       query: (serviceCenterData) => ({
         url: "",
@@ -31,13 +39,13 @@ export const serviceCenterApi = createApi({
       invalidatesTags: ["ServiceCenter"],
     }),
 
-// ✅ Get a single service center by ID
+    // Get a single service center by ID
     getServiceCenter: builder.query({
-      query: (id: number) => `${id}`, // ✅ expect number
+      query: (id: number) => `${id}`,
       providesTags: ["ServiceCenter"],
     }),
 
-    // ✅ Update a service center
+    // Update a service center
     updateServiceCenter: builder.mutation({
       query: ({ id, ...data }) => ({
         url: `${id}`,
@@ -47,7 +55,7 @@ export const serviceCenterApi = createApi({
       invalidatesTags: ["ServiceCenter"],
     }),
 
-    // ✅ Delete a service center
+    // Delete a service center
     deleteServiceCenter: builder.mutation({
       query: (id) => ({
         url: `${id}`,

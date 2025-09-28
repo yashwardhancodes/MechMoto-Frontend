@@ -5,6 +5,8 @@ import { z } from "zod";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { useGetCarMakeQuery, useUpdateCarMakeMutation } from "@/lib/redux/api/caeMakeApi"; // You'll need these endpoints in your API slice
+import { isApiError } from "@/lib/utils/typeError";
+
 
 // Validation Schema
 const carMakeSchema = z.object({
@@ -15,9 +17,12 @@ interface FormData {
     name: string;
 }
 
+ 
+
+
 const UpdateCarMake: React.FC = () => {
     const router = useRouter();
-    const params = useParams(); 
+    const params = useParams();
     const id = params?.car_makeId as string;
     console.log("Car Make ID from params:", id);
 
@@ -29,8 +34,8 @@ const UpdateCarMake: React.FC = () => {
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
     useEffect(() => {
-        if (data?.success && data?.data) {
-            setFormData({ name: data.data.name });
+        if (data) {
+            setFormData({ name: data.name });
         }
     }, [data]);
 
@@ -43,14 +48,14 @@ const UpdateCarMake: React.FC = () => {
             setErrors({});
             const parsedData = carMakeSchema.parse(formData);
 
-            const result = await updateCarMake({ id, ...parsedData }).unwrap();
+            const result = await updateCarMake({ id, name: parsedData.name }).unwrap();
             if (result?.success) {
                 toast.success("Car Make updated successfully!");
                 router.push("/admin/manage-car-make/");
             } else {
                 toast.error("Failed to update Car Make.");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             if (err instanceof z.ZodError) {
                 const formattedErrors: { [key: string]: string } = {};
                 err.errors.forEach((e) => {
@@ -58,10 +63,16 @@ const UpdateCarMake: React.FC = () => {
                 });
                 setErrors(formattedErrors);
                 toast.error("Validation failed!");
+            } else if (isApiError(err)) {
+                // Use either err.data.message or err.message
+                const errorMessage = err.data?.message || err.message || "Something went wrong!";
+                toast.error(errorMessage);
             } else {
-                toast.error(err?.data?.message || "Something went wrong!");
+                toast.error("Something went wrong!");
+                console.error("Unknown error:", err);
             }
         }
+
     };
 
     if (isFetching) {

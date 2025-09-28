@@ -25,7 +25,7 @@ interface PlanModule {
 }
 
 interface Plan {
-  id: number;
+  id: string;
   name: string;
   description: string | null;
   price: number;
@@ -56,7 +56,7 @@ export default function Pricing() {
   const [selectedPlan, setSelectedPlan] = useState<{ name: string; link: string } | null>(null);
   const dispatch = useDispatch();
 
-  const { data: allPlans, isLoading, isError } = useGetAllPlansQuery({});
+  const { data: allPlans, isLoading, isError } = useGetAllPlansQuery();
 
   // Transform and filter API data
   const plans: ComponentPlan[] = allPlans

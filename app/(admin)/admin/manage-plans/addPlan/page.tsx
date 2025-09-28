@@ -10,12 +10,7 @@ import { useRouter } from "next/navigation";
 import Select from "react-select";
 import { useGetModulesQuery } from "@/lib/redux/api/moduleApi";
 
-interface Module {
-  id: number;
-  name: string;
-  description: string | null;
-  created_at: Date;
-}
+ 
 
 interface FormData {
   name: string;
@@ -62,7 +57,7 @@ const AddPlan: React.FC = () => {
     });
   };
 
-  const handleModuleSelect = (index: number, selectedOption: any) => {
+  const handleModuleSelect = (index: number, selectedOption: { value: number; label: string } | null) => {
     setFormData((prev) => {
       const updatedModules = [...prev.modules];
       updatedModules[index] = {
@@ -126,20 +121,25 @@ const AddPlan: React.FC = () => {
     } else {
       toast.error("Plan addition failed. Please try again.");
     }
-  } catch (err: any) {
-    if (err instanceof z.ZodError) {
-      const formattedErrors: { [key: string]: string } = {};
-      err.errors.forEach((e) => {
-        formattedErrors[e.path[0]] = e.message;
-      });
-      setErrors(formattedErrors);
-      toast.error("Validation failed!");
-      console.log("❌ Validation Errors:", formattedErrors);
-    } else {
-      console.error("❌ Error:", err);
-      toast.error(err?.data?.message || "Something went wrong!");
-    }
+  } catch (err: unknown) {
+  if (err instanceof z.ZodError) {
+    const formattedErrors: { [key: string]: string } = {};
+    err.errors.forEach((e) => {
+      formattedErrors[e.path[0] as string] = e.message;
+    });
+    setErrors(formattedErrors);
+    toast.error("Validation failed!");
+    console.log("❌ Validation Errors:", formattedErrors);
+  } else if (typeof err === "object" && err !== null && "data" in err) {
+    const apiError = err as { data?: { message?: string } };
+    toast.error(apiError.data?.message || "Something went wrong!");
+    console.error("❌ API Error:", apiError);
+  } else {
+    console.error("❌ Unknown Error:", err);
+    toast.error("Something went wrong!");
   }
+}
+
 };
 
 

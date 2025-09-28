@@ -18,7 +18,7 @@ export default function UsersPage() {
   try {
     const authObj = auth ? JSON.parse(auth) : null;
     razorpaySubscriptionId = authObj?.user?.razorpaySubscriptionId ?? null;
-  } catch (e) {
+  } catch  {
     razorpaySubscriptionId = null;
   }
   console.log("auth", razorpaySubscriptionId);

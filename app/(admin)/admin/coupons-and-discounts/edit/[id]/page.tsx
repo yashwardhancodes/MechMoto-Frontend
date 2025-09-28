@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { useUpdateCouponMutation, useGetCouponQuery } from "@/lib/redux/api/partApi";
-import { useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
 import { z } from "zod";
 import { updateCouponSchema } from "@/lib/schema/couponSchema";
 import { ChevronDown } from "lucide-react";
 import { useParams } from "next/navigation";
+import { isApiError } from "@/lib/utils/typeError";
 
 interface FormData {
 	code: string;
@@ -53,7 +53,6 @@ const UpdateCoupon: React.FC = () => {
 		isLoading: isCouponLoading,
 		error: couponError,
 	} = useGetCouponQuery(couponId);
-	const token = useSelector((state: any) => state.auth.token);
 
 	// Populate form with existing coupon data
 	useEffect(() => {
@@ -76,6 +75,9 @@ const UpdateCoupon: React.FC = () => {
 			});
 		}
 	}, [coupon]);
+
+	
+
 
 	const handleInputChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -110,15 +112,15 @@ const UpdateCoupon: React.FC = () => {
 				min_order_amount: formData.min_order_amount
 					? parseFloat(formData.min_order_amount)
 					: undefined,
-                valid_from: formData.valid_from ? new Date(formData.valid_from).toISOString() : undefined,
-                valid_until: formData.valid_until ? new Date(formData.valid_until).toISOString() : undefined,
+				valid_from: formData.valid_from ? new Date(formData.valid_from).toISOString() : undefined,
+				valid_until: formData.valid_until ? new Date(formData.valid_until).toISOString() : undefined,
 				usage_limit: formData.usage_limit ? parseInt(formData.usage_limit) : undefined,
 				is_active:
 					formData.is_active === "true"
 						? true
 						: formData.is_active === "false"
-						? false
-						: undefined,
+							? false
+							: undefined,
 			});
 			console.log("✅ Valid Data:", parsedData);
 
@@ -131,7 +133,7 @@ const UpdateCoupon: React.FC = () => {
 			} else {
 				toast.error("Coupon update failed. Please try again.");
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			if (err instanceof z.ZodError) {
 				const formattedErrors: { [key: string]: string } = {};
 				err.errors.forEach((e) => {
@@ -142,9 +144,16 @@ const UpdateCoupon: React.FC = () => {
 				console.log("❌ Validation Errors:", formattedErrors);
 			} else {
 				console.error("❌ Error:", err);
-				toast.error(err?.data?.message || "Something went wrong!");
+
+				let errorMessage = "Something went wrong!";
+				if (isApiError(err) && err.data?.message) {
+					errorMessage = err.data.message;
+				}
+
+				toast.error(errorMessage);
 			}
 		}
+
 	};
 
 	const discountTypeOptions = ["percentage", "fixed"];
@@ -191,9 +200,8 @@ const UpdateCoupon: React.FC = () => {
 									{formData.discount_type || "Select Discount Type"}
 								</span>
 								<ChevronDown
-									className={`w-5 h-5 text-[#9AE144] ${
-										dropdownOpen.discount_type ? "rotate-180" : ""
-									}`}
+									className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.discount_type ? "rotate-180" : ""
+										}`}
 								/>
 							</button>
 							{dropdownOpen.discount_type && (
@@ -330,13 +338,12 @@ const UpdateCoupon: React.FC = () => {
 									{formData.is_active === "true"
 										? "Active"
 										: formData.is_active === "false"
-										? "Inactive"
-										: "Select Status"}
+											? "Inactive"
+											: "Select Status"}
 								</span>
 								<ChevronDown
-									className={`w-5 h-5 text-[#9AE144] ${
-										dropdownOpen.is_active ? "rotate-180" : ""
-									}`}
+									className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.is_active ? "rotate-180" : ""
+										}`}
 								/>
 							</button>
 							{dropdownOpen.is_active && (

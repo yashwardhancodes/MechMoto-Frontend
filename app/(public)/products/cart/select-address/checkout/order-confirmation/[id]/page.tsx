@@ -5,6 +5,29 @@ import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { useGetOrderQuery } from "@/lib/redux/api/partApi";
 
+interface Part {
+	id: number;
+	subcategory?: { name: string };
+	image_urls: string[];
+}
+
+interface OrderItem {
+	id: number;
+	quantity: number;
+	price: number;
+	part: Part;
+}
+
+interface Order {
+	id: string;
+	status: string;
+	created_at: string;
+	order_items: OrderItem[];
+}
+
+
+
+
 export default function OrderConfirmation() {
 	const { id } = useParams();
 	const router = useRouter();
@@ -13,7 +36,7 @@ export default function OrderConfirmation() {
 	if (isLoading) return <div className="p-6">Loading order...</div>;
 	if (error || !orderData) return <div className="p-6 text-red-600">Failed to load order.</div>;
 
-	const order = orderData.data;
+	const order: Order = orderData.data;
 
 	return (
 		<div className="mx-auto px-4 py-10">
@@ -64,28 +87,23 @@ export default function OrderConfirmation() {
 			<div className="bg-white shadow rounded-2xl p-6 mt-8">
 				<h3 className="text-lg font-semibold mb-4">Items</h3>
 				<div className="divide-y">
-					{order.order_items.map((item: any) => (
+					{order.order_items.map((item: OrderItem) => (
 						<div key={item.id} className="flex justify-between py-3">
 							<div className="flex items-center space-x-3">
-								<img
-									src={
-										item.part.image_urls[0] || "https://via.placeholder.com/150"
-									}
-									alt={item.part.subcategory?.name}
+								<Image
+									src={item.part.image_urls[0] || "https://via.placeholder.com/150"}
+									alt={item.part.subcategory?.name || "Part Image"}
 									className="w-12 h-12 rounded-lg object-cover"
 								/>
 								<div>
-									<p className="font-medium text-gray-800">
-										{item.part.subcategory?.name}
-									</p>
-									<p className="text-gray-500 text-sm">
-										Rs.{item.price.toFixed(2)}
-									</p>
+									<p className="font-medium text-gray-800">{item.part.subcategory?.name}</p>
+									<p className="text-gray-500 text-sm">Rs.{item.price.toFixed(2)}</p>
 								</div>
 							</div>
 							<p className="text-gray-600">{item.quantity}x</p>
 						</div>
 					))}
+
 				</div>
 			</div>
 

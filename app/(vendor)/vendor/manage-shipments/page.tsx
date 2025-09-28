@@ -3,42 +3,67 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGetOrdersQuery, useUpdateShipmentMutation } from "@/lib/redux/api/partApi";
-import useAuth from "@/hooks/useAuth";
 import { toast } from "react-hot-toast";
-import { Package, Pencil, Eye, X } from "lucide-react";
+import { Pencil, Eye, X } from "lucide-react";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
 import { Toaster } from "react-hot-toast";
 import { z } from "zod";
 import { updateShipmentSchema } from "@/lib/schema/shipmentsSchema";
 import { ChevronDown } from "lucide-react";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+
+type Shipment = {
+  id: number;
+  vendorId: number;
+  carrier?: string;
+  tracking_number?: string;
+  status: "pending" | "shipped" | "in_transit" | "delivered";
+  shipped_at?: string;
+  estimated_delivery?: string;
+  delivered_at?: string;
+  order: Order;
+};
+
+type Order = {
+  id: number;
+  user?: {
+    profiles?: {
+      full_name?: string;
+    };
+  };
+  order_items?: Array<{
+    part?: {
+      vendorId: number;
+      subcategory?: { name: string };
+    };
+  }>;
+  shipments: Shipment[];
+};
+
+type FormErrors = {
+  [key: string]: string;
+};
 
 export default function VendorShipments() {
-  const { user } = useAuth();
   const router = useRouter();
   const { data: ordersData, isLoading, isError } = useGetOrdersQuery({});
   const [updateShipment, { isLoading: isUpdating }] = useUpdateShipmentMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedShipment, setSelectedShipment] = useState<any>(null);
+  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [formData, setFormData] = useState({
     carrier: "",
     tracking_number: "",
-    status: "pending",
+    status: "pending" as Shipment["status"],
     shipped_at: "",
     estimated_delivery: "",
     delivered_at: "",
   });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [dropdownOpen, setDropdownOpen] = useState({ status: false });
 
-  // Redirect to login if not authenticated or not a vendor
-  // if (!user || user.role?.name !== "VENDOR") {
-  //   router.push("/login");
-  //   return null;
-  // }
-
   // Safely extract shipments from orders
-  const shipments = ordersData?.data?.flatMap((order: any) =>
-    order.shipments.map((shipment: any) => ({ ...shipment, order }))
+  const shipments = ordersData?.data?.flatMap((order: Order) =>
+    order.shipments.map((shipment: Shipment) => ({ ...shipment, order }))
   ) ?? [];
 
   // Define table columns
@@ -46,7 +71,7 @@ export default function VendorShipments() {
     {
       key: "order.id",
       header: "Order ID",
-      render: (value) => (
+      render: (value: Shipment) => (
         <div className="flex row items-center gap-2">
           <span className="font-semibold">#{value.order.id}</span>
           <span className="text-xs">{value.order.user?.profiles?.full_name || "N/A"}</span>
@@ -56,30 +81,30 @@ export default function VendorShipments() {
     {
       key: "order.user.profiles.full_name",
       header: "Customer",
-      render: (value) => value.order.user?.profiles?.full_name || "N/A",
+      render: (value: Shipment) => value.order.user?.profiles?.full_name || "N/A",
     },
     {
       key: "order.order_items",
       header: "Parts Ordered",
-      render: (value) =>
-        value.order.order_items
-          .filter((item: any) => item.part?.vendorId === value.vendorId)
-          .map((item: any) => item.part?.subcategory?.name)
+      render: (shipment: Shipment) =>
+        shipment.order.order_items
+          ?.filter((item) => item.part?.vendorId === shipment.vendorId)
+          .map((item) => item.part?.subcategory?.name)
           .join(", ") || "N/A",
     },
     {
       key: "status",
       header: "Status",
-      render: (value) => (
+      render: (value: Shipment) => (
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${
             value.status === "delivered"
               ? "bg-green-100 text-green-800"
               : value.status === "shipped" || value.status === "in_transit"
-              ? "bg-blue-100 text-blue-800"
-              : value.status === "pending"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-gray-100 text-gray-800"
+                ? "bg-blue-100 text-blue-800"
+                : value.status === "pending"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-gray-100 text-gray-800"
           }`}
         >
           {value.status.charAt(0).toUpperCase() + value.status.slice(1)}
@@ -89,17 +114,18 @@ export default function VendorShipments() {
     {
       key: "carrier",
       header: "Carrier",
-      render: (value) => value.carrier || "N/A",
+      render: (value: Shipment) => value.carrier || "N/A",
     },
     {
       key: "tracking_number",
       header: "Tracking Number",
-      render: (value) => value.tracking_number || "N/A",
+      render: (value: Shipment) => value.tracking_number || "N/A",
     },
     {
       key: "shipped_at",
       header: "Shipped At",
-      render: (value) => (value.shipped_at ? new Date(value.shipped_at).toLocaleDateString() : "N/A"),
+      render: (value: Shipment) =>
+        value.shipped_at ? new Date(value.shipped_at).toLocaleDateString() : "N/A",
     },
   ];
 
@@ -107,7 +133,7 @@ export default function VendorShipments() {
   const actions: TableAction[] = [
     {
       icon: Pencil,
-      onClick: (shipment) => {
+      onClick: (shipment: Shipment) => {
         setSelectedShipment(shipment);
         setFormData({
           carrier: shipment.carrier || "",
@@ -117,7 +143,9 @@ export default function VendorShipments() {
           estimated_delivery: shipment.estimated_delivery
             ? new Date(shipment.estimated_delivery).toISOString().slice(0, 16)
             : "",
-          delivered_at: shipment.delivered_at ? new Date(shipment.delivered_at).toISOString().slice(0, 16) : "",
+          delivered_at: shipment.delivered_at
+            ? new Date(shipment.delivered_at).toISOString().slice(0, 16)
+            : "",
         });
         setIsModalOpen(true);
       },
@@ -125,7 +153,7 @@ export default function VendorShipments() {
     },
     {
       icon: Eye,
-      onClick: (shipment) => router.push(`/orders/${shipment.order.id}`),
+      onClick: (shipment: Shipment) => router.push(`/orders/${shipment.order.id}`),
       tooltip: "View order",
     },
   ];
@@ -154,22 +182,35 @@ export default function VendorShipments() {
           : undefined,
         delivered_at: formData.delivered_at ? new Date(formData.delivered_at).toISOString() : undefined,
       });
-      await updateShipment({ id: selectedShipment.id, data: parsedData }).unwrap();
+      await updateShipment({ id: String(selectedShipment!.id), data: parsedData }).unwrap();
       toast.success("Shipment updated successfully!");
       setIsModalOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof z.ZodError) {
-        const formattedErrors: { [key: string]: string } = {};
+        const formattedErrors: FormErrors = {};
         err.errors.forEach((e) => {
-          formattedErrors[e.path[0]] = e.message;
+          const key = e.path[0] as string;
+          formattedErrors[key] = e.message;
         });
         setErrors(formattedErrors);
         toast.error("Validation failed!");
+      } else if (isFetchBaseQueryError(err)) {
+        const errorMessage = "data" in err && typeof err.data === "object" && err.data && "message" in err.data ? (err.data as { message: string }).message : "Failed to update shipment!";
+        toast.error(errorMessage);
       } else {
-        toast.error(err?.data?.message || "Failed to update shipment!");
+        toast.error("Failed to update shipment!");
       }
     }
   };
+
+  // Type guard for RTK Query errors
+  function isFetchBaseQueryError(error: unknown): error is FetchBaseQueryError {
+    return (
+      typeof error === "object" &&
+      error !== null &&
+      ("status" in error || "data" in error)
+    );
+  }
 
   return (
     <>
@@ -191,12 +232,12 @@ export default function VendorShipments() {
               nameKey: "order.id",
               subtitleKey: "order.user.profiles.full_name",
               getAvatarUrl: () => "/placeholder.png",
-              getAvatarAlt: (item) => `Order #${item.order.id}`,
+              getAvatarAlt: (item: Shipment) => `Order #${item.order.id}`,
             }}
           />
 
           {/* Edit Shipment Modal */}
-          {isModalOpen && (
+          {isModalOpen && selectedShipment && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-full max-w-5xl">
                 <div className="flex justify-between items-center mb-6">

@@ -2,16 +2,48 @@
 
 import React, { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import dynamic from "next/dynamic"; // ✅ import dynamic
+import dynamic from "next/dynamic";
 import { useGetPartsByFiltersQuery } from "@/lib/redux/api/partApi";
 import { useDispatch } from "react-redux";
 import { setBreadcrumbs } from "@/lib/redux/slices/breadcrumbSlice";
 
-// ✅ Lazy load ProductCard
-const ProductCard = dynamic(() => import("./ProductCard"), {
-  loading: () => <div className="h-40 bg-gray-200 animate-pulse rounded-lg" />, // fallback skeleton
-  ssr: false, // optional: avoids SSR if ProductCard uses window/document
-});
+// Define interfaces for the data structures
+interface Discount {
+  percentage: string;
+}
+
+interface Subcategory {
+  id: number;
+  name: string;
+}
+
+interface Category {
+  id: number;
+  name: string;
+}
+
+interface CarMake {
+  id: number;
+  name: string;
+}
+
+interface Vehicle {
+  id: number;
+  car_make: CarMake;
+  model_line: string;
+  modification: string | null;
+}
+
+interface Part {
+  id: number;
+  part_number: string;
+  price: number;
+  discount?: Discount;
+  image_urls: string[];
+  subcategory: Subcategory;
+  vehicle: Vehicle;
+  category?: Category;
+}
 
 interface Product {
   id: number;
@@ -24,6 +56,12 @@ interface Product {
   isGreatPrice?: boolean;
   discount?: string;
 }
+
+// Lazy load ProductCard
+const ProductCard = dynamic(() => import("./ProductCard"), {
+  loading: () => <div className="h-40 bg-gray-200 animate-pulse rounded-lg" />,
+  ssr: false,
+});
 
 const ProductsSection: React.FC = () => {
   const searchParams = useSearchParams();
@@ -42,7 +80,7 @@ const ProductsSection: React.FC = () => {
   });
 
   const products: Product[] =
-    partsData?.data?.map((part: any) => ({
+    partsData?.data?.map((part: Part) => ({
       id: part.id,
       title: part.part_number || "Unknown Part",
       specs: `${part.subcategory.name} • ${part.vehicle.modification || "N/A"}`,

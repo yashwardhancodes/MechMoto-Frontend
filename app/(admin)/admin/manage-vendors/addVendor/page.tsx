@@ -33,7 +33,7 @@ const AddVendor: React.FC = () => {
         country: "",
     });
 
-    const [errors, setErrors] = useState({});
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [addVendor, { isLoading }] = useCreateVendorMutation();
 
     const [stateDropdownOpen, setStateDropdownOpen] = useState(false);
@@ -74,18 +74,19 @@ const AddVendor: React.FC = () => {
             } else {
                 toast.error("Vendor addition failed. Please try again.");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             if (err instanceof z.ZodError) {
-                const formattedErrors: { [key: string]: string } = {};
+                const formattedErrors: Record<string, string> = {};
                 err.errors.forEach((e) => {
-                    formattedErrors[e.path[0]] = e.message;
+                    formattedErrors[String(e.path[0])] = e.message;
                 });
                 setErrors(formattedErrors);
-                toast.error("Validation failed!", formattedErrors);
+                toast.error("Validation failed!");
                 console.log("❌ Validation Errors:", formattedErrors);
             } else {
                 console.error("❌ Error:", err);
-                toast.error(err?.data?.message || "Something went wrong!");
+                const apiError = err as { data?: { message?: string } };
+                toast.error(apiError?.data?.message || "Something went wrong!");
             }
         }
     };
@@ -105,6 +106,8 @@ const AddVendor: React.FC = () => {
                                 onChange={handleInputChange}
                                 className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
                             />
+                            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+
                         </div>
                         <div>
                             <input
@@ -115,6 +118,8 @@ const AddVendor: React.FC = () => {
                                 onChange={handleInputChange}
                                 className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
                             />
+                            {errors.shop_name && <p className="text-red-500 text-sm mt-1">{errors.shop_name}</p>}
+
                         </div>
                     </div>
 
@@ -170,9 +175,8 @@ const AddVendor: React.FC = () => {
                                         {formData.country || "Country"}
                                     </span>
                                     <ChevronDown
-                                        className={`w-5 h-5 text-[#9AE144] transition-transform duration-200 ${
-                                            countryDropdownOpen ? "rotate-180" : ""
-                                        }`}
+                                        className={`w-5 h-5 text-[#9AE144] transition-transform duration-200 ${countryDropdownOpen ? "rotate-180" : ""
+                                            }`}
                                     />
                                 </button>
                                 {countryDropdownOpen && (
@@ -209,9 +213,8 @@ const AddVendor: React.FC = () => {
                                         {formData.city || "City"}
                                     </span>
                                     <ChevronDown
-                                        className={`w-5 h-5 text-[#9AE144] transition-transform duration-200 ${
-                                            cityDropdownOpen ? "rotate-180" : ""
-                                        }`}
+                                        className={`w-5 h-5 text-[#9AE144] transition-transform duration-200 ${cityDropdownOpen ? "rotate-180" : ""
+                                            }`}
                                     />
                                 </button>
                                 {cityDropdownOpen && (
@@ -249,9 +252,8 @@ const AddVendor: React.FC = () => {
                                     {formData.state || "State"}
                                 </span>
                                 <ChevronDown
-                                    className={`w-5 h-5 text-[#9AE144] transition-transform duration-200 ${
-                                        stateDropdownOpen ? "rotate-180" : ""
-                                    }`}
+                                    className={`w-5 h-5 text-[#9AE144] transition-transform duration-200 ${stateDropdownOpen ? "rotate-180" : ""
+                                        }`}
                                 />
                             </button>
                             {stateDropdownOpen && (
@@ -289,9 +291,10 @@ const AddVendor: React.FC = () => {
                         <button
                             type="button"
                             onClick={handleSubmit}
-                            className="px-8 py-3 bg-[#9AE144] hover:bg-[#9AE144] text-black font-medium rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-[#9AE144] focus:ring-offset-2 outline-none"
-                        >
+                            className="px-8 py-3 bg-[#9AE144] hover:bg-[#9AE144] text-black font-medium rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-[#9AE144] focus:ring-offset-2 outline-none disabled:opacity-50"
+                            disabled={isLoading}                        >
                             Add Vendor
+                            {isLoading ? "Adding..." : "Add Vendor"}
                         </button>
                     </div>
                 </div>

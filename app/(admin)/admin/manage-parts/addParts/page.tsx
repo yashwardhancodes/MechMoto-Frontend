@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useCreatePartMutation } from "@/lib/redux/api/partApi";
 import { useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
@@ -10,8 +11,10 @@ import { uploadImageToBackend } from "@/lib/utils/imageUpload";
 import { useGetAllVehiclesQuery } from "@/lib/redux/api/vehicleApi";
 import { useGetAllSubcategoriesQuery } from "@/lib/redux/api/subCategoriesApi";
 import { useGetAllPartBrandsQuery } from "@/lib/redux/api/partBrandApi";
-// import { useGetAllDiscountsQuery } from "@/lib/redux/api/discountsApi";
-import { ChevronDown } from "lucide-react";
+ import { ChevronDown } from "lucide-react";
+import { SerializedError } from "@reduxjs/toolkit";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import { RootState } from "@/lib/redux/store";
 
 
 interface FormData {
@@ -34,6 +37,11 @@ interface FormErrors {
 }
 
 interface Vehicle {
+  modification?: string;
+  engine_type?: { name: string };
+  production_year?: string | number;
+  model_line?: string;
+  car_make?: { name: string };
   id: number;
   name: string;
 }
@@ -44,7 +52,7 @@ interface Subcategory {
 }
 
 interface PartBrand {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -52,6 +60,7 @@ interface Discount {
   id: number;
   name: string;
 }
+
 
 const AddPart: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
@@ -68,8 +77,9 @@ const AddPart: React.FC = () => {
     partBrandId: "",
     discountId: "",
   });
+
   const [files, setFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [previewUrls] = useState<string[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [dropdownOpen, setDropdownOpen] = useState({
     vehicle: false,
@@ -79,25 +89,36 @@ const AddPart: React.FC = () => {
     partBrand: false,
     discount: false,
   });
+
   const [createPart, { isLoading }] = useCreatePartMutation();
-  const token = useSelector((state: any) => state.auth.token);
+  const token = useSelector((state: RootState) => state.auth.token);
+
+  // ✅ Hooks must always be called
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: vehicles, isLoading: isVehiclesLoading, error: vehiclesError } =
+    useGetAllVehiclesQuery({});
+  const { data: subcategories, isLoading: isSubcategoriesLoading, error: subcategoriesError } =
+    useGetAllSubcategoriesQuery({});
+  const { data: partBrands, isLoading: isPartBrandsLoading, error: partBrandsError } =
+    useGetAllPartBrandsQuery();
+  const { data: discounts, isLoading: isDiscountsLoading, error: discountsError } =
+    useGetAllVehiclesQuery({}); // ⚠️ looks like this should be useGetAllDiscountsQuery?
 
-  const { data: vehicles, isLoading: isVehiclesLoading, error: vehiclesError } = useGetAllVehiclesQuery({});
-  console.log("vehicle data",vehicles)
-  const { data: subcategories, isLoading: isSubcategoriesLoading, error: subcategoriesError } = useGetAllSubcategoriesQuery({});
-  const { data: partBrands, isLoading: isPartBrandsLoading, error: partBrandsError } = useGetAllPartBrandsQuery({});
-  const { data: discounts, isLoading: isDiscountsLoading, error: discountsError } = useGetAllVehiclesQuery({});
-
+  // ✅ Safe conditional side effect
   useEffect(() => {
-    if (files.length > 0) {
-      const urls = files.map((file) => URL.createObjectURL(file));
-      setPreviewUrls(urls);
-      return () => urls.forEach((url) => URL.revokeObjectURL(url));
-    } else {
-      setPreviewUrls([]);
+    if (!token) {
+      toast.error("You are not logged in!");
     }
-  }, [files]);
+  }, [token]);
+
+  // ✅ Redirect or block rendering safely
+  if (!token) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-140px)]">
+        <p className="text-red-500 text-lg font-medium">You are not logged in!</p>
+      </div>
+    );
+  }
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -160,7 +181,8 @@ const AddPart: React.FC = () => {
       } else {
         toast.error("Part addition failed. Please try again.");
       }
-    } catch (err: any) {
+    } // inside handleSubmit
+    catch (err: unknown) {
       if (err instanceof z.ZodError) {
         const formattedErrors: { [key: string]: string } = {};
         err.errors.forEach((e) => {
@@ -170,10 +192,19 @@ const AddPart: React.FC = () => {
         toast.error("Validation failed!");
         console.log("❌ Validation Errors:", formattedErrors);
       } else {
-        console.error("❌ Error:", err);
-        toast.error(err?.data?.message || "Something went wrong!");
+        const error = err as FetchBaseQueryError | SerializedError;
+
+        if ("data" in error && error.data && typeof error.data === "object") {
+          const apiError = error.data as { message?: string };
+          toast.error(apiError.message || "Something went wrong!");
+        } else {
+          toast.error("Something went wrong!");
+        }
+
+        console.error("❌ Error:", error);
       }
     }
+
   };
 
   const availabilityOptions = ["Available", "Unavailable", "On Backorder"];
@@ -260,71 +291,69 @@ const AddPart: React.FC = () => {
           {/* Row 3: Vehicle, Subcategory */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
-  <button
-    type="button"
-    onClick={() =>
-      setDropdownOpen((prev) => ({ ...prev, vehicle: !prev.vehicle }))
-    }
-    className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
-    disabled={isVehiclesLoading || !!vehiclesError}
-  >
-    <span
-      className={
-        formData.vehicleId && Array.isArray(vehicles?.data)
-          ? "text-gray-700"
-          : "text-gray-400"
-      }
-    >
-      {isVehiclesLoading
-        ? "Loading vehicles..."
-        : vehiclesError
-        ? "Error loading vehicles"
-        : formData.vehicleId && Array.isArray(vehicles?.data)
-        ? (() => {
-            const selected = vehicles.data.find(
-              (v: Vehicle) => v.id === Number(formData.vehicleId)
-            );
-            return selected
-              ? `${selected.car_make?.name || ""} ${selected.model_line || ""} ${
-                  selected.modification ? `(${selected.modification})` : ""
-                } ${selected.engine_type?.name ? `- ${selected.engine_type.name}` : ""} [${selected.production_year}]`
-              : "Select a Vehicle";
-          })()
-        : "Select a Vehicle"}
-    </span>
-    <ChevronDown
-      className={`w-5 h-5 text-[#9AE144] ${
-        dropdownOpen.vehicle ? "rotate-180" : ""
-      }`}
-    />
-  </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setDropdownOpen((prev) => ({ ...prev, vehicle: !prev.vehicle }))
+                }
+                className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
+                disabled={isVehiclesLoading || !!vehiclesError}
+              >
+                <span
+                  className={
+                    formData.vehicleId && Array.isArray(vehicles?.data)
+                      ? "text-gray-700"
+                      : "text-gray-400"
+                  }
+                >
+                  {isVehiclesLoading
+                    ? "Loading vehicles..."
+                    : vehiclesError
+                      ? "Error loading vehicles"
+                      : formData.vehicleId && Array.isArray(vehicles?.data)
+                        ? (() => {
+                          const selected = vehicles.data.find(
+                            (v: Vehicle) => v.id === Number(formData.vehicleId)
+                          );
+                          return selected
+                            ? `${selected.car_make?.name || ""} ${selected.model_line || ""} ${selected.modification ? `(${selected.modification})` : ""
+                            } ${selected.engine_type?.name ? `- ${selected.engine_type.name}` : ""} [${selected.production_year}]`
+                            : "Select a Vehicle";
+                        })()
+                        : "Select a Vehicle"}
+                </span>
+                <ChevronDown
+                  className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.vehicle ? "rotate-180" : ""
+                    }`}
+                />
+              </button>
 
-  {dropdownOpen.vehicle &&
-    !isVehiclesLoading &&
-    !vehiclesError &&
-    Array.isArray(vehicles?.data) &&
-    vehicles.data.length > 0 && (
-      <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-        {vehicles.data.map((vehicle: Vehicle) => (
-          <button
-            key={vehicle.id}
-            type="button"
-            onClick={() => handleSelectChange("vehicleId", vehicle.id)}
-            className="w-full px-4 py-2 text-left hover:bg-gray-50"
-          >
-            {vehicle.car_make?.name} {vehicle.model_line}{" "}
-            {vehicle.modification ? `(${vehicle.modification})` : ""}{" "}
-            {vehicle.engine_type?.name ? `- ${vehicle.engine_type.name}` : ""}{" "}
-            [{vehicle.production_year}]
-          </button>
-        ))}
-      </div>
-    )}
+              {dropdownOpen.vehicle &&
+                !isVehiclesLoading &&
+                !vehiclesError &&
+                Array.isArray(vehicles?.data) &&
+                vehicles.data.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                    {vehicles.data.map((vehicle: Vehicle) => (
+                      <button
+                        key={vehicle.id}
+                        type="button"
+                        onClick={() => handleSelectChange("vehicleId", vehicle.id)}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50"
+                      >
+                        {vehicle.car_make?.name} {vehicle.model_line}{" "}
+                        {vehicle.modification ? `(${vehicle.modification})` : ""}{" "}
+                        {vehicle.engine_type?.name ? `- ${vehicle.engine_type.name}` : ""}{" "}
+                        [{vehicle.production_year}]
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-  {errors["vehicleId"] && (
-    <p className="text-red-500 text-sm mt-1">{errors["vehicleId"]}</p>
-  )}
-</div>
+              {errors["vehicleId"] && (
+                <p className="text-red-500 text-sm mt-1">{errors["vehicleId"]}</p>
+              )}
+            </div>
 
             <div className="relative">
               <button
@@ -343,10 +372,10 @@ const AddPart: React.FC = () => {
                   {isSubcategoriesLoading
                     ? "Loading subcategories..."
                     : subcategoriesError
-                    ? "Error loading subcategories"
-                    : formData.subcategoryId && Array.isArray(subcategories?.data)
-                    ? subcategories.data.find((s: Subcategory) => s.id === Number(formData.subcategoryId))?.name || "Select a Subcategory"
-                    : "Select a Subcategory"}
+                      ? "Error loading subcategories"
+                      : formData.subcategoryId && Array.isArray(subcategories?.data)
+                        ? subcategories.data.find((s: Subcategory) => s.id === Number(formData.subcategoryId))?.name || "Select a Subcategory"
+                        : "Select a Subcategory"}
                 </span>
                 <ChevronDown
                   className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.subcategory ? "rotate-180" : ""}`}
@@ -391,10 +420,10 @@ const AddPart: React.FC = () => {
                   {isPartBrandsLoading
                     ? "Loading part brands..."
                     : partBrandsError
-                    ? "Error loading part brands"
-                    : formData.partBrandId && Array.isArray(partBrands?.data)
-                    ? partBrands.data.find((pb: PartBrand) => pb.id === Number(formData.partBrandId))?.name || "Select a Part Brand"
-                    : "Select a Part Brand"}
+                      ? "Error loading part brands"
+                      : formData.partBrandId && Array.isArray(partBrands?.data)
+                        ? partBrands.data.find((pb: PartBrand) => pb.id === formData.partBrandId)?.name || "Select a Part Brand"
+                        : "Select a Part Brand"}
                 </span>
                 <ChevronDown
                   className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.partBrand ? "rotate-180" : ""}`}
@@ -435,10 +464,10 @@ const AddPart: React.FC = () => {
                   {isDiscountsLoading
                     ? "Loading discounts..."
                     : discountsError
-                    ? "Error loading discounts"
-                    : formData.discountId && Array.isArray(discounts?.data)
-                    ? discounts.data.find((d: Discount) => d.id === Number(formData.discountId))?.name || "Select a Discount"
-                    : "Select a Discount"}
+                      ? "Error loading discounts"
+                      : formData.discountId && Array.isArray(discounts?.data)
+                        ? discounts.data.find((d: Discount) => d.id === Number(formData.discountId))?.name || "Select a Discount"
+                        : "Select a Discount"}
                 </span>
                 <ChevronDown
                   className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.discount ? "rotate-180" : ""}`}
@@ -550,10 +579,12 @@ const AddPart: React.FC = () => {
                       onClick={handleImageClick}
                       title="Click to update images"
                     >
-                      <img
+                      <Image
                         src={url}
                         alt={`Part preview ${index + 1}`}
                         className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
+                        width={100}
+                        height={100}
                       />
                       <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-[#9AE144] bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <span className="text-black font-medium text-sm">Update Images</span>

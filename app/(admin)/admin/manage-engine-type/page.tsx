@@ -1,16 +1,29 @@
-"use client";
+'use client';
 
 import { Pencil, Eye, Trash2 } from "lucide-react";
 import { useGetAllEngineTypesQuery, useDeleteEngineTypeMutation } from "@/lib/redux/api/engineTypeApi";
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
 
+interface EngineType {
+    id: number | string;
+    name: string;
+    created_at?: string;
+}
+
+interface EngineTypeRow {
+    id: number | string;
+    name: string;
+    createdAt: string;
+    raw: EngineType;
+}
+
 export default function ManageEngineType() {
     const { data, isLoading, isError } = useGetAllEngineTypesQuery({});
     const [deleteEngineType] = useDeleteEngineTypeMutation();
     const router = useRouter();
 
-    const engineTypes = (data?.data ?? []).map((engineType: any) => ({
+    const engineTypes: EngineTypeRow[] = (data?.data ?? []).map((engineType: EngineType) => ({
         id: engineType.id,
         name: engineType.name ?? "N/A",
         createdAt: engineType.created_at
@@ -23,12 +36,12 @@ export default function ManageEngineType() {
         {
             key: "name",
             header: "Engine Type",
-            render: (value) => (
+            render: (value: EngineTypeRow) => (
                 <div className="flex row items-center gap-2">
                     <div className="size-10 rounded-full p-2 flex items-center text-white justify-center bg-green-500">
                         {value.name
                             ?.split(" ")
-                            .map((word: string) => word.charAt(0).toUpperCase())
+                            .map((word) => word.charAt(0).toUpperCase())
                             .join("")}
                     </div>
                     <div className="flex flex-col">
@@ -44,21 +57,21 @@ export default function ManageEngineType() {
     const actions: TableAction[] = [
         {
             icon: Pencil,
-            onClick: (engineType) => {
+            onClick: (engineType: EngineTypeRow) => {
                 router.push(`/admin/manage-engine-type/edit/${engineType.id}`);
             },
             tooltip: "Edit Engine Type"
         },
         {
             icon: Eye,
-            onClick: (engineType) => {
+            onClick: (engineType: EngineTypeRow) => {
                 router.push(`/admin/manage-engine-type/${engineType.id}`);
             },
             tooltip: "View Engine Type"
         },
         {
             icon: Trash2,
-            onClick: async (engineType) => {
+            onClick: async (engineType: EngineTypeRow) => {
                 try {
                     await deleteEngineType(engineType.id).unwrap();
                     window.location.reload();

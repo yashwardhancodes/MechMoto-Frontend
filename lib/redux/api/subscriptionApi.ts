@@ -1,11 +1,19 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+// Define the type for the Redux state
+interface RootState {
+  auth: {
+    token?: string; // Token is optional, as it might not always be present
+  };
+}
+
 export const subscriptionApi = createApi({
   reducerPath: "subscriptionApi",
   baseQuery: fetchBaseQuery({
     baseUrl: `${process.env.NEXT_PUBLIC_BASE_URL}subscriptions/`,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as any).auth.token;
+      const state = getState() as RootState; // Specify the RootState type
+      const token = state.auth.token;
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
@@ -15,13 +23,13 @@ export const subscriptionApi = createApi({
   }),
   tagTypes: ["Subscription"],
   endpoints: (builder) => ({
-    // ✅ Get all subscriptions
+    // Get all subscriptions
     getAllSubscriptions: builder.query({
       query: () => "",
       providesTags: ["Subscription"],
     }),
 
-    // ✅ Create subscription
+    // Create subscription
     createSubscription: builder.mutation({
       query: (subscriptionData) => ({
         url: "create",
@@ -31,13 +39,13 @@ export const subscriptionApi = createApi({
       invalidatesTags: ["Subscription"],
     }),
 
-    // ✅ Get single subscription
+    // Get single subscription
     getSubscription: builder.query({
       query: (id) => `${id}`,
       providesTags: ["Subscription"],
     }),
 
-    // ✅ Update subscription
+    // Update subscription
     updateSubscription: builder.mutation({
       query: ({ id, ...data }) => ({
         url: `${id}`,
@@ -47,7 +55,7 @@ export const subscriptionApi = createApi({
       invalidatesTags: ["Subscription"],
     }),
 
-    // ✅ Delete subscription (soft delete in backend)
+    // Delete subscription (soft delete in backend)
     deleteSubscription: builder.mutation({
       query: (id) => ({
         url: `${id}`,
@@ -56,15 +64,15 @@ export const subscriptionApi = createApi({
       invalidatesTags: ["Subscription"],
     }),
 
-    // ✅ Get subscription status (maps to controller.getSubscriptionStatus)
+    // Get subscription status (maps to controller.getSubscriptionStatus)
     getSubscriptionStatus: builder.query({
-      query: (id) => `status/${id}`, // <-- depends on your backend route definition
+      query: (id) => `status/${id}`,
       providesTags: ["Subscription"],
     }),
 
-    // ✅ Get active subscription with modules (maps to controller.getUserModules)
+    // Get active subscription with modules (maps to controller.getUserModules)
     getActiveSubscriptionWithModules: builder.query({
-      query: () => `active`,  
+      query: () => `active`,
       providesTags: ["Subscription"],
     }),
   }),

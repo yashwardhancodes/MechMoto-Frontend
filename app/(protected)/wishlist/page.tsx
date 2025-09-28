@@ -1,23 +1,45 @@
 "use client";
 
 import React, { ReactElement } from "react";
-import { Heart, Eye, Package, Star, Clock, ShoppingCart } from "lucide-react";
+import { Heart, Eye, Package, Clock, ShoppingCart } from "lucide-react";
 import { useGetWishlistsQuery } from "@/lib/redux/api/partApi";
 import { useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import { toast } from "react-hot-toast";
+import Image from "next/image";
 
+interface Part {
+	id: number;
+	subcategory?: { name?: string };
+	part_brand?: { name?: string };
+	part_number: string;
+	price: number;
+	quantity: number;
+	availability_status: string;
+	origin: string;
+	description?: string;
+	remarks?: string;
+	image_urls?: string[];
+}
+
+interface Wishlist {
+	id: number;
+	part: Part;
+	created_at: string;
+}
 interface TableColumn {
 	key: string;
 	header: string;
-	render?: (value: any) => string | ReactElement;
+	render?: (value: Wishlist) => string | ReactElement;
 }
 
 interface TableAction {
-	icon: React.ComponentType<any>;
-	onClick: (item: any) => void;
+	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+	onClick: (item: Wishlist) => void;
 	tooltip: string;
 }
+
+
 
 export default function ManageWishlist() {
 	const { user } = useAuth();
@@ -69,13 +91,16 @@ export default function ManageWishlist() {
 				<div className="flex items-center gap-3">
 					<div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
 						{wishlist.part.image_urls && wishlist.part.image_urls.length > 0 ? (
-							<img
+							<Image
 								src={wishlist.part.image_urls[0]}
 								alt={wishlist.part.subcategory?.name || "Part"}
 								className="w-full h-full object-cover"
 								onError={(e) => {
 									e.currentTarget.style.display = 'none';
-									e.currentTarget.nextElementSibling.style.display = 'flex';
+									if (e.currentTarget.nextElementSibling) {
+										const sibling = e.currentTarget.nextElementSibling as HTMLElement | null;
+										if (sibling) sibling.style.display = 'flex';
+									}
 								}}
 							/>
 						) : null}
@@ -171,6 +196,7 @@ export default function ManageWishlist() {
 			onClick: (wishlist) => {
 				// Add to cart functionality
 				toast.success("Added to cart!");
+				console.log("Add to cart:", wishlist);
 			},
 			tooltip: "Add to cart",
 		},
@@ -305,20 +331,16 @@ export default function ManageWishlist() {
 										</td>
 									</tr>
 								) : (
-									wishlists.map((wishlist: any) => (
+									wishlists.map((wishlist: Wishlist) => (
 										<tr
 											key={wishlist.id}
 											className="hover:bg-gray-50 transition-colors duration-150"
 										>
 											{columns.map((column) => (
-												<td
-													key={column.key}
-													className="px-6 py-4 whitespace-nowrap"
-												>
-													{column.render
-														? column.render(wishlist)
-														: wishlist[column.key] || "N/A"}
+												<td key={column.key} className="px-6 py-4 whitespace-nowrap">
+													{column.render && column.render(wishlist)}
 												</td>
+
 											))}
 											<td className="px-6 py-4 whitespace-nowrap">
 												<div className="flex gap-2">
@@ -380,18 +402,20 @@ export default function ManageWishlist() {
 							</div>
 						) : (
 							<div className="divide-y divide-gray-200">
-								{wishlists.map((wishlist: any) => (
+								{wishlists.map((wishlist: Wishlist) => (
 									<div key={wishlist.id} className="p-4">
 										<div className="flex items-start gap-4 mb-4">
 											<div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
 												{wishlist.part.image_urls && wishlist.part.image_urls.length > 0 ? (
-													<img
+													<Image
 														src={wishlist.part.image_urls[0]}
 														alt={wishlist.part.subcategory?.name || "Part"}
 														className="w-full h-full object-cover"
 														onError={(e) => {
 															e.currentTarget.style.display = 'none';
-															e.currentTarget.nextElementSibling.style.display = 'flex';
+															if (e.currentTarget.nextElementSibling) {
+																(e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+															}
 														}}
 													/>
 												) : null}

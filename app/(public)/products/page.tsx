@@ -1,5 +1,4 @@
-import Breadcrumb from '@/components/ProductListing/Breadcrumb';
-import FilterSection from '@/components/ProductListing/FilterSection';
+ import FilterSection from '@/components/ProductListing/FilterSection';
 import ProductsSection from '@/components/ProductListing/ProductSection';
 import React from 'react';
 

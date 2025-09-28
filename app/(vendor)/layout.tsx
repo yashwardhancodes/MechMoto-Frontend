@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import {   useMemo } from "react";
 import useAuth from "@/hooks/useAuth";
 import { ROLES } from "@/constants/roles";
 import Navbar from "@/components/Navbar";
@@ -18,33 +18,31 @@ export default function VendorLayout({ children }: DashboardLayoutProps) {
 	const pathname = usePathname();
 	const { isLoggedIn, loading, role } = useAuth();
 
-	const [allowed, setAllowed] = useState(false);
-	const [activeMenu, setActiveMenu] = useState("");
-
 	// Authentication and role check
-	useEffect(() => {
-		if (!loading) {
-			if (!isLoggedIn) {
-				router.replace("/auth/login");
-			} else if (role !== ROLES.VENDOR) {
-				router.replace("/");
-			} else {
-				setAllowed(true);
-			}
+	const allowed = useMemo(() => {
+		if (loading) return false;
+		if (!isLoggedIn) {
+			router.replace("/auth/login");
+			return false;
 		}
+		if (role !== ROLES.VENDOR) {
+			router.replace("/");
+			return false;
+		}
+		return true;
 	}, [loading, isLoggedIn, role, router]);
 
 	// Derive active menu from pathname
 	const currentMenu = useMemo(() => {
-		const segment = pathname?.split("/")[2];  
+		const segment = pathname?.split("/")[2];
 		if (!segment) return "Dashboard";
 
 		const menuMap: { [key: string]: string } = {
-			"dashboard": "Dashboard",
+			dashboard: "Dashboard",
 			"manage-vendors": "Manage Vendors",
 			"manage-parts": "Manage Parts",
 			"coupons-discounts": "Coupons & Discounts",
-			"orders": "Orders",
+			orders: "Orders",
 			"service-request": "Service Request",
 			"manage-mechanics": "Manage Mechanics",
 			"manage-vehicles": "Manage Vehicles",
@@ -57,7 +55,7 @@ export default function VendorLayout({ children }: DashboardLayoutProps) {
 			"manage-categories": "Manage Categories",
 			"manage-subcategories": "Manage Subcategories",
 			"manage-part-brands": "Manage Part Brands",
-			"manage-shipments": "Manage Shipments"
+			"manage-shipments": "Manage Shipments",
 		};
 
 		return menuMap[segment] || "Dashboard";
@@ -77,12 +75,12 @@ export default function VendorLayout({ children }: DashboardLayoutProps) {
 	}
 
 	return (
-		<div className=" bg-gray-50">
+		<div className="bg-gray-50">
 			{/* Fixed Top Navbar */}
 			<Navbar />
 
 			<div className="mt-[40px] md:mt-[50px] lg:mt-[56px]">
-				<Sidebar activeMenu={currentMenu} setActiveMenu={setActiveMenu} />
+				<Sidebar activeMenu={currentMenu} setActiveMenu={() => {}} />
 
 				{/* Main Content Area */}
 				<main className="ml-63 p-2 h-[calc(100vh-100px)]">
@@ -90,9 +88,7 @@ export default function VendorLayout({ children }: DashboardLayoutProps) {
 						<button onClick={handleBack}>
 							<MoveLeft className="text-[#9AE144] size-9" />
 						</button>
-						<h1 className="text-3xl font-dm-sans font-bold">
-							{currentMenu}
-						</h1>
+						<h1 className="text-3xl font-dm-sans font-bold">{currentMenu}</h1>
 					</div>
 					<div className="p-2">{children}</div>
 				</main>

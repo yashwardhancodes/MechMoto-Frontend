@@ -9,6 +9,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useGetAllPlansQuery } from "@/lib/redux/api/planApi";
 import { useCreateSubscriptionMutation } from "@/lib/redux/api/subscriptionApi";
 import { setSubscriptionId } from "@/lib/redux/slices/authSlice";
+import { RootState } from "@/lib/redux/store";
 
 // ------------------
 // Types
@@ -30,7 +31,7 @@ interface PlanModule {
 }
 
 interface Plan {
-  id: number;
+  id: string;
   name: string;
   description: string | null;
   price: number;
@@ -58,11 +59,11 @@ export default function PlanPage() {
   const router = useRouter();
 
   // ✅ Get subscription info from Redux auth state
-  const subscriptionId = useSelector((state: any) => state.auth.user.razorpaySubscriptionId);
+  const subscriptionId = useSelector((state: RootState) => state.auth.user?.razorpaySubscriptionId);
 
   console.log("subscriptionId plan page", subscriptionId);
 
-  const { data: allPlans, isLoading, isError } = useGetAllPlansQuery({});
+  const { data: allPlans, isLoading, isError } = useGetAllPlansQuery();
   const [createSubscription, { isLoading: isCreating }] =
     useCreateSubscriptionMutation();
 

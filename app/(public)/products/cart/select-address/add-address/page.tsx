@@ -39,7 +39,7 @@ export default function AddAddress() {
 			};
 			await createAddress(addressData).unwrap();
 			router.push("/products/cart/select-address");
-		} catch (err) {
+		} catch   {
 			setErrorMessage("Failed to add address. Please try again.");
 		}
 	};

@@ -27,7 +27,7 @@ const EditVendor: React.FC = () => {
     console.log("Vendor ID:", vendorId);
 
     const { data: vendorData, isLoading: isVendorLoading } = useGetVendorQuery(vendorId);
-    const [updateVendor, { isLoading }] = useUpdateVendorMutation();
+    const [updateVendor] = useUpdateVendorMutation();
 
     const [formData, setFormData] = useState<FormData>({
         name: "",
@@ -41,7 +41,7 @@ const EditVendor: React.FC = () => {
         country: "",
     });
 
-    const [errors, setErrors] = useState({});
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [stateDropdownOpen, setStateDropdownOpen] = useState(false);
     const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
     const [countryDropdownOpen, setCountryDropdownOpen] = useState(false);
@@ -99,18 +99,19 @@ const EditVendor: React.FC = () => {
             } else {
                 toast.error("Vendor update failed. Please try again.");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             if (err instanceof z.ZodError) {
-                const formattedErrors: { [key: string]: string } = {};
+                const formattedErrors: Record<string, string> = {};
                 err.errors.forEach((e) => {
-                    formattedErrors[e.path[0]] = e.message;
+                    formattedErrors[String(e.path[0])] = e.message;
                 });
                 setErrors(formattedErrors);
-                toast.error("Validation failed!", formattedErrors);
+                toast.error("Validation failed!");
                 console.log("❌ Validation Errors:", formattedErrors);
             } else {
                 console.error("❌ Error:", err);
-                toast.error(err?.data?.message || "Something went wrong!");
+                const apiError = err as { data?: { message?: string } };
+                toast.error(apiError?.data?.message || "Something went wrong!");
             }
         }
     };
@@ -158,6 +159,8 @@ const EditVendor: React.FC = () => {
                                 onChange={handleInputChange}
                                 className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
                             />
+                            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+
                         </div>
                         <div>
                             <input

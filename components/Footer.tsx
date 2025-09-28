@@ -82,9 +82,6 @@
             <p className="text-gray-400 text-sm">&copy; 2023 Detail Technologies B.V. All rights reserved</p>
             <div className="flex items-center mt-4 md:mt-0">
               <span className="text-gray-400 text-sm">Powered by</span>
-              <Link href="https://framer.com" className="text-gray-400 hover:text-white ml-2">
-                <img src="/framer-logo.svg" alt="Framer" className="h-4" />
-              </Link>
             </div>
           </div>
         </div>

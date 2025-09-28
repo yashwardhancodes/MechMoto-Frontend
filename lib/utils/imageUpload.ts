@@ -21,8 +21,13 @@ export const uploadImageToBackend = async (file: File, token: string): Promise<s
 		} else {
 			throw new Error("Failed to upload image");
 		}
-	} catch (error: any) {
-		console.error("Image upload error:", error);
-		throw new Error(error.message || "Failed to upload image to backend");
+	} catch (error: unknown) {
+		// Narrow down error type
+		let message = "Failed to upload image to backend";
+		if (error instanceof Error) {
+			message = error.message;
+		}
+		console.error("Image upload error:", message);
+		throw new Error(message);
 	}
 };

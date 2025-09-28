@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { z } from 'zod';
 import { toast } from 'react-hot-toast';
@@ -10,10 +10,11 @@ import { useGetAllEngineTypesQuery } from '@/lib/redux/api/engineTypeApi';
 import { vehicleSchema } from '@/lib/schema/vehicleSchema';
 import { useRouter, useParams } from 'next/navigation';
 
-// Define interfaces for CarMake and EngineType
+// Define interfaces
 interface CarMake {
   id: number;
   name: string;
+  data?: any
 }
 
 interface EngineType {
@@ -43,20 +44,25 @@ const UpdateVehicle: React.FC = () => {
     engineTypeId: null,
   });
 
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [errors, setErrors] = useState<{ [key in keyof FormData]?: string }>({});
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
   const [engineDropdownOpen, setEngineDropdownOpen] = useState(false);
 
   const { data: vehicleResponse, isLoading: vehicleLoading, error: vehicleError } = useGetVehicleQuery(vehicleIdStr, {
     skip: !vehicleIdStr || vehicleIdStr === 'undefined',
   });
-  const { data: carMakesResponse, isLoading: carMakesLoading, error: carMakesError } = useGetAllCarMakesQuery({});
+  const { data: carMakesResponse, isLoading: carMakesLoading, error: carMakesError } = useGetAllCarMakesQuery();
   const { data: engineTypesResponse, isLoading: engineTypesLoading, error: engineTypesError } = useGetAllEngineTypesQuery({});
   const [updateVehicle, { isLoading: isUpdating }] = useUpdateVehicleMutation();
 
-  // Define carMakes and engineTypes with explicit types
-  const carMakes: CarMake[] = Array.isArray(carMakesResponse?.data) ? carMakesResponse.data : [];
-  const engineTypes: EngineType[] = Array.isArray(engineTypesResponse?.data) ? engineTypesResponse.data : [];
+  // Memoized carMakes and engineTypes to fix useEffect warnings
+  const carMakes: CarMake[] = useMemo(() => {
+    return Array.isArray(carMakesResponse?.data) ? carMakesResponse.data : [];
+  }, [carMakesResponse]);
+
+  const engineTypes: EngineType[] = useMemo(() => {
+    return Array.isArray(engineTypesResponse?.data) ? engineTypesResponse.data : [];
+  }, [engineTypesResponse]);
 
   // Populate form with vehicle data
   useEffect(() => {
@@ -72,32 +78,22 @@ const UpdateVehicle: React.FC = () => {
     }
   }, [vehicleResponse]);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('Vehicle ID:', vehicleIdStr);
-    console.log('Parsed Vehicle ID:', vehicleIdParsed);
-    console.log('Vehicle Response:', vehicleResponse);
-    console.log('Car Makes:', carMakes);
-    console.log('Engine Types:', engineTypes);
-    console.log('Form Data:', formData);
-  }, [vehicleIdStr, vehicleIdParsed, vehicleResponse, carMakes, engineTypes, formData]);
-
-  // Handle API errors
+  // API error handling
   useEffect(() => {
     if (vehicleError) toast.error('Failed to load vehicle data.');
     if (carMakesError) toast.error('Failed to load car makes.');
     if (engineTypesError) toast.error('Failed to load engine types.');
     if (!vehicleIdStr || vehicleIdStr === 'undefined' || !vehicleIdParsed) {
       toast.error('Invalid vehicle ID. Please check the URL or try again.');
-      router.push('/admin/manage-vehicles'); // Redirect to vehicles list if ID is invalid
+      router.push('/admin/manage-vehicles');
     }
   }, [vehicleError, carMakesError, engineTypesError, vehicleIdStr, vehicleIdParsed, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
+    if (errors[name as keyof FormData]) {
+      setErrors((prev) => ({ ...prev, [name as keyof FormData]: '' }));
     }
   };
 
@@ -135,27 +131,29 @@ const UpdateVehicle: React.FC = () => {
         engineTypeId: formData.engineTypeId,
       };
 
-      console.log('Submitting payload:', payload);
       const parsedData = vehicleSchema.parse(payload);
-      const result = await updateVehicle({...parsedData, id: vehicleId}).unwrap();
-
+      const result = await updateVehicle({ ...parsedData, id: vehicleIdParsed }).unwrap();
       if (result?.success) {
         toast.success('Vehicle updated successfully!');
         router.push('/admin/manage-vehicles?refresh=true');
       } else {
         toast.error('Vehicle update failed.');
       }
-    } catch (err: any) {
+    } catch (err) {
       if (err instanceof z.ZodError) {
-        const formattedErrors: { [key: string]: string } = {};
+        const formattedErrors: { [key in keyof FormData]?: string } = {};
         err.errors.forEach((e) => {
-          formattedErrors[e.path[0]] = e.message;
+          formattedErrors[e.path[0] as keyof FormData] = e.message;
         });
         setErrors(formattedErrors);
         Object.values(formattedErrors).forEach((error) => toast.error(error));
       } else {
         console.error('Error:', err);
-        toast.error(err?.data?.message || 'Failed to update vehicle. Please try again.');
+        if (typeof err === "object" && err !== null && "data" in err && typeof (err as { data?: { message?: string } }).data?.message === "string") {
+          toast.error((err as { data?: { message?: string } }).data!.message!);
+        } else {
+          toast.error("Failed to update vehicle. Please try again.");
+        }
       }
     }
   };
@@ -166,7 +164,6 @@ const UpdateVehicle: React.FC = () => {
         <div className="space-y-9">
           <h1 className="text-2xl font-bold">Update Vehicle</h1>
           {vehicleLoading && <p>Loading vehicle data...</p>}
-          {vehicleError && <p className="text-red-500">Error loading vehicle data</p>}
           {!vehicleIdStr || vehicleIdStr === 'undefined' || !vehicleIdParsed ? (
             <p className="text-red-500">Invalid vehicle ID. Please select a valid vehicle.</p>
           ) : (
@@ -184,18 +181,16 @@ const UpdateVehicle: React.FC = () => {
                       {carMakesLoading
                         ? 'Loading...'
                         : carMakesError
-                        ? 'Error loading makes'
-                        : formData.carMakeId
-                        ? carMakes.find((b: CarMake) => b.id === formData.carMakeId)?.name || 'Select Car Make'
-                        : 'Select Car Make'}
+                          ? 'Error loading makes'
+                          : formData.carMakeId
+                            ? carMakes.find((b) => b.id === formData.carMakeId)?.name ?? 'Select Car Make'
+                            : 'Select Car Make'}
                     </span>
-                    <ChevronDown
-                      className={`w-5 h-5 text-[#9AE144] ${brandDropdownOpen ? 'rotate-180' : ''}`}
-                    />
+                    <ChevronDown className={`w-5 h-5 text-[#9AE144] ${brandDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
-                  {brandDropdownOpen && !carMakesLoading && !carMakesError && carMakes.length > 0 && (
+                  {brandDropdownOpen && carMakes.length > 0 && (
                     <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                      {carMakes.map((brand: CarMake) => (
+                      {carMakes.map((brand) => (
                         <button
                           key={brand.id}
                           type="button"
@@ -253,18 +248,16 @@ const UpdateVehicle: React.FC = () => {
                       {engineTypesLoading
                         ? 'Loading...'
                         : engineTypesError
-                        ? 'Error loading engines'
-                        : formData.engineTypeId
-                        ? engineTypes.find((e: EngineType) => e.id === formData.engineTypeId)?.name || 'Select Engine Type'
-                        : 'Select Engine Type'}
+                          ? 'Error loading engines'
+                          : formData.engineTypeId
+                            ? engineTypes.find((e) => e.id === formData.engineTypeId)?.name ?? 'Select Engine Type'
+                            : 'Select Engine Type'}
                     </span>
-                    <ChevronDown
-                      className={`w-5 h-5 text-[#9AE144] ${engineDropdownOpen ? 'rotate-180' : ''}`}
-                    />
+                    <ChevronDown className={`w-5 h-5 text-[#9AE144] ${engineDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
-                  {engineDropdownOpen && !engineTypesLoading && !engineTypesError && engineTypes.length > 0 && (
+                  {engineDropdownOpen && engineTypes.length > 0 && (
                     <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                      {engineTypes.map((engine: EngineType) => (
+                      {engineTypes.map((engine) => (
                         <button
                           key={engine.id}
                           type="button"
