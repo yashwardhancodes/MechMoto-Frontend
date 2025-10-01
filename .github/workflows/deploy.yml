@@ -15,7 +15,7 @@ jobs:
         port: ${{ secrets.PORT }}
         key: ${{ secrets.SSHKEY }}
         script: |
-          cd /var/www/frontend
+          cd /var/www/frontend/MechMoto-Frontend
           pwd
           git pull origin master
           npm install
