@@ -16,11 +16,11 @@ jobs:
         key: ${{ secrets.SSHKEY }}
         script: |
           cd /var/www/frontend/MechMoto-Frontend || exit
-          export PATH=$PATH:/usr/bin:/usr/local/bin
+          export PATH=$PATH:/usr/bin:/usr/local/bin:/usr/local/node/bin
           pwd
           git pull origin master
           pwd
-          npm install
+          npm install || (echo "npm not found, installing..." && sudo apt update && sudo apt install -y nodejs npm)
           npm audit fix
           npm run build
-          pm2 restart frontend || pm2 start build/index.js --name frontend
+          pm2 restart frontend || (echo "pm2 not found, installing..." && sudo npm install -g pm2 && pm2 start build/index.js --name frontend)
