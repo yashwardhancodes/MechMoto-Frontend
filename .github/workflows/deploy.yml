@@ -16,6 +16,7 @@ jobs:
         key: ${{ secrets.SSHKEY }}
         script: |
           cd /var/www/frontend
+          pwd
           git pull origin master
           npm install
           npm run build
