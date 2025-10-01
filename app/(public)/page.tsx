@@ -57,7 +57,7 @@ export default function UsersPage() {
             }`}
             onClick={() => setSelectedTab("repair")}
           >
-            Repair my car
+            Repair my carr
           </button>
         </div>
       </div>
