@@ -15,11 +15,12 @@ jobs:
         port: ${{ secrets.PORT }}
         key: ${{ secrets.SSHKEY }}
         script: |
-          cd /var/www/frontend/MechMoto-Frontend
+          cd /var/www/frontend/MechMoto-Frontend || exit
+          export PATH=$PATH:/usr/bin:/usr/local/bin
           pwd
           git pull origin master
           pwd
           npm install
           npm audit fix
           npm run build
-          pm2 restart frontend
+          pm2 restart frontend || pm2 start build/index.js --name frontend
