@@ -19,5 +19,6 @@ jobs:
           pwd
           git pull origin master
           npm install
+          npm audit fix
           npm run build
           pm2 restart frontend
