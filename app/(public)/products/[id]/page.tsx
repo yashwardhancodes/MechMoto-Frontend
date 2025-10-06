@@ -13,11 +13,11 @@ import toast from "react-hot-toast";
 import Image from "next/image";
 import { RootState } from "@/lib/redux/store";
 
-interface AuthWindow extends Window {
-	auth?: {
-		token?: string;
-	};
-}
+// interface AuthWindow extends Window {
+// 	auth?: {
+// 		token?: string;
+// 	};
+// }
 
 interface WishlistItem {
 	partId: number;
@@ -129,7 +129,7 @@ export default function ToyotaNexusBelt() {
 				checkWishlist();
 			}
 		}
-	}, [part, id, dispatch, isLoggedIn]);
+	}, [part, id, dispatch, isLoggedIn, token]);
 
 	if (isLoading) {
 		return <div className="p-6">Loading...</div>;

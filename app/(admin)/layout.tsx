@@ -33,7 +33,6 @@ export default function AdminDashboardLayout({ children }: DashboardLayoutProps)
 			}
 		}
 	}, [loading, isLoggedIn, role, router]);
-	const navigator = useRouter();
 
 	// Derive active menu from pathname
 	const currentMenu = useMemo(() => {

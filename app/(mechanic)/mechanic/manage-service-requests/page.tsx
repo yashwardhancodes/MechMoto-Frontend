@@ -5,7 +5,6 @@ import {
 	useGetServiceRequestsQuery,
 	useUpdateServiceRequestMutation,
 } from "@/lib/redux/api/serviceRequestApi";
-import useAuth from "@/hooks/useAuth";
 import { toast } from "react-hot-toast";
 import dynamic from "next/dynamic";
 
@@ -13,7 +12,6 @@ import dynamic from "next/dynamic";
 const GoogleMapModal = dynamic(() => import("./GoogleMapModal"), { ssr: false });
 
 export default function MechanicRequests() {
-	const { user } = useAuth();
     const [selectedRequest, setSelectedRequest] = useState(null);
 	const { data, refetch, isLoading } = useGetServiceRequestsQuery();
 	const [updateServiceRequest] = useUpdateServiceRequestMutation();
