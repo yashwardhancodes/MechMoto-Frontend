@@ -1,49 +1,58 @@
 "use client";
 
 import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { rehydrateAuth } from "@/lib/redux/thunks/authThunks";
-import { AppDispatch, RootState } from "@/lib/redux/store";
+import { AppDispatch } from "@/lib/redux/store";
 import useAuth from "@/hooks/useAuth";
 import Loading from "@/components/custom/Loading";
-import socket  from "@/lib/utils/subscriptionSocket";
-import { joinUserRoom } from "@/lib/utils/subscriptionSocket";
-import { setSubscriptionId ,clearSubscriptionId } from "@/lib/redux/slices/authSlice";
+// import socket from "@/lib/utils/subscriptionSocket";
+// import { joinUserRoom } from "@/lib/utils/subscriptionSocket";
+import { setSubscriptionId, clearSubscriptionId } from "@/lib/redux/slices/authSlice";
 
 export default function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
-  const dispatch = useDispatch<AppDispatch>();
-  const { loading } = useAuth();
-  const user = useSelector((state: RootState) => state.auth.user);
+	const dispatch = useDispatch<AppDispatch>();
+	const { loading, user } = useAuth();
 
-  // 🔹 Rehydrate user + token from localStorage on mount
-  useEffect(() => {
-    dispatch(rehydrateAuth());
-  }, [dispatch]);
+	// 🔹 Request notifications & listen for messages
+	useEffect(() => {
+		if (!user?.id) return;
 
-  // 🔹 Setup subscription lifecycle socket listener
-  useEffect(() => {
-    if (user?.id) {
-      joinUserRoom(user.id);
+		import("@/firebaseClient").then(({ requestNotificationPermission, listenForMessages }) => {
+			requestNotificationPermission(user.id);
+			listenForMessages((payload) => {
+				console.log("Foreground message:", payload);
+			});
+		});
+	}, [user?.id]);
 
-      socket.on("subscription:update", (data) => {
-        console.log("🔔 Subscription update:", data);
+	// 🔹 Rehydrate user + token from localStorage on mount
+	useEffect(() => {
+		dispatch(rehydrateAuth());
+	}, [dispatch]);
 
-        if (data.status === "ACTIVE") {
-          dispatch(setSubscriptionId(data.subscriptionId));
-        } else if (data.status === "INACTIVE") {
-          dispatch(clearSubscriptionId());
-        }
-      });
+	// 🔹 Setup subscription lifecycle socket listener
+	// useEffect(() => {
+	// 	if (!user?.id) return;
 
-      return () => {
-        socket.off("subscription:update");
-      };
-    }
-  }, [user, dispatch]);
+	// 	joinUserRoom(user.id);
 
-  if (loading) {
-    return <Loading />;
-  }
+	// 	socket.on("subscription:update", (data) => {
+	// 		console.log("🔔 Subscription update:", data);
 
-  return <>{children}</>;
+	// 		if (data.status === "ACTIVE") {
+	// 			dispatch(setSubscriptionId(data.subscriptionId));
+	// 		} else if (data.status === "INACTIVE") {
+	// 			dispatch(clearSubscriptionId());
+	// 		}
+	// 	});
+
+	// 	return () => {
+	// 		socket.off("subscription:update");
+	// 	};
+	// }, [user?.id, dispatch]);
+
+	if (loading) return <Loading />;
+
+	return <>{children}</>;
 }

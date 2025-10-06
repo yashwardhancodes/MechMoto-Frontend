@@ -119,7 +119,8 @@ const Page: React.FC = () => {
 														"https://via.placeholder.com/150"
 													}
 													alt={item.part.subcategory?.name || "Part Image"}
-
+													width={100}
+													height={100}
 													className="w-full h-full object-contain"
 												/>
 											</div>
@@ -181,7 +182,8 @@ const Page: React.FC = () => {
 													"https://via.placeholder.com/150"
 												}
 												alt={item.part.subcategory?.name || "Part Image"}
-
+												width={100}
+												height={100}
 												className="w-full h-full object-contain"
 											/>
 										</div>

@@ -308,6 +308,8 @@ return (
 										}
 										alt={item.part.subcategory?.name || "Product image"}
 										className="w-6 h-6 md:w-8 md:h-8 object-contain"
+										width={100}
+										height={100}
 									/>
 								</div>
 							))}

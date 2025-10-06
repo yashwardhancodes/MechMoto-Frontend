@@ -43,9 +43,15 @@ const SignupPage = () => {
         dispatch(setRedirect("")); // Clear after use
       } else if (role !== undefined) {
         if (role === ROLES.SUPER_ADMIN) {
-          finalPath = "/admin/dashboard";
+          finalPath = "/admin";
         } else if (role === ROLES.VENDOR) {
           finalPath = "/vendor/dashboard";
+        } else if (role === ROLES.USER){
+          finalPath = "/"
+        } else if (role === ROLES.MECHANIC) {
+          finalPath = "/mechanic/dashboard";
+        } else if (role === ROLES.SERVICE_CENTER) {
+          finalPath = "/service-center/dashboard"
         }
       }
       router.push(finalPath); // Use finalPath instead of redirectPath
@@ -64,8 +70,7 @@ const SignupPage = () => {
       const result = await signup(parsedData).unwrap();
       if (result.success) {
         toast.success("Signup successful! Redirecting...");
-        const redirectPath =
-          result.data.user.roleId === 1 ? "/dashboard/superadmin" : "/dashboard/vendor";
+        const redirectPath = "/auth/login";
         router.push(redirectPath);
       } else {
         toast.error("Signup failed. Please try again.");

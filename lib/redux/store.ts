@@ -18,6 +18,8 @@ import { subscriptionApi } from "./api/subscriptionApi";
 import { moduleApi } from "./api/moduleApi";
 import { serviceCenterApi } from "./api/serviceCenterApi";
 import { mechanicApi } from "./api/mechanicApi";
+import { liveCallApi } from "./api/liveCallApi";
+import { serviceRequestApi } from "./api/serviceRequestApi";
 
 
 export const makeStore = () =>
@@ -41,7 +43,9 @@ export const makeStore = () =>
 			[subscriptionApi.reducerPath]:subscriptionApi.reducer,
 			[moduleApi.reducerPath] : moduleApi.reducer,
 			[serviceCenterApi.reducerPath]: serviceCenterApi.reducer,
-			[mechanicApi.reducerPath]: mechanicApi.reducer,},
+			[mechanicApi.reducerPath]: mechanicApi.reducer,
+			[liveCallApi.reducerPath]: liveCallApi.reducer,
+			[serviceRequestApi.reducerPath]: serviceRequestApi.reducer},
 		middleware: (getDefaultMiddleware) =>
 			getDefaultMiddleware().concat(
 				authApi.middleware,
@@ -58,7 +62,9 @@ export const makeStore = () =>
 				subscriptionApi.middleware,
 				moduleApi.middleware,
 				serviceCenterApi.middleware,
-				mechanicApi.middleware
+				mechanicApi.middleware,
+				liveCallApi.middleware,
+				serviceRequestApi.middleware
 			),
 	});
 

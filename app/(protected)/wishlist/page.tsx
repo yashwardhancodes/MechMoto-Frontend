@@ -96,12 +96,15 @@ export default function ManageWishlist() {
 								alt={wishlist.part.subcategory?.name || "Part"}
 								className="w-full h-full object-cover"
 								onError={(e) => {
-									e.currentTarget.style.display = 'none';
+									e.currentTarget.style.display = "none";
 									if (e.currentTarget.nextElementSibling) {
-										const sibling = e.currentTarget.nextElementSibling as HTMLElement | null;
-										if (sibling) sibling.style.display = 'flex';
+										const sibling = e.currentTarget
+											.nextElementSibling as HTMLElement | null;
+										if (sibling) sibling.style.display = "flex";
 									}
 								}}
+								width={100}
+								height={100}
 							/>
 						) : null}
 						<div className="w-full h-full bg-[#9AE144]/10 rounded-lg flex items-center justify-center">
@@ -115,9 +118,7 @@ export default function ManageWishlist() {
 						<p className="text-sm text-gray-600 truncate">
 							{wishlist.part.part_brand?.name || "Unknown Brand"}
 						</p>
-						<p className="text-xs text-gray-500">
-							{wishlist.part.part_number}
-						</p>
+						<p className="text-xs text-gray-500">{wishlist.part.part_number}</p>
 					</div>
 				</div>
 			),
@@ -128,14 +129,13 @@ export default function ManageWishlist() {
 			render: (wishlist) => (
 				<div className="text-left">
 					<div className="font-bold text-lg text-gray-900">
-						₹{wishlist.part.price.toLocaleString("en-IN", {
+						₹
+						{wishlist.part.price.toLocaleString("en-IN", {
 							minimumFractionDigits: 2,
 							maximumFractionDigits: 2,
 						})}
 					</div>
-					<p className="text-sm text-gray-600">
-						Stock: {wishlist.part.quantity} units
-					</p>
+					<p className="text-sm text-gray-600">Stock: {wishlist.part.quantity} units</p>
 				</div>
 			),
 		},
@@ -337,10 +337,12 @@ export default function ManageWishlist() {
 											className="hover:bg-gray-50 transition-colors duration-150"
 										>
 											{columns.map((column) => (
-												<td key={column.key} className="px-6 py-4 whitespace-nowrap">
+												<td
+													key={column.key}
+													className="px-6 py-4 whitespace-nowrap"
+												>
 													{column.render && column.render(wishlist)}
 												</td>
-
 											))}
 											<td className="px-6 py-4 whitespace-nowrap">
 												<div className="flex gap-2">
@@ -406,17 +408,28 @@ export default function ManageWishlist() {
 									<div key={wishlist.id} className="p-4">
 										<div className="flex items-start gap-4 mb-4">
 											<div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-												{wishlist.part.image_urls && wishlist.part.image_urls.length > 0 ? (
+												{wishlist.part.image_urls &&
+												wishlist.part.image_urls.length > 0 ? (
 													<Image
 														src={wishlist.part.image_urls[0]}
-														alt={wishlist.part.subcategory?.name || "Part"}
+														alt={
+															wishlist.part.subcategory?.name ||
+															"Part"
+														}
 														className="w-full h-full object-cover"
 														onError={(e) => {
-															e.currentTarget.style.display = 'none';
-															if (e.currentTarget.nextElementSibling) {
-																(e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+															e.currentTarget.style.display = "none";
+															if (
+																e.currentTarget.nextElementSibling
+															) {
+																(
+																	e.currentTarget
+																		.nextElementSibling as HTMLElement
+																).style.display = "flex";
 															}
 														}}
+														width={100}
+														height={100}
 													/>
 												) : null}
 												<div className="w-full h-full bg-[#9AE144]/10 rounded-lg flex items-center justify-center">
@@ -425,10 +438,12 @@ export default function ManageWishlist() {
 											</div>
 											<div className="flex-1 min-w-0">
 												<h3 className="font-semibold text-gray-900 mb-1">
-													{wishlist.part.subcategory?.name || "Unknown Part"}
+													{wishlist.part.subcategory?.name ||
+														"Unknown Part"}
 												</h3>
 												<p className="text-sm text-gray-600 mb-1">
-													{wishlist.part.part_brand?.name || "Unknown Brand"}
+													{wishlist.part.part_brand?.name ||
+														"Unknown Brand"}
 												</p>
 												<p className="text-xs text-gray-500">
 													Part: {wishlist.part.part_number}
@@ -452,7 +467,8 @@ export default function ManageWishlist() {
 											<div className="flex items-center justify-between">
 												<span className="text-sm text-gray-600">Price</span>
 												<span className="font-bold text-gray-900">
-													₹{wishlist.part.price.toLocaleString("en-IN", {
+													₹
+													{wishlist.part.price.toLocaleString("en-IN", {
 														minimumFractionDigits: 2,
 													})}
 												</span>
@@ -466,7 +482,9 @@ export default function ManageWishlist() {
 											</div>
 
 											<div className="flex items-center justify-between">
-												<span className="text-sm text-gray-600">Status</span>
+												<span className="text-sm text-gray-600">
+													Status
+												</span>
 												<span
 													className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getAvailabilityStyle(
 														wishlist.part.availability_status,
@@ -480,7 +498,9 @@ export default function ManageWishlist() {
 											</div>
 
 											<div className="flex items-center justify-between">
-												<span className="text-sm text-gray-600">Origin</span>
+												<span className="text-sm text-gray-600">
+													Origin
+												</span>
 												<span
 													className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getOriginStyle(
 														wishlist.part.origin,

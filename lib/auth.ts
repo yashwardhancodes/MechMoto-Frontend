@@ -14,7 +14,7 @@ const ROLES = {
     "view:orders",
     "view:service-request",
     "view:mechanics",
-    "view:vehicles",
+    "manage:vehicles",
     "manage:car-make",
     "manage:model-line",
     "manage:engine-type",
@@ -28,6 +28,7 @@ const ROLES = {
     "manage:shipments",
      "view:service-center",
     "manage:service-center",
+    "manage:live-calls"
   ],
 
   Vendor: [
@@ -43,11 +44,17 @@ const ROLES = {
 
   Mechanic: [
     "view:dashboard",
-    "view:service-request",
+    "manage:service-requests",
     "view:vehicles",
     "manage:car-make",
     "manage:model-line",
      "view:service-center",
+  ],
+
+  ServiceCenter: [
+    "view:dashboard",
+    "manage:service-requests",
+    "manage:mechanics"
   ],
 
   Customer: [

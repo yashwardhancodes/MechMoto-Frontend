@@ -216,7 +216,6 @@ export default function VendorShipments() {
     <>
       <Toaster position="top-right" />
       <div className="h-[calc(100vh-140px)] overflow-y-auto bg-white shadow-sm py-8 px-4">
-        <div className="max-w-5xl mx-auto">
           <DataTable
             title="Manage Shipments"
             data={shipments}
@@ -373,7 +372,6 @@ export default function VendorShipments() {
               </div>
             </div>
           )}
-        </div>
       </div>
     </>
   );
