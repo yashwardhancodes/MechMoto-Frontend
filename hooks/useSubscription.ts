@@ -14,7 +14,7 @@ export type Subscription = {
   expiresAt: string;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
 
 // ✅ Centralized fetcher with Bearer token
 const fetcher = async (url: string) => {
