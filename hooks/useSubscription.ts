@@ -14,7 +14,7 @@ export type Subscription = {
   expiresAt: string;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000/api/v1";
 
 // ✅ Centralized fetcher with Bearer token
 const fetcher = async (url: string) => {
@@ -35,7 +35,7 @@ export function useSubscription() {
   const userId = getUserId();
 
   const { data, error, mutate, isLoading } = useSWR<Subscription>(
-    userId ? `${API_BASE}/subscriptions/active/${userId}` : null,
+    userId ? `${API_BASE}subscriptions/active/${userId}` : null,
     fetcher,
     {
       revalidateOnFocus: true,
@@ -61,7 +61,7 @@ export function useHasModule(moduleName: string) {
 export async function consumeModuleUsage(moduleId: number) {
   const token = getToken();
 
-  const res = await fetch(`${API_BASE}/modules/consume`, {
+  const res = await fetch(`${API_BASE}modules/consume`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
