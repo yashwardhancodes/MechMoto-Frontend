@@ -44,9 +44,13 @@ const LoginPage = () => {
 
       // Role-based fallback
       if (role === ROLES.SUPER_ADMIN) {
-        finalPath = "/admin/";
+        finalPath = "/admin";
       } else if (role === ROLES.VENDOR) {
         finalPath = "/vendor/dashboard";
+      } else if (role === ROLES.SERVICE_CENTER) {
+        finalPath = "/service-center/dashboard";
+      } else if (role === ROLES.MECHANIC) {
+        finalPath = "/mechanic/dashboard";
       }
 
       router.push(finalPath);

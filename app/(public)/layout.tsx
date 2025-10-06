@@ -22,6 +22,10 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             redirectPath = "/admin/";
           } else if (role === ROLES.VENDOR) {
             redirectPath = "/vendor/dashboard";
+          } else if (role === ROLES.SERVICE_CENTER) {
+            redirectPath = "/service-center/dashboard";
+          } else if (role === ROLES.MECHANIC) {
+            redirectPath = "/mechanic/dashboard";
           }
         }
         router.push(redirectPath);

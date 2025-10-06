@@ -35,6 +35,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <Image
           src={product.image}
           alt={product.alt}
+          height={100}
+          width={100}
           className="w-full h-full object-cover"
         />
         {product.isGreatPrice && (

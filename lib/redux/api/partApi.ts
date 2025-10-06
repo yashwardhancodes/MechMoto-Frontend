@@ -91,7 +91,7 @@ export const partApi = createApi({
     }),
     addToWishlist: builder.mutation({
       query: (data) => ({
-        url: "/wishlist/toggle",
+        url: "wishlist/toggle",
         method: "POST",
         body: data,
       }),

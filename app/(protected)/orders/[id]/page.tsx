@@ -280,7 +280,7 @@ export default function OrderDetails() {
 								<div className="p-6">
 									<div className="space-y-4">
 										{order.order_items && order.order_items.length > 0 ? (
-											order.order_items.map((item: OrderItem ) => (
+											order.order_items.map((item: OrderItem) => (
 												<div
 													key={item.id}
 													className="flex gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100"
@@ -292,6 +292,8 @@ export default function OrderDetails() {
 														}
 														alt={item.part?.subcategory?.name || "Item"}
 														className="w-16 h-16 object-cover rounded-lg bg-white border border-slate-200"
+														width={100}
+														height={100}
 													/>
 													<div className="flex-1">
 														<h4 className="font-medium text-slate-900 mb-1">

@@ -1,18 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { RootState } from "../store";
 
-// Define the shape of a ModelLine
-interface ModelLine {
-  id: string | number; // Adjust based on your actual data structure
-  name: string;       // Add other relevant fields
-  [key: string]: unknown; // For flexibility, if needed; replace with specific fields if possible
-}
-
 // Define the expected response structure
 interface ModelLinesResponse {
-  data: ModelLine[];
-  total: number; // Adjust based on your API response
-  [key: string]: unknown; // For flexibility, if needed
+  data: string[];
+  success: boolean;
 }
 
 // Optional stricter filter type

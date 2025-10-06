@@ -5,12 +5,13 @@ import { Star, Eye, MapPin, Heart } from "lucide-react";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { useAddToWishlistMutation, useGetPartQuery } from "@/lib/redux/api/partApi";
 import { useParams, useRouter } from "next/navigation";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setBreadcrumbs } from "@/lib/redux/slices/breadcrumbSlice";
 import { useAddToCartMutation } from "@/lib/redux/api/partApi";
 import useAuth from "@/hooks/useAuth";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import { RootState } from "@/lib/redux/store";
 
 interface AuthWindow extends Window {
 	auth?: {
@@ -33,6 +34,7 @@ export default function ToyotaNexusBelt() {
 	const [addToWishlist] = useAddToWishlistMutation();
 	const { data: response, isLoading, error } = useGetPartQuery(id);
 	const part = response?.data;
+		const {token} = useSelector((state: RootState) => state.auth);
 
 	const images = part?.image_urls?.length
 		? part.image_urls
@@ -105,15 +107,15 @@ export default function ToyotaNexusBelt() {
 			// Check if the part is in the wishlist
 			const checkWishlist = async () => {
 				try {
-					const token = (window as AuthWindow).auth?.token;
-					const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/wishlist`, {
+					const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}wishlist`, {
 						headers: {
 							Authorization: `Bearer ${token}`,
 							"Content-Type": "application/json",
 						},
 					});
-					const wishlists: WishlistItem[] = await response.json();
-					const isWishlisted = wishlists.some(
+					const wishlists: { success: boolean; data?: WishlistItem[] } =
+						await response.json();
+					const isWishlisted = wishlists.data?.some(
 						(item) => item.partId === parseInt(id as string),
 					);
 					setIsInWishlist(isWishlisted);
@@ -245,6 +247,8 @@ export default function ToyotaNexusBelt() {
 									src={images[currentIndex]}
 									alt="Product"
 									className="max-h-48 sm:max-h-64 lg:max-h-72 object-contain mb-4 transition-all duration-500"
+									width={100}
+									height={100}
 								/>
 								<div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 text-left w-full px-2 sm:px-4">
 									<p className="text-xs sm:text-sm text-gray-600">
@@ -281,6 +285,8 @@ export default function ToyotaNexusBelt() {
 											src={img}
 											alt={`Thumbnail ${index}`}
 											className="w-16 h-16 object-contain"
+											width={100}
+											height={100}
 										/>
 									</div>
 								))}

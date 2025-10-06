@@ -51,7 +51,13 @@ export default function PaymentMethod() {
 					>
 						<div className="flex items-center gap-3">
 							<div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
-								<Image src={option.icon} alt={option.name} className="w-6 h-6" />
+								<Image
+									src={option.icon}
+									alt={option.name}
+									className="w-6 h-6"
+									width={100}
+									height={100}
+								/>
 							</div>
 							<p className="font-medium">{option.name}</p>
 						</div>

@@ -10,6 +10,7 @@ import { CiDiscount1 } from "react-icons/ci";
 import { MdMiscellaneousServices } from "react-icons/md";
 import { BiSupport } from "react-icons/bi";
 import { hasPermission, Role, Permission } from "@/lib/auth";
+import { ROLES } from "@/constants/roles";
 
 type MenuItem = {
   label: string;
@@ -35,55 +36,163 @@ interface AuthData {
 }
 
 const menuItems: MenuItem[] = [
-  { label: "Dashboard", icon: <LuLayoutDashboard size={16} />, basePath: "dashboard", permission: "view:dashboard" },
-  { label: "Manage Vendors", icon: <IoPeopleOutline size={18} />, basePath: "manage-vendors", permission: "view:vendors" },
-  {
-    label: "Manage Parts",
-    icon: <HiOutlineShoppingBag size={18} />,
-    basePath: "manage-parts",
-    permission: "view:parts",
-    subItems: [
-      { label: "Manage Categories", basePath: "manage-categories", icon: <Layers size={16} />, permission: "manage:categories" },
-      { label: "Manage Subcategories", basePath: "manage-subcategories", icon: <List size={16} />, permission: "manage:subcategories" },
-      { label: "Manage Part Brands", basePath: "manage-part-brands", icon: <Tag size={16} />, permission: "manage:part-brands" },
-    ],
-  },
-  {
-    label: "Manage Plans",
-    icon: <Tag size={16} />,
-    basePath: "manage-plans",
-    permission: "view:plans",
-    subItems: [
-      { label: "Manage Plan Types", basePath: "manage-plan-types", icon: <Layers size={16} />, permission: "manage:plan-types" },
-      { label: "Manage Plan Features", basePath: "manage-plan-features", icon: <List size={16} />, permission: "manage:plan-features" },
-      { label: "Manage Plan Pricing", basePath: "manage-plan-pricing", icon: <Tag size={16} />, permission: "manage:plan-pricing" },
-    ],
-  },
-  { label: "Coupons & Discounts", icon: <CiDiscount1 size={18} />, basePath: "coupons-and-discounts", permission: "view:coupons" },
-  { label: "Orders", icon: <Tag size={16} />, basePath: "orders", permission: "view:orders" },
-  { label: "Shipments", icon: <Tag size={16} />, basePath: "manage-shipments", permission: "view:shipments" },
-  { label: "Service Request", icon: <MdMiscellaneousServices size={18} />, basePath: "service-request", permission: "view:service-request" },
-  { label: "Manage Mechanics", icon: <Tag size={16} />, basePath: "manage-mechanics", permission: "view:mechanics" },
-  {
-    label: "Manage Vehicles",
-    icon: <Tag size={16} />,
-    basePath: "manage-vehicles",
-    permission: "view:vehicles",
-    subItems: [
-      { label: "Manage Car Make", basePath: "manage-car-make", icon: <Layers size={16} />, permission: "manage:car-make" },
-      { label: "Manage Model Line", basePath: "manage-model-line", icon: <List size={16} />, permission: "manage:model-line" },
-      { label: "Manage Engine Type", basePath: "manage-engine-type", icon: <Tag size={16} />, permission: "manage:engine-type" },
-    ],
-  },
-  {
-    label: "Manage Service Center",
-    icon: <MdMiscellaneousServices size={18} />,
-    basePath: "manage-service-center",
-    permission: "manage:service-center",
-  },
-  { label: "Financial Management", icon: <Tag size={16} />, basePath: "financial-management", permission: "view:financials" },
-  { label: "Analytics and Reporting", icon: <Tag size={16} />, basePath: "analytics-and-reporting", permission: "view:analytics" },
-  { label: "Customer Support", icon: <BiSupport size={16} />, basePath: "customer-support", permission: "view:support" },
+	{
+		label: "Dashboard",
+		icon: <LuLayoutDashboard size={16} />,
+		basePath: "dashboard",
+		permission: "view:dashboard",
+	},
+	{
+		label: "Live Calls",
+		icon: <BiSupport size={16} />,
+		basePath: "manage-live-calls",
+		permission: "manage:live-calls",
+	},
+	{
+		label: "Manage Vendors",
+		icon: <IoPeopleOutline size={18} />,
+		basePath: "manage-vendors",
+		permission: "view:vendors",
+	},
+	{
+		label: "Manage Parts",
+		icon: <HiOutlineShoppingBag size={18} />,
+		basePath: "manage-parts",
+		permission: "view:parts",
+		subItems: [
+			{
+				label: "Manage Categories",
+				basePath: "manage-categories",
+				icon: <Layers size={16} />,
+				permission: "manage:categories",
+			},
+			{
+				label: "Manage Subcategories",
+				basePath: "manage-subcategories",
+				icon: <List size={16} />,
+				permission: "manage:subcategories",
+			},
+			{
+				label: "Manage Part Brands",
+				basePath: "manage-part-brands",
+				icon: <Tag size={16} />,
+				permission: "manage:part-brands",
+			},
+		],
+	},
+	{
+		label: "Manage Plans",
+		icon: <Tag size={16} />,
+		basePath: "manage-plans",
+		permission: "view:plans",
+		subItems: [
+			{
+				label: "Manage Plan Types",
+				basePath: "manage-plan-types",
+				icon: <Layers size={16} />,
+				permission: "manage:plan-types",
+			},
+			{
+				label: "Manage Plan Features",
+				basePath: "manage-plan-features",
+				icon: <List size={16} />,
+				permission: "manage:plan-features",
+			},
+			{
+				label: "Manage Plan Pricing",
+				basePath: "manage-plan-pricing",
+				icon: <Tag size={16} />,
+				permission: "manage:plan-pricing",
+			},
+		],
+	},
+	{
+		label: "Coupons & Discounts",
+		icon: <CiDiscount1 size={18} />,
+		basePath: "coupons-and-discounts",
+		permission: "view:coupons",
+	},
+	{ label: "Orders", icon: <Tag size={16} />, basePath: "orders", permission: "view:orders" },
+	{
+		label: "Shipments",
+		icon: <Tag size={16} />,
+		basePath: "manage-shipments",
+		permission: "view:shipments",
+	},
+	{
+		label: "Service Request",
+		icon: <MdMiscellaneousServices size={18} />,
+		basePath: "service-request",
+		permission: "view:service-request",
+	},
+	{
+		label: "Manage Mechanics",
+		icon: <Tag size={16} />,
+		basePath: "manage-mechanics",
+		permission: "view:mechanics",
+	},
+	{
+		label: "Manage Vehicles",
+		icon: <Tag size={16} />,
+		basePath: "manage-vehicles",
+		permission: "manage:vehicles",
+		subItems: [
+			{
+				label: "Manage Car Make",
+				basePath: "manage-car-make",
+				icon: <Layers size={16} />,
+				permission: "manage:car-make",
+			},
+			{
+				label: "Manage Model Line",
+				basePath: "manage-model-line",
+				icon: <List size={16} />,
+				permission: "manage:model-line",
+			},
+			{
+				label: "Manage Engine Type",
+				basePath: "manage-engine-type",
+				icon: <Tag size={16} />,
+				permission: "manage:engine-type",
+			},
+		],
+	},
+	{
+		label: "Manage Service Center",
+		icon: <MdMiscellaneousServices size={18} />,
+		basePath: "manage-service-center",
+		permission: "manage:service-center",
+	},
+	{
+		label: "Financial Management",
+		icon: <Tag size={16} />,
+		basePath: "financial-management",
+		permission: "view:financials",
+	},
+	{
+		label: "Analytics and Reporting",
+		icon: <Tag size={16} />,
+		basePath: "analytics-and-reporting",
+		permission: "view:analytics",
+	},
+	{
+		label: "Customer Support",
+		icon: <BiSupport size={16} />,
+		basePath: "customer-support",
+		permission: "view:support",
+	},
+	{
+		label: "Service Requests",
+		icon: <BiSupport size={16} />,
+		basePath: "manage-service-requests",
+		permission: "manage:service-requests",
+	},
+	{
+		label: "Manage Mechanics",
+		icon: <BiSupport size={16} />,
+		basePath: "manage-mechanics",
+		permission: "manage:mechanics",
+	},
 ];
 
 export default function Sidebar({ setActiveMenu }: Props) {
@@ -102,7 +211,14 @@ export default function Sidebar({ setActiveMenu }: Props) {
   }, []);
 
    const getBasePath = (role: Role | null) => {
-    return role === "Vendor" ? "/vendor" : "/admin";
+    if (role == ROLES.VENDOR) {
+      return "/vendor";
+    } else if (role == ROLES.SERVICE_CENTER) {
+      return "/service-center";
+    } else if (role == ROLES.MECHANIC) {
+      return "/mechanic"
+    }
+    return "/admin";
   };
 
   const filteredMenuItems = useMemo(() => {

@@ -91,19 +91,26 @@ export default function OrderConfirmation() {
 						<div key={item.id} className="flex justify-between py-3">
 							<div className="flex items-center space-x-3">
 								<Image
-									src={item.part.image_urls[0] || "https://via.placeholder.com/150"}
+									src={
+										item.part.image_urls[0] || "https://via.placeholder.com/150"
+									}
 									alt={item.part.subcategory?.name || "Part Image"}
 									className="w-12 h-12 rounded-lg object-cover"
+									width={100}
+									height={100}
 								/>
 								<div>
-									<p className="font-medium text-gray-800">{item.part.subcategory?.name}</p>
-									<p className="text-gray-500 text-sm">Rs.{item.price.toFixed(2)}</p>
+									<p className="font-medium text-gray-800">
+										{item.part.subcategory?.name}
+									</p>
+									<p className="text-gray-500 text-sm">
+										Rs.{item.price.toFixed(2)}
+									</p>
 								</div>
 							</div>
 							<p className="text-gray-600">{item.quantity}x</p>
 						</div>
 					))}
-
 				</div>
 			</div>
 
