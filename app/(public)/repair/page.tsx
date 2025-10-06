@@ -66,6 +66,7 @@ export default function Service() {
 					setLocationError(
 						"Unable to get your location. Please enter manually or try again.",
 					);
+					console.log("Error: ", error);
 					toast.error("Location access denied. Please enable location services.");
 				},
 				{ enableHighAccuracy: true },

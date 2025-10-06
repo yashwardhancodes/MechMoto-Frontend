@@ -8,7 +8,7 @@ import useAuth from "@/hooks/useAuth";
 import Loading from "@/components/custom/Loading";
 // import socket from "@/lib/utils/subscriptionSocket";
 // import { joinUserRoom } from "@/lib/utils/subscriptionSocket";
-import { setSubscriptionId, clearSubscriptionId } from "@/lib/redux/slices/authSlice";
+// import { setSubscriptionId, clearSubscriptionId } from "@/lib/redux/slices/authSlice";
 
 export default function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
 	const dispatch = useDispatch<AppDispatch>();
