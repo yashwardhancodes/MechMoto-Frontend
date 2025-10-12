@@ -20,13 +20,32 @@ const FilterSection: React.FC = () => {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
-	const { data: filterOptions, isLoading: optionsLoading } = useGetFilterOptionsQuery();
+	const { data: filterOptionsResponse, isLoading: optionsLoading } = useGetFilterOptionsQuery({
+		undefined,
+	});
+	const filterOptions = filterOptionsResponse?.data;
+
+	// Helper to map filterType to URL key
+	const getUrlKey = (filterType: keyof typeof selectedFilters): string => {
+		const mapping: Record<keyof typeof selectedFilters, string> = {
+			makes: "make",
+			models: "model",
+			years: "year",
+			engines: "engine",
+			brands: "brand",
+			categories: "category",
+		};
+		return mapping[filterType];
+	};
 
 	// Initialize selected filters from URL params
 	useEffect(() => {
 		const makes = searchParams.getAll("make");
 		const models = searchParams.getAll("model");
-		const years = searchParams.getAll("year").map(Number);
+		const years = searchParams
+			.getAll("year")
+			.map(Number)
+			.filter((y) => !isNaN(y));
 		const engines = searchParams.getAll("engine");
 		const brands = searchParams.getAll("brand");
 		const categories = searchParams.getAll("category");
@@ -34,7 +53,7 @@ const FilterSection: React.FC = () => {
 		setSelectedFilters({
 			makes,
 			models,
-			years: years.filter((y) => !isNaN(y)),
+			years,
 			engines,
 			brands,
 			categories,
@@ -54,16 +73,17 @@ const FilterSection: React.FC = () => {
 		setSelectedFilters((prev) => ({ ...prev, [filterType]: newSelected }));
 
 		// Update URL
+		const urlKey = getUrlKey(filterType);
 		const params = new URLSearchParams(searchParams.toString());
-		params.delete(filterType);
+		params.delete(urlKey);
 
 		newSelected.forEach((item) => {
-			params.append(filterType, String(item));
+			params.append(urlKey, String(item));
 		});
 
 		// Clean empty arrays
 		if (newSelected.length === 0) {
-			params.delete(filterType);
+			params.delete(urlKey);
 		}
 
 		router.push(`?${params.toString()}`, { scroll: false });
@@ -93,9 +113,21 @@ const FilterSection: React.FC = () => {
 		return <div className="bg-white rounded-lg p-5">Loading filters...</div>;
 	}
 
+	// Ensure selected brands are always visible, even in limited view
+	const selectedBrandsSet = new Set(selectedFilters.brands);
+	const nonSelectedBrands = (filterOptions?.brands || []).filter(
+		(b) => !selectedBrandsSet.has(b),
+	);
+	const baseVisibleBrands = [
+		...selectedFilters.brands,
+		...nonSelectedBrands.slice(
+			0,
+			showMoreBrands ? nonSelectedBrands.length : 3 - selectedFilters.brands.length,
+		),
+	];
 	const visibleBrands = showMoreBrands
 		? filterOptions?.brands || []
-		: (filterOptions?.brands || []).slice(0, 3);
+		: [...new Set(baseVisibleBrands)]; // Dedupe in case of overlap
 
 	return (
 		<div className="bg-white rounded-lg">
@@ -166,7 +198,7 @@ const FilterSection: React.FC = () => {
 						>
 							{showMoreBrands
 								? "- Show less"
-								: `+ ${filterOptions.brands.length - 3} more`}
+								: `+ ${filterOptions.brands.length - visibleBrands.length} more`}
 						</div>
 					)}
 				</div>
