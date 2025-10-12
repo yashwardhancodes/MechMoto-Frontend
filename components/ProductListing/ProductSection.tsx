@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
-import { useGetPartsByFiltersQuery, useGetFilterOptionsQuery } from "@/lib/redux/api/partApi";
+import { useGetPartsByFiltersQuery } from "@/lib/redux/api/partApi";
 import { useDispatch } from "react-redux";
 import { setBreadcrumbs } from "@/lib/redux/slices/breadcrumbSlice";
 // Define interfaces for the data structures
