@@ -107,7 +107,7 @@ export default function ManageParts() {
       onClick: (part) => {
         console.log("View part:", part);
         if (part?.id && typeof part.id === "number") {
-          // router.push(`/vendor/dashboard/manage-parts/${part.id}`);
+          router.push(`/vendor/manage-parts/view/${part.id}`);
         } else {
           console.error("Invalid part ID for view:", part);
         }

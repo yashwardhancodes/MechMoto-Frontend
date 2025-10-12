@@ -20,6 +20,7 @@ import { serviceCenterApi } from "./api/serviceCenterApi";
 import { mechanicApi } from "./api/mechanicApi";
 import { liveCallApi } from "./api/liveCallApi";
 import { serviceRequestApi } from "./api/serviceRequestApi";
+import { notificationApi } from "./api/notificationApi";
 
 
 export const makeStore = () =>
@@ -45,7 +46,9 @@ export const makeStore = () =>
 			[serviceCenterApi.reducerPath]: serviceCenterApi.reducer,
 			[mechanicApi.reducerPath]: mechanicApi.reducer,
 			[liveCallApi.reducerPath]: liveCallApi.reducer,
-			[serviceRequestApi.reducerPath]: serviceRequestApi.reducer},
+			[serviceRequestApi.reducerPath]: serviceRequestApi.reducer,
+			[notificationApi.reducerPath]: notificationApi.reducer,
+		},
 		middleware: (getDefaultMiddleware) =>
 			getDefaultMiddleware().concat(
 				authApi.middleware,
@@ -64,7 +67,8 @@ export const makeStore = () =>
 				serviceCenterApi.middleware,
 				mechanicApi.middleware,
 				liveCallApi.middleware,
-				serviceRequestApi.middleware
+				serviceRequestApi.middleware,
+				notificationApi.middleware,
 			),
 	});
 
