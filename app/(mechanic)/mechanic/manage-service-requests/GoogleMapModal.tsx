@@ -27,6 +27,7 @@ export default function GoogleMapModal({
 	const legendText = isMechanicView ? "Your Location" : "Your Service Center";
 
 	useEffect(() => {
+		console.log("Google map api key: ", process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
 		const loader = new Loader({
 			apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
 			version: "weekly",

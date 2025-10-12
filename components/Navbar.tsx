@@ -7,12 +7,14 @@ import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
 import { faUser, faBell } from "@fortawesome/free-regular-svg-icons";
+import { faCompress, faExpand } from "@fortawesome/free-solid-svg-icons";
 import { Menu, X } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useGetAllSubscriptionsQuery } from "@/lib/redux/api/subscriptionApi";
 import NotificationDropdown from "./notifications/NotificationDropdown";
 import { useNotifications } from "@/hooks/useNotifications";
+import { ROLES } from "@/constants/roles";
 
 // Define the Subscription interface based on the expected data structure
 interface Subscription {
@@ -31,6 +33,7 @@ const Navbar = () => {
 	const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const { isLoggedIn, user, loading, signOut } = useAuth();
+	const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
 	console.log(user?.razorpaySubscriptionId);
 
 	const router = useRouter();
@@ -59,6 +62,17 @@ const Navbar = () => {
 		};
 	}, []);
 
+	// Fullscreen toggle
+	const toggleFullScreen = () => {
+		if (!document.fullscreenElement) {
+			document.documentElement.requestFullscreen();
+			setIsFullScreen(true);
+		} else if (document.exitFullscreen) {
+			document.exitFullscreen();
+			setIsFullScreen(false);
+		}
+	};
+
 	return (
 		<>
 			{/* Desktop Navbar */}
@@ -67,11 +81,13 @@ const Navbar = () => {
 					<Image src={navLogo} alt="logo" className="h-[45px] lg:h-[52px] w-auto" />
 				</Link>
 				<div className="flex items-center gap-4 lg:gap-8 text-xs lg:text-sm">
-					<div className="flex items-center gap-4 lg:gap-8">
-						<Link href={"/"}>Home</Link>
-						<Link href={"/about"}>About Us</Link>
-						<Link href={"/about"}>Contact</Link>
-					</div>
+					{(!isLoggedIn || user?.role.name === ROLES.USER) && (
+						<div className="flex items-center gap-4 lg:gap-8">
+							<Link href={"/"}>Home</Link>
+							<Link href={"/about"}>About Us</Link>
+							<Link href={"/about"}>Contact</Link>
+						</div>
+					)}
 					{/* Notification Dropdown */}
 					{isLoggedIn && (
 						<NotificationDropdown
@@ -102,16 +118,10 @@ const Navbar = () => {
 							<div className="absolute left-0 top-12 w-44 bg-white rounded-lg shadow-md z-50">
 								<ul className="py-2 text-sm text-gray-700">
 									{/* Check the role of the user */}
-									{user?.role.name === "Admin" ? (
+									{user?.role.name === ROLES.SUPER_ADMIN ? (
 										<>
 											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
-												Admin Dashboard
-											</li>
-											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
-												Manage Users
-											</li>
-											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
-												Settings
+												Profile Settings
 											</li>
 										</>
 									) : (
@@ -150,13 +160,24 @@ const Navbar = () => {
 							</div>
 						)}
 					</div>
-					<Link
-						href="/products/cart"
-						className="flex items-center justify-between gap-1 lg:gap-2 px-3 lg:px-4 py-2 rounded-3xl bg-gradient-to-r from-[#1F5B05] to-[#9AE144] text-black font-medium shadow-md"
-					>
-						<span>My Cart</span>
-						<FontAwesomeIcon icon={faCartShopping} className="text-sm" />
-					</Link>
+					{isLoggedIn && user.role.name === ROLES.USER && (
+						<Link
+							href="/products/cart"
+							className="flex items-center justify-between gap-1 lg:gap-2 px-3 lg:px-4 py-2 rounded-3xl bg-gradient-to-r from-[#1F5B05] to-[#9AE144] text-black font-medium shadow-md"
+						>
+							<span>My Cart</span>
+							<FontAwesomeIcon icon={faCartShopping} className="text-sm" />
+						</Link>
+					)}
+					{/* Fullscreen Toggle Button */}
+					{isLoggedIn && user.role.name !== ROLES.USER && (
+						<button
+							onClick={toggleFullScreen}
+							className="flex items-center justify-center px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600"
+						>
+							<FontAwesomeIcon icon={isFullScreen ? faCompress : faExpand} />
+						</button>
+					)}
 				</div>
 			</div>
 
