@@ -78,7 +78,14 @@ export default function Pricing() {
     : [];
 
   const handleRedirect = (plan: { name: string; link: string }) => {
-    const isLoggedIn = localStorage.getItem("auth");
+    const storageKey = "auth";
+
+	// ✅ Check localStorage first (persistent)
+	let isLoggedIn = localStorage.getItem(storageKey);
+	if (!isLoggedIn) {
+		// Fallback to sessionStorage (current session)
+		isLoggedIn = sessionStorage.getItem(storageKey);
+	}
 
     if (isLoggedIn) {
       router.push(plan.link);

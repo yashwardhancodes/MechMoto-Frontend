@@ -10,7 +10,14 @@ export interface AuthData {
 
 export function getAuth(): AuthData | null {
   try {
-    const raw = localStorage.getItem("auth");
+    const storageKey = "auth";
+
+	// ✅ Check localStorage first (persistent)
+	let raw = localStorage.getItem(storageKey);
+	if (!raw) {
+		// Fallback to sessionStorage (current session)
+		raw = sessionStorage.getItem(storageKey);
+	}
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;

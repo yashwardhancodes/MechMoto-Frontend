@@ -126,6 +126,12 @@ const menuItems: MenuItem[] = [
 		permission: "view:service-request",
 	},
 	{
+		label: "Roles and Permissions",
+		icon: <MdMiscellaneousServices size={18} />,
+		basePath: "manage-roles",
+		permission: "manage:roles-permissions",
+	},
+	{
 		label: "Manage Mechanics",
 		icon: <Tag size={16} />,
 		basePath: "manage-mechanics",
@@ -203,7 +209,14 @@ export default function Sidebar({ setActiveMenu }: Props) {
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedUserData = localStorage.getItem("auth");
+    const storageKey = "auth";
+
+	// ✅ Check localStorage first (persistent)
+	let storedUserData = localStorage.getItem(storageKey);
+	if (!storedUserData) {
+		// Fallback to sessionStorage (current session)
+		storedUserData = sessionStorage.getItem(storageKey);
+	}
     if (storedUserData) {
       const user: AuthData = JSON.parse(storedUserData);
       setUserRole(user.user.role.name as Role);

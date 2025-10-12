@@ -1,25 +1,36 @@
+// In authThunks.ts (or wherever rehydrateAuth lives)
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { setCredentials, logout } from "../slices/authSlice";
+import { setCredentials, User } from "../slices/authSlice";
+import { AuthState } from "../slices/authSlice"; // Adjust path
 
-export const rehydrateAuth = createAsyncThunk(
-	"auth/rehydrate",
-	async (_, { dispatch, rejectWithValue }) => {
+export const rehydrateAuth = createAsyncThunk<
+	{ user: User; token: string } | null,
+	void,
+	{ state: { auth: AuthState } }
+>("auth/rehydrateAuth", (_, { dispatch }) => {
+	const storageKey = "auth";
+
+	// ✅ Check localStorage first (persistent)
+	let authData = localStorage.getItem(storageKey);
+	if (!authData) {
+		// Fallback to sessionStorage (current session)
+		authData = sessionStorage.getItem(storageKey);
+	}
+
+	if (authData) {
 		try {
-			const authData = localStorage.getItem("auth");
-			if (authData) {
-				const parsed = JSON.parse(authData);
-				if (parsed.user && parsed.token) {
-					dispatch(setCredentials(parsed));
-				} else {
-					dispatch(logout());
-				}
-			} else {
-				dispatch(logout());
+			const parsed = JSON.parse(authData);
+			if (parsed.user && parsed.token) {
+				dispatch(setCredentials(parsed));
+				return parsed;
 			}
-		} catch (error) {
-			console.error("Failed to rehydrate auth state:", error);
-			localStorage.removeItem("auth");
-			return rejectWithValue(error);
+		} catch (err) {
+			console.error("Failed to rehydrate auth:", err);
+			// Clear invalid data
+			localStorage.removeItem(storageKey);
+			sessionStorage.removeItem(storageKey);
 		}
-	},
-);
+	}
+
+	return null;
+});

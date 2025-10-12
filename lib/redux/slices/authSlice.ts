@@ -44,12 +44,13 @@ const authSlice = createSlice({
 		) => {
 			state.user = action.payload.user;
 			state.token = action.payload.token;
-			localStorage.setItem("auth", JSON.stringify(action.payload));
+			// localStorage.setItem("auth", JSON.stringify(action.payload));
 		},
 		logout: (state) => {
 			state.user = null;
 			state.token = null;
 			localStorage.removeItem("auth");
+			sessionStorage.removeItem("auth");
 		},
 
 		// ✅ new reducer for updating subscriptionId

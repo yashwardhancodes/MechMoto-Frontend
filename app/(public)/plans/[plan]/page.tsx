@@ -96,8 +96,14 @@ export default function PlanPage() {
   // Handle subscription create
   // -------------------------
   const handleRedirect = async () => {
-    const authData = localStorage.getItem("auth");
+    const storageKey = "auth";
 
+    // ✅ Check localStorage first (persistent)
+    let authData = localStorage.getItem(storageKey);
+    if (!authData) {
+      // Fallback to sessionStorage (current session)
+      authData = sessionStorage.getItem(storageKey);
+    }
     if (!authData) {
       router.push("/auth/login");
       dispatch(setRedirect(`/plans/${plan}`));
