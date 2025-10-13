@@ -1,68 +1,79 @@
-export type Role = keyof typeof ROLES;
+import { ROLES } from "@/constants/roles";
+import { User } from "./redux/slices/authSlice";
+import { Permission } from "./redux/api/rolesApi";
 
-export type Permission = (typeof ROLES)[Role][number];
+export type Role = keyof typeof USERROLES;
 
-const ROLES = {
+export type UserPermission = (typeof USERROLES)[Role][number];
+
+const USERROLES = {
 	SuperAdmin: [
-		"view:dashboard",
-		"view:vendors",
-		"view:parts",
-		"manage:categories",
-		"manage:subcategories",
-		"manage:part-brands",
-		"view:coupons",
-		"view:orders",
-		"view:service-request",
-		"view:mechanics",
-		"manage:vehicles",
-		"manage:car-make",
-		"manage:model-line",
-		"manage:engine-type",
-		"view:financials",
-		"view:analytics",
-		"view:support",
-		"view:plans",
-		"manage:plan-add",
-		"manage:plan-edit",
-		"view:shipments",
-		"manage:shipments",
-		"view:service-center",
-		"manage:service-center",
-		"manage:live-calls",
-		"manage:roles-permissions",
+		"read:dashboard",
+		"read:user_management",
+		"read:vendor",
+		"read:part",
+		"read:category",
+		"read:subcategory",
+		"read:part_brand",
+		"read:coupon",
+		"read:order",
+		"read:service_request",
+		"read:mechanics",
+		"read:vehicle",
+		"read:car_make",
+		"read:model-line",
+		"read:engine_type",
+		"read:financials",
+		"read:analytics",
+		"read:support",
+		"read:plan",
+		"read:plan-add",
+		"read:plan-edit",
+		"read:shipments",
+		"read:shipments",
+		"read:service_center",
+		"read:expert_help",
+		"read:role",
 	],
 
 	Vendor: [
-		"view:dashboard",
-		"view:parts",
-		"manage:parts",
-		"manage:categories",
-		"manage:subcategories",
-		"view:orders",
-		"view:coupons",
-		"view:shipments",
+		"read:dashboard",
+		"read:parts",
+		"read:parts",
+		"read:category",
+		"read:subcategory",
+		"read:order",
+		"read:shipment",
 	],
 
-	Mechanic: [
-		"view:dashboard",
-		"manage:service-requests",
-		"view:vehicles",
-		"manage:car-make",
-		"manage:model-line",
-		"view:service-center",
-	],
+	Mechanic: ["read:dashboard", "read:service_request"],
 
-	ServiceCenter: ["view:dashboard", "manage:service-requests", "manage:mechanics"],
+	ServiceCenter: ["read:dashboard", "read:service_request", "read:mechanics"],
 
-	Customer: ["view:dashboard", "view:orders", "view:support", "view:service-center"],
+	Customer: ["read:dashboard", "read:order", "read:support", "read:service_center"],
 } as const;
 
-export function hasPermission({
-  user,
-  permission,
-}: {
-  user: { id: string; role: Role };
-  permission: Permission;
-}) {
-  return (ROLES[user.role] as readonly Permission[]).includes(permission);
+export function createPermissions(permissions: Permission[]): string[] {
+	return permissions.map((permission) => {
+		if (!permission.module) {
+			throw new Error(`Module is missing for permission id: ${permission.id}`);
+		}
+		return `${permission.action}:${permission.module.name}`;
+	});
+}
+
+export function hasPermission({ user, permission }: { user: User; permission: UserPermission }) {
+	const role = user?.role?.name;
+	if (
+		role === ROLES.VENDOR ||
+		role == ROLES.MECHANIC ||
+		role === ROLES.SERVICE_CENTER ||
+		role == ROLES.USER
+	) {
+		return (USERROLES[role] as readonly UserPermission[]).includes(permission);
+	}
+	const customPermissions = createPermissions(user.role.permissions);
+	console.log("custom permissions", customPermissions);
+	console.log("result: ", permission, customPermissions.includes(permission));
+	return customPermissions.includes(permission);
 }
