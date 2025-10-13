@@ -100,7 +100,7 @@ const AddPart: React.FC = () => {
   const { data: subcategories, isLoading: isSubcategoriesLoading, error: subcategoriesError } =
     useGetAllSubcategoriesQuery({});
   const { data: partBrands, isLoading: isPartBrandsLoading, error: partBrandsError } =
-    useGetAllPartBrandsQuery();
+    useGetAllPartBrandsQuery({page: 1, limit: 999999});
   const { data: discounts, isLoading: isDiscountsLoading, error: discountsError } =
     useGetAllVehiclesQuery({}); // ⚠️ looks like this should be useGetAllDiscountsQuery?
 

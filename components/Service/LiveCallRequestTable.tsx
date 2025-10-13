@@ -9,9 +9,9 @@ import { toast } from "react-hot-toast";
 import { Star } from "lucide-react";
 
 export default function LiveCallRequests() {
-	const { data, isLoading, isError, refetch } = useGetLiveCallRequestsQuery();
+	const { data, isLoading, isError, refetch } = useGetLiveCallRequestsQuery({page: 1, limit: 999999});
 	const [updateLiveCallRequest] = useUpdateLiveCallRequestMutation();
-	const requests = Array.isArray(data) ? data : data?.data ?? [];
+	const requests = data.data.requests;
 	const [isUpdating, setIsUpdating] = useState<{ [key: number]: boolean }>({});
 
 	const handleRatingSubmit = async (requestId: number, rating: number) => {

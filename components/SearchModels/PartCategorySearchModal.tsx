@@ -73,9 +73,9 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({
 	const dispatch = useDispatch();
 
 	// Categories
-	const { data: categoriesData, isLoading: isLoadingCategories } = useGetAllCategoriesQuery({});
+	const { data: categoriesData, isLoading: isLoadingCategories } = useGetAllCategoriesQuery({page: 1, limit: 999999});
 	const categories: PartCategory[] =
-		categoriesData?.data.map((category: Category) => ({
+		categoriesData?.data.categories.map((category: Category) => ({
 			id: category.id,
 			name: category.name,
 			img_src: category.img_src,

@@ -111,7 +111,7 @@ const UpdatePart: React.FC = () => {
 		data: partBrands,
 		isLoading: isPartBrandsLoading,
 		error: partBrandsError,
-	} = useGetAllPartBrandsQuery();
+	} = useGetAllPartBrandsQuery({page: 1, limit: 999999});
 	const {
 		data: discounts,
 		isLoading: isDiscountsLoading,

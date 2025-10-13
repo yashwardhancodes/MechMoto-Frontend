@@ -4,10 +4,10 @@
 import FilterItem from "./FilterItem";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useGetFilterOptionsQuery, useGetPartsByFiltersQuery } from "@/lib/redux/api/partApi";
+import { useGetFilterOptionsQuery } from "@/lib/redux/api/partApi";
 import { useGetAllCategoriesQuery } from "@/lib/redux/api/categoriesApi";
 import { useLazyGetSubcategoriesByCategoryIdQuery } from "@/lib/redux/api/subCategoriesApi";
-import { skipToken } from "@reduxjs/toolkit/query";
+// import { skipToken } from "@reduxjs/toolkit/query";
 
 const FilterSection: React.FC = () => {
 	const [showMoreBrands, setShowMoreBrands] = useState(false);
@@ -32,39 +32,40 @@ const FilterSection: React.FC = () => {
 	const filterOptions = filterOptionsResponse?.data;
 
 	// For category and subcategory dropdowns
-	const { data: categoriesData } = useGetAllCategoriesQuery({});
-	const categoriesList = categoriesData?.data || [];
+	const { data: categoriesData } = useGetAllCategoriesQuery({page: 1, limit: 999999});
+	// Normalize categoriesData to an array when API response might be wrapped
+	const categoriesList = categoriesData?.data?.categories;
 	const [triggerSubcats, { data: subcatsData }] = useLazyGetSubcategoriesByCategoryIdQuery();
 
 	// For preselect from parts data
-	const subcategoryIdParam = searchParams.get("sub_category_id");
-	const vehicleIdParam = searchParams.get("vehicle_id");
-	const currentMakes = searchParams.getAll("make");
-	const currentModels = searchParams.getAll("model");
-	const currentYears = searchParams
-		.getAll("year")
-		.map(Number)
-		.filter((y) => !isNaN(y));
-	const currentEngines = searchParams.getAll("engine");
-	const currentBrands = searchParams.getAll("brand");
-	const currentCategories = searchParams.getAll("category");
+	// const subcategoryIdParam = searchParams.get("sub_category_id");
+	// const vehicleIdParam = searchParams.get("vehicle_id");
+	// const currentMakes = searchParams.getAll("make");
+	// const currentModels = searchParams.getAll("model");
+	// const currentYears = searchParams
+	// 	.getAll("year")
+	// 	.map(Number)
+	// 	.filter((y) => !isNaN(y));
+	// const currentEngines = searchParams.getAll("engine");
+	// const currentBrands = searchParams.getAll("brand");
+	// const currentCategories = searchParams.getAll("category");
 
-	const { data: partsDataForPreselect, isLoading: partsPreselectLoading } =
-		useGetPartsByFiltersQuery(
-			vehicleIdParam || subcategoryIdParam
-				? {
-						subcategoryId: subcategoryIdParam ? Number(subcategoryIdParam) : undefined,
-						vehicleId: vehicleIdParam ? Number(vehicleIdParam) : undefined,
-						make: currentMakes.length > 0 ? currentMakes : undefined,
-						model: currentModels.length > 0 ? currentModels : undefined,
-						year: currentYears.length > 0 ? currentYears : undefined,
-						engine: currentEngines.length > 0 ? currentEngines : undefined,
-						brand: currentBrands.length > 0 ? currentBrands : undefined,
-						category: currentCategories.length > 0 ? currentCategories : undefined,
-				  }
-				: skipToken,
-			{ skip: !vehicleIdParam && !subcategoryIdParam },
-		);
+	// const { data, isLoading } =
+	// 	useGetPartsByFiltersQuery(
+	// 		vehicleIdParam || subcategoryIdParam
+	// 			? {
+	// 					subcategoryId: subcategoryIdParam ? Number(subcategoryIdParam) : undefined,
+	// 					vehicleId: vehicleIdParam ? Number(vehicleIdParam) : undefined,
+	// 					make: currentMakes.length > 0 ? currentMakes : undefined,
+	// 					model: currentModels.length > 0 ? currentModels : undefined,
+	// 					year: currentYears.length > 0 ? currentYears : undefined,
+	// 					engine: currentEngines.length > 0 ? currentEngines : undefined,
+	// 					brand: currentBrands.length > 0 ? currentBrands : undefined,
+	// 					category: currentCategories.length > 0 ? currentCategories : undefined,
+	// 			  }
+	// 			: skipToken,
+	// 		{ skip: !vehicleIdParam && !subcategoryIdParam },
+	// 	);
 
 	// Update subcatOptions when subcatsData changes
 	useEffect(() => {

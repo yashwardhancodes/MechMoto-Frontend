@@ -100,7 +100,7 @@ const AddPart: React.FC = () => {
   const [createPart, { isLoading }] = useCreatePartMutation();
   const { data: vehicles, isLoading: isVehiclesLoading, error: vehiclesError } = useGetAllVehiclesQuery({});
   const { data: subcategories, isLoading: isSubcategoriesLoading, error: subcategoriesError } = useGetAllSubcategoriesQuery({});
-  const { data: partBrands, isLoading: isPartBrandsLoading, error: partBrandsError } = useGetAllPartBrandsQuery();
+  const { data: partBrands, isLoading: isPartBrandsLoading, error: partBrandsError } = useGetAllPartBrandsQuery({page: 1, limit: 999999});
   const { data: discounts, isLoading: isDiscountsLoading, error: discountsError } = useGetAllVehiclesQuery({}); // Note: This seems to be incorrectly querying vehicles instead of discounts
 
   useEffect(() => {

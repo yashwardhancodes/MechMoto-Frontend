@@ -1,6 +1,6 @@
 // Updated: src/components/ProductListing/BuyParts.tsx (for persistence)
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { FaSearch, FaSpinner } from "react-icons/fa";
 import CategoryGrid from "./CategoryGrid";
 import PartCategorySearchModal from "./SearchModels/PartCategorySearchModal";
@@ -127,7 +127,7 @@ const BuyParts = () => {
 		selectedSubCategory,
 	]);
 
-	const { data: carMakesData, isLoading: carMakeLoading } = useGetAllCarMakesQuery();
+	const { data: carMakesData, isLoading: carMakeLoading } = useGetAllCarMakesQuery({page: 1, limit: 999999});
 	const [triggerGetModels, { data: modelLineData, isFetching: modelLineLoading }] =
 		useLazyGetModelLinesQuery();
 	const [
@@ -177,29 +177,8 @@ const BuyParts = () => {
 		}
 	}, [selectedCategory, hydrated, triggerGetSubcategories]);
 
-	// Auto-trigger search and open modal if category is persisted
-	useEffect(() => {
-		if (
-			hydrated &&
-			selectedCategory &&
-			!isModalOpen &&
-			searchResults.length === 0 &&
-			(selectedCarMake || selectedModelLine || selectedProductionYear || selectedModification)
-		) {
-			handleSearch();
-		}
-	}, [
-		hydrated,
-		selectedCategory,
-		isModalOpen,
-		searchResults.length,
-		selectedCarMake,
-		selectedModelLine,
-		selectedProductionYear,
-		selectedModification,
-	]);
-
-	const handleSearch = async () => {
+	
+	const handleSearch = useCallback(async () => {
 		if (
 			!selectedCarMake &&
 			!selectedModelLine &&
@@ -223,7 +202,36 @@ const BuyParts = () => {
 			console.error("Failed to fetch filtered vehicles:", error);
 			toast.error("Failed to fetch vehicles. Please try again.");
 		}
-	};
+	}, [
+		selectedCarMake,
+		selectedModelLine,
+		selectedProductionYear,
+		selectedModification,
+		triggerGetFilteredVehicles, // ✅ include hook trigger
+	]);
+
+	// Auto-trigger search and open modal if category is persisted
+	useEffect(() => {
+		if (
+			hydrated &&
+			selectedCategory &&
+			!isModalOpen &&
+			searchResults.length === 0 &&
+			(selectedCarMake || selectedModelLine || selectedProductionYear || selectedModification)
+		) {
+			handleSearch();
+		}
+	}, [
+		hydrated,
+		selectedCategory,
+		isModalOpen,
+		searchResults.length,
+		selectedCarMake,
+		selectedModelLine,
+		selectedProductionYear,
+		selectedModification,
+		handleSearch
+	]);
 
 	const LoadingSpinner = ({ size = "sm" }: { size?: "sm" | "md" }) => (
 		<FaSpinner
@@ -317,7 +325,7 @@ const BuyParts = () => {
 							>
 								{carMakeLoading ? "Loading..." : "🚗 Select Car Make"}
 							</option>
-							{carMakesData?.data?.map((carMake: CarMake) => (
+							{carMakesData?.data?.carMakes.map((carMake: CarMake) => (
 								<option
 									key={carMake.id}
 									value={carMake.id}
@@ -465,7 +473,7 @@ const BuyParts = () => {
 						>
 							{carMakeLoading ? "Loading..." : "🚗 Select Car Make"}
 						</option>
-						{carMakesData?.data?.map((carMake: CarMake) => (
+						{carMakesData?.data?.carMakes.map((carMake: CarMake) => (
 							<option
 								key={carMake.id}
 								value={carMake.id}

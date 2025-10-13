@@ -12,26 +12,28 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   const currentPath = usePathname();
 
   useEffect(() => {
-    const publicPaths = ["/", "/products/[subcategory]"]; // moved inside useEffect
+    const publicPaths = ["/", "/products/[subcategory]"];
 
     if (user) {
       if (publicPaths.includes(currentPath)) {
         let redirectPath = "/";
         if (role != undefined) {
-          if (role === ROLES.SUPER_ADMIN) {
-            redirectPath = "/admin/";
+          if (role === ROLES.USER) {
+            redirectPath = "/";
           } else if (role === ROLES.VENDOR) {
             redirectPath = "/vendor/dashboard";
           } else if (role === ROLES.SERVICE_CENTER) {
             redirectPath = "/service-center/dashboard";
           } else if (role === ROLES.MECHANIC) {
             redirectPath = "/mechanic/dashboard";
-          }
+          }else {
+            redirectPath = "/admin/";
+          } 
         }
         router.push(redirectPath);
       }
     }
-  }, [user, router, role, currentPath]); // no need to include publicPaths here
+  }, [user, router, role, currentPath]);
 
   return (
     <>

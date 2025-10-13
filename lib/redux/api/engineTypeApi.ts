@@ -10,6 +10,23 @@ interface EngineTypeResponse {
 	};
 }
 
+interface GetEngineTypeResponse {
+	data: {
+		id: number;
+		name: string;
+	};
+	success: boolean;
+}
+
+interface UpdateEngineTypeResponse {
+	data: {
+		id: number,
+		name: string,
+	},
+	message: string,
+	success: boolean
+}
+
 export interface EngineType {
 	id: number;
 	name: string;
@@ -39,7 +56,7 @@ export const engineTypeApi = createApi({
 			}),
 			providesTags: ["EngineType"],
 		}),
-		createEngineType: builder.mutation<EngineType, { name: string }>({
+		createEngineType: builder.mutation<EngineType, { name?: string }>({
 			query: (engineTypeData) => ({
 				url: "engine_types",
 				method: "POST",
@@ -47,11 +64,14 @@ export const engineTypeApi = createApi({
 			}),
 			invalidatesTags: ["EngineType"],
 		}),
-		getEngineType: builder.query<EngineType, string | number>({
+		getEngineType: builder.query<GetEngineTypeResponse, string | number>({
 			query: (id) => `engine_types/${id}`,
 			providesTags: ["EngineType"],
 		}),
-		updateEngineType: builder.mutation<EngineType, { id: string | number; name: string }>({
+		updateEngineType: builder.mutation<
+			UpdateEngineTypeResponse,
+			{ id: string | number; name?: string }
+		>({
 			query: ({ id, ...data }) => ({
 				url: `engine_types/${id}`,
 				method: "PUT",

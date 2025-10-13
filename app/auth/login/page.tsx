@@ -9,7 +9,6 @@ import { z } from "zod";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import logo from "@/public/assets/logo.png";
-import google from "@/public/assets/Google.png";
 import useAuth from "@/hooks/useAuth";
 import { ROLES } from "@/constants/roles";
 import { useSelector } from "react-redux";
