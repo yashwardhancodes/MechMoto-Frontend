@@ -32,7 +32,7 @@ const AddEngineType: React.FC = () => {
             const parsedData = engineTypeSchema.parse(formData);
 
             const result = await addEngineType(parsedData).unwrap();
-            if (result?.success) {
+            if (result) {
                 toast.success("Engine Type added successfully!");
                 setFormData({ name: "" });
                 router.push("/admin/manage-engine-type/?refresh=true");

@@ -9,8 +9,9 @@ import { HiOutlineShoppingBag } from "react-icons/hi2";
 import { CiDiscount1 } from "react-icons/ci";
 import { MdMiscellaneousServices } from "react-icons/md";
 import { BiSupport } from "react-icons/bi";
-import { hasPermission, Role, Permission } from "@/lib/auth";
+import { hasPermission, Role, UserPermission } from "@/lib/auth";
 import { ROLES } from "@/constants/roles";
+import { User } from "@/lib/redux/slices/authSlice";
 
 type MenuItem = {
   label: string;
@@ -26,57 +27,54 @@ type Props = {
   setActiveMenu: (menu: string) => void;
 };
 
-interface AuthData {
-  user: {
-    id: string;
-    role: {
-      name: Role;
-    };
-  };
-}
-
 const menuItems: MenuItem[] = [
 	{
 		label: "Dashboard",
 		icon: <LuLayoutDashboard size={16} />,
 		basePath: "dashboard",
-		permission: "view:dashboard",
+		permission: "read:dashboard",
 	},
 	{
 		label: "Live Calls",
 		icon: <BiSupport size={16} />,
 		basePath: "manage-live-calls",
-		permission: "manage:live-calls",
+		permission: "read:expert_help",
+	},
+	{
+		label: "Manage Users",
+		icon: <IoPeopleOutline size={18} />,
+		basePath: "manage-users",
+		permission: "read:user_management",
 	},
 	{
 		label: "Manage Vendors",
 		icon: <IoPeopleOutline size={18} />,
 		basePath: "manage-vendors",
-		permission: "view:vendors",
+		permission: "read:vendor",
 	},
 	{
 		label: "Manage Parts",
 		icon: <HiOutlineShoppingBag size={18} />,
 		basePath: "manage-parts",
-		permission: "view:parts",
+		permission: "read:part",
 		subItems: [
 			{
 				label: "Manage Categories",
 				basePath: "manage-categories",
 				icon: <Layers size={16} />,
-				permission: "manage:categories",
+				permission: "read:category",
 			},
 			{
 				label: "Manage Subcategories",
 				basePath: "manage-subcategories",
 				icon: <List size={16} />,
-				permission: "manage:subcategories",
+				permission: "read:subcategory",
 			},
 			{
 				label: "Manage Part Brands",
 				basePath: "manage-part-brands",
 				icon: <Tag size={16} />,
-				permission: "manage:part-brands",
+				permission: "read:part_brand",
 			},
 		],
 	},
@@ -84,76 +82,62 @@ const menuItems: MenuItem[] = [
 		label: "Manage Plans",
 		icon: <Tag size={16} />,
 		basePath: "manage-plans",
-		permission: "view:plans",
-		subItems: [
-			{
-				label: "Manage Plan Types",
-				basePath: "manage-plan-types",
-				icon: <Layers size={16} />,
-				permission: "manage:plan-types",
-			},
-			{
-				label: "Manage Plan Features",
-				basePath: "manage-plan-features",
-				icon: <List size={16} />,
-				permission: "manage:plan-features",
-			},
-			{
-				label: "Manage Plan Pricing",
-				basePath: "manage-plan-pricing",
-				icon: <Tag size={16} />,
-				permission: "manage:plan-pricing",
-			},
-		],
+		permission: "read:plan",
 	},
 	{
 		label: "Coupons & Discounts",
 		icon: <CiDiscount1 size={18} />,
 		basePath: "coupons-and-discounts",
-		permission: "view:coupons",
+		permission: "read:coupon",
 	},
-	{ label: "Orders", icon: <Tag size={16} />, basePath: "orders", permission: "view:orders" },
+	{ label: "Orders", icon: <Tag size={16} />, basePath: "orders", permission: "read:order" },
 	{
 		label: "Shipments",
 		icon: <Tag size={16} />,
 		basePath: "manage-shipments",
-		permission: "view:shipments",
+		permission: "read:shipment",
 	},
 	{
 		label: "Service Request",
 		icon: <MdMiscellaneousServices size={18} />,
 		basePath: "service-request",
-		permission: "view:service-request",
+		permission: "read:service_request",
+	},
+	{
+		label: "Roles and Permissions",
+		icon: <MdMiscellaneousServices size={18} />,
+		basePath: "manage-roles",
+		permission: "read:role",
 	},
 	{
 		label: "Manage Mechanics",
 		icon: <Tag size={16} />,
 		basePath: "manage-mechanics",
-		permission: "view:mechanics",
+		permission: "read:mechanic",
 	},
 	{
 		label: "Manage Vehicles",
 		icon: <Tag size={16} />,
 		basePath: "manage-vehicles",
-		permission: "manage:vehicles",
+		permission: "read:vehicle",
 		subItems: [
 			{
 				label: "Manage Car Make",
 				basePath: "manage-car-make",
 				icon: <Layers size={16} />,
-				permission: "manage:car-make",
+				permission: "read:car_make",
 			},
-			{
-				label: "Manage Model Line",
-				basePath: "manage-model-line",
-				icon: <List size={16} />,
-				permission: "manage:model-line",
-			},
+			// {
+			// 	label: "Manage Model Line",
+			// 	basePath: "manage-model-line",
+			// 	icon: <List size={16} />,
+			// 	permission: "read:car_make",
+			// },
 			{
 				label: "Manage Engine Type",
 				basePath: "manage-engine-type",
 				icon: <Tag size={16} />,
-				permission: "manage:engine-type",
+				permission: "read:engine_type",
 			},
 		],
 	},
@@ -161,56 +145,53 @@ const menuItems: MenuItem[] = [
 		label: "Manage Service Center",
 		icon: <MdMiscellaneousServices size={18} />,
 		basePath: "manage-service-center",
-		permission: "manage:service-center",
+		permission: "read:service_center",
 	},
-	{
-		label: "Financial Management",
-		icon: <Tag size={16} />,
-		basePath: "financial-management",
-		permission: "view:financials",
-	},
-	{
-		label: "Analytics and Reporting",
-		icon: <Tag size={16} />,
-		basePath: "analytics-and-reporting",
-		permission: "view:analytics",
-	},
-	{
-		label: "Customer Support",
-		icon: <BiSupport size={16} />,
-		basePath: "customer-support",
-		permission: "view:support",
-	},
-	{
-		label: "Service Requests",
-		icon: <BiSupport size={16} />,
-		basePath: "manage-service-requests",
-		permission: "manage:service-requests",
-	},
-	{
-		label: "Manage Mechanics",
-		icon: <BiSupport size={16} />,
-		basePath: "manage-mechanics",
-		permission: "manage:mechanics",
-	},
+	// {
+	// 	label: "Financial Management",
+	// 	icon: <Tag size={16} />,
+	// 	basePath: "financial-management",
+	// 	permission: "read:financials",
+	// },
+	// {
+	// 	label: "Analytics and Reporting",
+	// 	icon: <Tag size={16} />,
+	// 	basePath: "analytics-and-reporting",
+	// 	permission: "read:analytics",
+	// },
+	// {
+	// 	label: "Customer Support",
+	// 	icon: <BiSupport size={16} />,
+	// 	basePath: "customer-support",
+	// 	permission: "read:support",
+	// },
 ];
 
 export default function Sidebar({ setActiveMenu }: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [userRole, setUserRole] = useState<Role | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedUserData = localStorage.getItem("auth");
+    const storageKey = "auth";
+
+	// ✅ Check localStorage first (persistent)
+	let storedUserData = localStorage.getItem(storageKey);
+	if (!storedUserData) {
+		// Fallback to sessionStorage (current session)
+		console.log("user data not found")
+		storedUserData = sessionStorage.getItem(storageKey);
+	}
     if (storedUserData) {
-      const user: AuthData = JSON.parse(storedUserData);
-      setUserRole(user.user.role.name as Role);
+      const user: {user: User} = JSON.parse(storedUserData);
+	  console.log("user", user);
+      setUser(user.user);
     }
   }, []);
 
-   const getBasePath = (role: Role | null) => {
+   const getBasePath = (role: Role | string | null) => {
     if (role == ROLES.VENDOR) {
       return "/vendor";
     } else if (role == ROLES.SERVICE_CENTER) {
@@ -222,50 +203,72 @@ export default function Sidebar({ setActiveMenu }: Props) {
   };
 
   const filteredMenuItems = useMemo(() => {
-    if (!userRole) return [];
-    return menuItems
-      .filter((item) => hasPermission({ user: { id: "", role: userRole }, permission: item.permission as Permission }))
-      .map((item) => ({
-        ...item,
-        path: `${getBasePath(userRole)}/${item.basePath}`,
-        subItems: item.subItems
-          ? item.subItems
-              .filter((sub) => hasPermission({ user: { id: "", role: userRole }, permission: sub.permission as Permission }))
-              .map((sub) => ({ ...sub, path: `${getBasePath(userRole)}/${sub.basePath}` }))
-          : undefined,
-      }));
-  }, [userRole]);
+		if (!user?.role?.name) return [];
+		return menuItems
+			.filter((item) =>
+				hasPermission({ user, permission: item.permission as UserPermission }),
+			)
+			.map((item) => ({
+				...item,
+				path: `${getBasePath(user?.role?.name)}/${item.basePath}`,
+				subItems: item.subItems
+					? item.subItems
+							.filter((sub) =>
+								hasPermission({
+									user,
+									permission: sub.permission as UserPermission,
+								}),
+							)
+							.map((sub) => ({
+								...sub,
+								path: `${getBasePath(user.role.name)}/${sub.basePath}`,
+							}))
+					: undefined,
+			}));
+  }, [user]);
 
  
 
   useEffect(() => {
-    if (userRole) {
-      const vehicleMenu = filteredMenuItems.find((item) => item.label === "Manage Vehicles");
-      const partsMenu = filteredMenuItems.find((item) => item.label === "Manage Parts");
-      const plansMenu = filteredMenuItems.find((item) => item.label === "Manage Plans");
+		if (user?.role?.name) {
+			const vehicleMenu = filteredMenuItems.find((item) => item.label === "Manage Vehicles");
+			const partsMenu = filteredMenuItems.find((item) => item.label === "Manage Parts");
+			const plansMenu = filteredMenuItems.find((item) => item.label === "Manage Plans");
 
-      if (vehicleMenu?.subItems) {
-        const isVehicleSubItemActive = vehicleMenu.subItems.some((subItem) => pathname === subItem.path);
-        if (isVehicleSubItemActive) setExpandedMenu("Manage Vehicles");
-      }
+			if (vehicleMenu?.subItems) {
+				const isVehicleSubItemActive = vehicleMenu.subItems.some(
+					(subItem) => pathname === subItem.path,
+				);
+				if (isVehicleSubItemActive) setExpandedMenu("Manage Vehicles");
+			}
 
-      if (partsMenu?.subItems) {
-        const isPartsSubItemActive = partsMenu.subItems.some((subItem) => pathname === subItem.path);
-        if (isPartsSubItemActive) setExpandedMenu("Manage Parts");
-      }
+			if (partsMenu?.subItems) {
+				const isPartsSubItemActive = partsMenu.subItems.some(
+					(subItem) => pathname === subItem.path,
+				);
+				if (isPartsSubItemActive) setExpandedMenu("Manage Parts");
+			}
 
-      if (plansMenu?.subItems) {
-        const isPlansSubItemActive = plansMenu.subItems.some((subItem) => pathname === subItem.path);
-        if (isPlansSubItemActive) setExpandedMenu("Manage Plans");
-      }
-    }
-  }, [userRole, pathname, filteredMenuItems, setExpandedMenu]);
+			if (plansMenu?.subItems) {
+				const isPlansSubItemActive = plansMenu.subItems.some(
+					(subItem) => pathname === subItem.path,
+				);
+				if (isPlansSubItemActive) setExpandedMenu("Manage Plans");
+			}
+		}
+  }, [user, pathname, filteredMenuItems, setExpandedMenu]);
 
   const handleClick = (item: MenuItem) => {
-    if (!userRole || !hasPermission({ user: { id: "", role: userRole }, permission: item.permission as Permission })) {
-      router.push("/admin/unauthorized");
-      return;
-    }
+    if (
+		!user?.role?.name ||
+		!hasPermission({
+			user,
+			permission: item.permission as UserPermission,
+		})
+	) {
+		router.push("/admin/unauthorized");
+		return;
+	}
 
     if (item.subItems) {
       setExpandedMenu(expandedMenu === item.label ? null : item.label);
@@ -307,11 +310,17 @@ export default function Sidebar({ setActiveMenu }: Props) {
                       <li
                         key={sub.label}
                         onClick={() => {
-                          if (userRole && hasPermission({ user: { id: "", role: userRole }, permission: sub.permission as Permission })) {
-                            router.push(sub.path);
-                          } else {
-                            router.push("/admin/unauthorized");
-                          }
+                          if (
+								user?.role?.name &&
+								hasPermission({
+									user,
+									permission: sub.permission as UserPermission,
+								})
+							) {
+								router.push(sub.path);
+							} else {
+								router.push("/admin/unauthorized");
+							}
                         }}
                         className={`p-2 rounded-md cursor-pointer flex items-center gap-2 ${pathname === sub.path || pathname.startsWith(sub.path + "/") ? "bg-[#DCF4BE]" : "hover:bg-gray-100"}`}
                       >

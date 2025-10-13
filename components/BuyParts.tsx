@@ -1,5 +1,6 @@
+// Updated: src/components/ProductListing/BuyParts.tsx (for persistence)
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { FaSearch, FaSpinner } from "react-icons/fa";
 import CategoryGrid from "./CategoryGrid";
 import PartCategorySearchModal from "./SearchModels/PartCategorySearchModal";
@@ -10,6 +11,7 @@ import {
 	useLazyGetFilteredVehiclesQuery,
 } from "@/lib/redux/api/vehicleApi";
 import { useLazyGetModelLinesQuery } from "@/lib/redux/api/modelLineApi";
+import { useLazyGetSubcategoriesByCategoryIdQuery } from "@/lib/redux/api/subCategoriesApi";
 import toast from "react-hot-toast";
 
 interface CarMake {
@@ -44,6 +46,12 @@ interface Vehicle {
 	compatibility: Compatibility[];
 }
 
+interface PartCategory {
+	id?: string;
+	name: string;
+	img_src: string;
+}
+
 const BuyParts = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedCarMake, setSelectedCarMake] = useState<number | null>(null);
@@ -51,8 +59,75 @@ const BuyParts = () => {
 	const [selectedProductionYear, setSelectedProductionYear] = useState<string | null>(null);
 	const [selectedModification, setSelectedModification] = useState<string | null>(null);
 	const [searchResults, setSearchResults] = useState<Vehicle[]>([]);
+	const [selectedCategory, setSelectedCategory] = useState<PartCategory | null>(null);
+	const [selectedSubCategory, setSelectedSubCategory] = useState<PartCategory | null>(null);
+	const [hydrated, setHydrated] = useState(false);
 
-	const { data: carMakesData, isLoading: carMakeLoading } = useGetAllCarMakesQuery();
+	const STORAGE_KEY = "buyPartsState";
+
+	// Load from sessionStorage on mount
+	useEffect(() => {
+		const saved = sessionStorage.getItem(STORAGE_KEY);
+		if (saved) {
+			try {
+				const { carMake, modelLine, productionYear, modification, category, subcategory } =
+					JSON.parse(saved);
+				setSelectedCarMake(carMake || null);
+				setSelectedModelLine(modelLine || null);
+				setSelectedProductionYear(productionYear || null);
+				setSelectedModification(modification || null);
+				setSelectedCategory(
+					category
+						? {
+								id: category.id,
+								name: category.name,
+								img_src: category.img_src,
+						  }
+						: null,
+				);
+				setSelectedSubCategory(
+					subcategory
+						? {
+								id: subcategory.id,
+								name: subcategory.name,
+								img_src: subcategory.img_src,
+						  }
+						: null,
+				);
+			} catch (error) {
+				console.error("Failed to load saved selection:", error);
+				sessionStorage.removeItem(STORAGE_KEY);
+			}
+		}
+		// Mark hydration complete after initial load
+		setHydrated(true);
+	}, []);
+
+	// Save to sessionStorage on changes
+	useEffect(() => {
+		if (!hydrated) return; // skip until first load completes
+		sessionStorage.setItem(
+			STORAGE_KEY,
+			JSON.stringify({
+				carMake: selectedCarMake,
+				modelLine: selectedModelLine,
+				productionYear: selectedProductionYear,
+				modification: selectedModification,
+				category: selectedCategory,
+				subcategory: selectedSubCategory,
+			}),
+		);
+	}, [
+		hydrated,
+		selectedCarMake,
+		selectedModelLine,
+		selectedProductionYear,
+		selectedModification,
+		selectedCategory,
+		selectedSubCategory,
+	]);
+
+	const { data: carMakesData, isLoading: carMakeLoading } = useGetAllCarMakesQuery({page: 1, limit: 999999});
 	const [triggerGetModels, { data: modelLineData, isFetching: modelLineLoading }] =
 		useLazyGetModelLinesQuery();
 	const [
@@ -63,24 +138,29 @@ const BuyParts = () => {
 		useLazyGetModificationsQuery();
 	const [triggerGetFilteredVehicles, { isFetching: filteredVehiclesLoading }] =
 		useLazyGetFilteredVehiclesQuery();
+	const [triggerGetSubcategories, { data: subcategoriesData, isFetching: subcategoriesLoading }] =
+		useLazyGetSubcategoriesByCategoryIdQuery();
 
 	useEffect(() => {
+		if (!hydrated) return; // ⛔️ Skip during initial load
 		if (selectedCarMake) {
 			triggerGetModels({ car_make: selectedCarMake });
 		} else {
 			setSelectedModelLine(null);
 		}
-	}, [selectedCarMake, triggerGetModels]);
+	}, [hydrated, selectedCarMake, triggerGetModels]);
 
 	useEffect(() => {
+		if (!hydrated) return;
 		if (selectedModelLine) {
 			triggerGetProductionYears(selectedModelLine);
 		} else {
 			setSelectedProductionYear(null);
 		}
-	}, [selectedModelLine, triggerGetProductionYears]);
+	}, [hydrated, selectedModelLine, triggerGetProductionYears]);
 
 	useEffect(() => {
+		if (!hydrated) return;
 		if (selectedProductionYear && selectedModelLine) {
 			triggerGetModifications({
 				modelLine: selectedModelLine,
@@ -89,9 +169,16 @@ const BuyParts = () => {
 		} else {
 			setSelectedModification(null);
 		}
-	}, [selectedProductionYear, selectedModelLine, triggerGetModifications]);
+	}, [hydrated, selectedProductionYear, selectedModelLine, triggerGetModifications]);
 
-	const handleSearch = async () => {
+	useEffect(() => {
+		if (selectedCategory && hydrated) {
+			triggerGetSubcategories(selectedCategory.id!);
+		}
+	}, [selectedCategory, hydrated, triggerGetSubcategories]);
+
+	
+	const handleSearch = useCallback(async () => {
 		if (
 			!selectedCarMake &&
 			!selectedModelLine &&
@@ -115,7 +202,36 @@ const BuyParts = () => {
 			console.error("Failed to fetch filtered vehicles:", error);
 			toast.error("Failed to fetch vehicles. Please try again.");
 		}
-	};
+	}, [
+		selectedCarMake,
+		selectedModelLine,
+		selectedProductionYear,
+		selectedModification,
+		triggerGetFilteredVehicles, // ✅ include hook trigger
+	]);
+
+	// Auto-trigger search and open modal if category is persisted
+	useEffect(() => {
+		if (
+			hydrated &&
+			selectedCategory &&
+			!isModalOpen &&
+			searchResults.length === 0 &&
+			(selectedCarMake || selectedModelLine || selectedProductionYear || selectedModification)
+		) {
+			handleSearch();
+		}
+	}, [
+		hydrated,
+		selectedCategory,
+		isModalOpen,
+		searchResults.length,
+		selectedCarMake,
+		selectedModelLine,
+		selectedProductionYear,
+		selectedModification,
+		handleSearch
+	]);
 
 	const LoadingSpinner = ({ size = "sm" }: { size?: "sm" | "md" }) => (
 		<FaSpinner
@@ -209,7 +325,7 @@ const BuyParts = () => {
 							>
 								{carMakeLoading ? "Loading..." : "🚗 Select Car Make"}
 							</option>
-							{carMakesData?.data?.map((carMake: CarMake) => (
+							{carMakesData?.data?.carMakes.map((carMake: CarMake) => (
 								<option
 									key={carMake.id}
 									value={carMake.id}
@@ -357,7 +473,7 @@ const BuyParts = () => {
 						>
 							{carMakeLoading ? "Loading..." : "🚗 Select Car Make"}
 						</option>
-						{carMakesData?.data?.map((carMake: CarMake) => (
+						{carMakesData?.data?.carMakes.map((carMake: CarMake) => (
 							<option
 								key={carMake.id}
 								value={carMake.id}
@@ -512,8 +628,18 @@ const BuyParts = () => {
 					onClose={() => {
 						setIsModalOpen(false);
 						setSearchResults([]);
+						setSelectedCategory(null);
+						setSelectedSubCategory(null);
 					}}
 					vehicles={searchResults}
+					productionYear={selectedProductionYear}
+					selectedCategory={selectedCategory}
+					setSelectedCategory={setSelectedCategory}
+					selectedSubCategory={selectedSubCategory}
+					setSelectedSubCategory={setSelectedSubCategory}
+					triggerGetSubcategories={triggerGetSubcategories}
+					subcategoriesData={subcategoriesData}
+					isLoadingSubcategories={subcategoriesLoading}
 				/>
 			)}
 		</div>

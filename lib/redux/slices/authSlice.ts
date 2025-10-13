@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { rehydrateAuth } from "../thunks/authThunks";
+import { Permission } from "../api/rolesApi";
 
 export interface Role {
 	id: number;
@@ -8,6 +9,7 @@ export interface Role {
 	is_system: boolean;
 	created_at: string;
 	updated_at: string;
+	permissions: Permission[]
 }
 
 export interface User {
@@ -44,12 +46,13 @@ const authSlice = createSlice({
 		) => {
 			state.user = action.payload.user;
 			state.token = action.payload.token;
-			localStorage.setItem("auth", JSON.stringify(action.payload));
+			// localStorage.setItem("auth", JSON.stringify(action.payload));
 		},
 		logout: (state) => {
 			state.user = null;
 			state.token = null;
 			localStorage.removeItem("auth");
+			sessionStorage.removeItem("auth");
 		},
 
 		// ✅ new reducer for updating subscriptionId

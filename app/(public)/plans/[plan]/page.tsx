@@ -63,13 +63,13 @@ export default function PlanPage() {
 
   console.log("subscriptionId plan page", subscriptionId);
 
-  const { data: allPlans, isLoading, isError } = useGetAllPlansQuery();
+  const { data: allPlans, isLoading, isError } = useGetAllPlansQuery({page: 1, limit: 999999});
   const [createSubscription, { isLoading: isCreating }] =
     useCreateSubscriptionMutation();
 
   // Active plans
   const activePlans: Plan[] = allPlans
-    ? allPlans.filter((plan: Plan) => plan.status === "ACTIVE")
+    ? allPlans?.plans?.filter((plan: Plan) => plan.status === "ACTIVE")
     : [];
 
   // Selected plan from URL
@@ -96,8 +96,14 @@ export default function PlanPage() {
   // Handle subscription create
   // -------------------------
   const handleRedirect = async () => {
-    const authData = localStorage.getItem("auth");
+    const storageKey = "auth";
 
+    // ✅ Check localStorage first (persistent)
+    let authData = localStorage.getItem(storageKey);
+    if (!authData) {
+      // Fallback to sessionStorage (current session)
+      authData = sessionStorage.getItem(storageKey);
+    }
     if (!authData) {
       router.push("/auth/login");
       dispatch(setRedirect(`/plans/${plan}`));

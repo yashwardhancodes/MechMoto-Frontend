@@ -30,7 +30,7 @@ const AddVehicle: React.FC = () => {
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [addVehicle, { isLoading }] = useCreateVehicleMutation();
-  const { data: carMakesResponse, isLoading: carMakesLoading, error: carMakesError } = useGetAllCarMakesQuery();
+  const { data: carMakesResponse, isLoading: carMakesLoading, error: carMakesError } = useGetAllCarMakesQuery({page: 1, limit: 9999999});
   const { data: engineTypesResponse, isLoading: engineTypesLoading, error: engineTypesError } = useGetAllEngineTypesQuery({});
 
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);

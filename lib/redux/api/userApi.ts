@@ -1,3 +1,4 @@
+// frontend/lib/redux/api/userApi.ts
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Define the type for the Redux state
@@ -7,17 +8,17 @@ interface RootState {
 	};
 }
 
-interface VendorResponse {
+interface UserResponse {
 	data: {
-		vendors: any[];
+		users: any[];
 		total: number;
 		page: number;
 		limit: number;
 	};
 }
 
-export const vendorApi = createApi({
-	reducerPath: "vendorApi",
+export const userApi = createApi({
+	reducerPath: "userApi",
 	baseQuery: fetchBaseQuery({
 		baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
 		prepareHeaders: (headers, { getState }) => {
@@ -31,49 +32,49 @@ export const vendorApi = createApi({
 			return headers;
 		},
 	}),
-	tagTypes: ["Vendor"],
+	tagTypes: ["User"],
 	endpoints: (builder) => ({
-		getAllVendors: builder.query<VendorResponse, { page?: number; limit?: number }>({
+		getAllUsers: builder.query<UserResponse, { page?: number; limit?: number }>({
 			query: ({ page = 1, limit = 10 }) => ({
-				url: "vendors",
+				url: "/admin/users", // Assuming mounted under /admin
 				params: { page, limit },
 			}),
-			providesTags: ["Vendor"],
+			providesTags: ["User"],
 		}),
-		createVendor: builder.mutation({
-			query: (vendorData) => ({
-				url: "vendors",
+		createUser: builder.mutation({
+			query: (userData) => ({
+				url: "/admin/users",
 				method: "POST",
-				body: vendorData,
+				body: userData,
 			}),
-			invalidatesTags: ["Vendor"],
+			invalidatesTags: ["User"],
 		}),
-		getVendor: builder.query({
-			query: (id) => `vendors/${id}`,
-			providesTags: ["Vendor"],
+		getUser: builder.query({
+			query: (id) => `/admin/users/${id}`,
+			providesTags: ["User"],
 		}),
-		updateVendor: builder.mutation({
+		updateUser: builder.mutation({
 			query: ({ id, ...data }) => ({
-				url: `vendors/${id}`,
+				url: `/admin/users/${id}`,
 				method: "PUT",
 				body: data,
 			}),
-			invalidatesTags: ["Vendor"],
+			invalidatesTags: ["User"],
 		}),
-		deleteVendor: builder.mutation({
+		deleteUser: builder.mutation({
 			query: (id) => ({
-				url: `vendors/${id}`,
+				url: `/admin/users/${id}`,
 				method: "DELETE",
 			}),
-			invalidatesTags: ["Vendor"],
+			invalidatesTags: ["User"],
 		}),
 	}),
 });
 
 export const {
-	useGetAllVendorsQuery,
-	useCreateVendorMutation,
-	useGetVendorQuery,
-	useUpdateVendorMutation,
-	useDeleteVendorMutation,
-} = vendorApi;
+	useGetAllUsersQuery,
+	useCreateUserMutation,
+	useGetUserQuery,
+	useUpdateUserMutation,
+	useDeleteUserMutation,
+} = userApi;

@@ -31,6 +31,8 @@ interface Vehicle {
 	car_make: CarMake;
 	model_line: string;
 	modification: string | null;
+	production_year?: number;
+	engine_type?: { id: number; name: string } | null;
 }
 
 interface Part {

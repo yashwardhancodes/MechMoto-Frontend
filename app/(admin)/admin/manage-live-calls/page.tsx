@@ -24,57 +24,61 @@ import { useState } from "react";
 
 export default function ManageLiveCalls() {
 	const { user } = useAuth();
-	const { data, isLoading, isError } = useGetLiveCallRequestsQuery();
+	const [page, setPage] = useState(1);
+	const limit = 10;
+	const { data, isLoading, isError } = useGetLiveCallRequestsQuery({ page, limit });
 	const [updateLiveCallRequest, { isLoading: isUpdating }] = useUpdateLiveCallRequestMutation();
 	const [showModal, setShowModal] = useState(false);
 	const [selectedRequest, setSelectedRequest] = useState(null);
-	const requests = Array.isArray(data) ? data : data?.data ?? [];
+	const requests = data?.data?.requests ?? [];
+	const total = data?.data?.total ?? 0;
+	const totalPages = Math.ceil(total / limit);
 
 	const columns: TableColumn[] = [
 		{
 			key: "issue_description",
 			header: "Issue Description",
-			render: (value) => value.issue_description || "N/A",
+			render: (item) => item.issue_description || "N/A",
 		},
 		{
 			key: "status",
 			header: "Status",
-			render: (value) => (
+			render: (item) => (
 				<span
 					className={`px-3 py-1 rounded-full text-xs font-semibold ${
-						value.status === "completed"
+						item.status === "completed"
 							? "bg-green-100 text-green-700"
-							: value.status === "scheduled"
+							: item.status === "scheduled"
 							? "bg-blue-100 text-blue-700"
-							: value.status === "canceled"
+							: item.status === "canceled"
 							? "bg-red-100 text-red-700"
 							: "bg-gray-200 text-gray-700"
 					}`}
 				>
-					{value.status.toUpperCase()}
+					{item.status.toUpperCase()}
 				</span>
 			),
 		},
 		{
 			key: "scheduled_at",
 			header: "Scheduled At",
-			render: (value) =>
-				value.scheduled_at ? new Date(value.scheduled_at).toLocaleString() : "N/A",
+			render: (item) =>
+				item.scheduled_at ? new Date(item.scheduled_at).toLocaleString() : "N/A",
 		},
 		{
 			key: "call_duration",
 			header: "Call Duration",
-			render: (value) => (value.call_duration ? `${value.call_duration} min` : "N/A"),
+			render: (item) => (item.call_duration ? `${item.call_duration} min` : "N/A"),
 		},
 		{
 			key: "rating",
 			header: "Rating",
-			render: (value) => value.rating || "N/A",
+			render: (item) => item.rating || "N/A",
 		},
 		{
 			key: "created_at",
 			header: "Created At",
-			render: (value) => new Date(value.created_at).toLocaleDateString(),
+			render: (item) => new Date(item.created_at).toLocaleDateString(),
 		},
 	];
 
@@ -453,7 +457,7 @@ export default function ManageLiveCalls() {
 	return (
 		<DataTable
 			title="Live Call Requests"
-			data={requests || []}
+			data={requests}
 			columns={columns}
 			actions={actions}
 			isLoading={isLoading}
@@ -461,6 +465,17 @@ export default function ManageLiveCalls() {
 			emptyMessage="No call requests found."
 			errorMessage="Failed to load call requests."
 			loadingMessage="Loading call requests..."
+			pagination={
+				totalPages > 0
+					? {
+							currentPage: page,
+							totalPages,
+							totalItems: total,
+							pageSize: limit,
+							onPageChange: setPage,
+					  }
+					: undefined
+			}
 		/>
 	);
 }

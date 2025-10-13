@@ -51,7 +51,7 @@ const UpdateVehicle: React.FC = () => {
   const { data: vehicleResponse, isLoading: vehicleLoading, error: vehicleError } = useGetVehicleQuery(vehicleIdStr, {
     skip: !vehicleIdStr || vehicleIdStr === 'undefined',
   });
-  const { data: carMakesResponse, isLoading: carMakesLoading, error: carMakesError } = useGetAllCarMakesQuery();
+  const { data: carMakesResponse, isLoading: carMakesLoading, error: carMakesError } = useGetAllCarMakesQuery({page: 1, limit: 999999});
   const { data: engineTypesResponse, isLoading: engineTypesLoading, error: engineTypesError } = useGetAllEngineTypesQuery({});
   const [updateVehicle, { isLoading: isUpdating }] = useUpdateVehicleMutation();
 

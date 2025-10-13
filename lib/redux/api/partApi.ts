@@ -3,21 +3,39 @@ import { RootState } from "../store"; // Adjust path to your store
 
 // Define interfaces for type safety
 interface Shipment {
-  id: string;
-  orderId: string;
-  status: string;
-  // Add other fields as needed
+	id: string;
+	orderId: string;
+	status: string;
+	// Add other fields as needed
 }
 
 interface UpdateShipmentData {
-  status?: string;
-  // Add other fields as needed
+	status?: string;
+	// Add other fields as needed
 }
 
 interface ShipmentResponse {
-  id: string;
-  status: string;
-  // Add other fields as needed
+	id: string;
+	status: string;
+	// Add other fields as needed
+}
+
+interface PartResponse {
+	data: {
+		parts: any[];
+		total: number;
+		page: number;
+		limit: number;
+	};
+}
+
+interface CouponResponse {
+	data: {
+		coupons: any[];
+		total: number;
+		page: number;
+		limit: number;
+	};
 }
 
 export const partApi = createApi({
@@ -35,8 +53,11 @@ export const partApi = createApi({
 	}),
 	tagTypes: ["Part", "Cart", "Wishlist", "Address", "Order", "Coupon"],
 	endpoints: (builder) => ({
-		getAllParts: builder.query({
-			query: () => "/parts",
+		getAllParts: builder.query<PartResponse, { page?: number; limit?: number }>({
+			query: ({ page = 1, limit = 10 }) => ({
+				url: "/parts",
+				params: { page, limit },
+			}),
 			providesTags: ["Part"],
 		}),
 		getAllPartsByVendor: builder.query({
@@ -193,8 +214,11 @@ export const partApi = createApi({
 				body: data,
 			}),
 		}),
-		getCoupons: builder.query({
-			query: () => "/coupons",
+		getCoupons: builder.query<CouponResponse, { page?: number; limit?: number }>({
+			query: ({ page = 1, limit = 10 }) => ({
+				url: "/coupons",
+				params: { page, limit },
+			}),
 			providesTags: ["Coupon"],
 		}),
 		getCoupon: builder.query({
@@ -228,33 +252,33 @@ export const partApi = createApi({
 });
 
 export const {
-  useGetAllPartsQuery,
-  useGetAllPartsByVendorQuery,
-  useGetPartsByFiltersQuery,
-  useGetFilterOptionsQuery,
-  useCreatePartMutation,
-  useGetPartQuery,
-  useUpdatePartMutation,
-  useDeletePartMutation,
-  useGetCartItemsQuery,
-  useAddToCartMutation,
-  useAddToWishlistMutation,
-  useGetWishlistsQuery,
-  useUpdateCartItemMutation,
-  useRemoveFromCartMutation,
-  useGetAddressesQuery,
-  useCreateAddressMutation,
-  useUpdateAddressMutation,
-  useDeleteAddressMutation,
-  useCreateOrderMutation,
-  useGetOrderQuery,
-  useGetOrdersQuery,
-  useUpdateOrderStatusMutation,
-  useGetShipmentsByOrderQuery,
-  useUpdateShipmentMutation,
-  useGetCouponsQuery,
-  useGetCouponQuery,
-  useCreateCouponMutation,
-  useUpdateCouponMutation,
-  useDeleteCouponMutation,
+	useGetAllPartsQuery,
+	useGetAllPartsByVendorQuery,
+	useGetPartsByFiltersQuery,
+	useGetFilterOptionsQuery,
+	useCreatePartMutation,
+	useGetPartQuery,
+	useUpdatePartMutation,
+	useDeletePartMutation,
+	useGetCartItemsQuery,
+	useAddToCartMutation,
+	useAddToWishlistMutation,
+	useGetWishlistsQuery,
+	useUpdateCartItemMutation,
+	useRemoveFromCartMutation,
+	useGetAddressesQuery,
+	useCreateAddressMutation,
+	useUpdateAddressMutation,
+	useDeleteAddressMutation,
+	useCreateOrderMutation,
+	useGetOrderQuery,
+	useGetOrdersQuery,
+	useUpdateOrderStatusMutation,
+	useGetShipmentsByOrderQuery,
+	useUpdateShipmentMutation,
+	useGetCouponsQuery,
+	useGetCouponQuery,
+	useCreateCouponMutation,
+	useUpdateCouponMutation,
+	useDeleteCouponMutation,
 } = partApi;

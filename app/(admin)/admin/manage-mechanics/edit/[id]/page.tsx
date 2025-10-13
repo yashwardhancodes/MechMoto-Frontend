@@ -44,10 +44,10 @@ const UpdateMechanic: React.FC = () => {
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const { data: mechanic, isLoading: isMechanicLoading } = useGetMechanicQuery(mechanicId || "");
     const [updateMechanic, { isLoading: isUpdating }] = useUpdateMechanicMutation();
-    const { data: serviceCentersData, isLoading: scLoading } = useGetAllServiceCentersQuery({});
+    const { data: serviceCentersData, isLoading: scLoading } = useGetAllServiceCentersQuery({page: 1, limit: 999999});
 
     // Typed service centers array
-    const serviceCenters: ServiceCenter[] = serviceCentersData?.data ?? [];
+    const serviceCenters: ServiceCenter[] = serviceCentersData?.data?.serviceCenters ?? [];
 
     // Populate form with mechanic data on load
     useEffect(() => {

@@ -13,7 +13,14 @@ export default function UsersPage() {
   const [selectedTab, setSelectedTab] = useState("buy");
   const router = useRouter();
 
-  const auth = localStorage.getItem("auth");
+  const storageKey = "auth";
+
+  // ✅ Check localStorage first (persistent)
+  let auth = localStorage.getItem(storageKey);
+  if (!auth) {
+		// Fallback to sessionStorage (current session)
+		auth = sessionStorage.getItem(storageKey);
+  }
   let razorpaySubscriptionId = null;
   try {
     const authObj = auth ? JSON.parse(auth) : null;

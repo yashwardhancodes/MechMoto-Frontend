@@ -26,7 +26,7 @@ export default function AdminDashboardLayout({ children }: DashboardLayoutProps)
 		if (!loading) {
 			if (!isLoggedIn) {
 				router.replace("/auth/login");
-			} else if (role !== ROLES.SUPER_ADMIN) {
+			} else if (role === ROLES.VENDOR || role == ROLES.MECHANIC || role === ROLES.SERVICE_CENTER || role == ROLES.USER) {
 				router.replace("/");
 			} else {
 				setAllowed(true);

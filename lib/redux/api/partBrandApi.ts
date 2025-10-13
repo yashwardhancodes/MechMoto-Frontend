@@ -2,22 +2,25 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { RootState } from "../store"; // Adjust path to your store
 
 interface PartBrandResponse {
-	success: boolean;
-	data: PartBrand[];
+	data: {
+		brands: PartBrand[];
+		total: number;
+		page: number;
+		limit: number;
+	};
 }
-
 
 // Define interfaces for type safety
 interface PartBrand {
-  id: string;
-  name: string;
-  success?: any;
-  data?: any
- }
+	id: string;
+	name: string;
+	success?: any;
+	data?: any;
+}
 
 interface PartBrandInput {
-  name?: string;
-  // Add other fields as needed
+	name?: string;
+	// Add other fields as needed
 }
 
 export const partBrandApi = createApi({
@@ -35,8 +38,11 @@ export const partBrandApi = createApi({
 	}),
 	tagTypes: ["PartBrand"],
 	endpoints: (builder) => ({
-		getAllPartBrands: builder.query<PartBrandResponse, void>({
-			query: () => "/part_brands",
+		getAllPartBrands: builder.query<PartBrandResponse, { page?: number; limit?: number }>({
+			query: ({ page = 1, limit = 10 }) => ({
+				url: "/part_brands",
+				params: { page, limit },
+			}),
 			providesTags: ["PartBrand"],
 		}),
 		createPartBrand: builder.mutation<PartBrand, PartBrandInput>({
@@ -70,9 +76,9 @@ export const partBrandApi = createApi({
 });
 
 export const {
-  useGetAllPartBrandsQuery,
-  useCreatePartBrandMutation,
-  useGetPartBrandQuery,
-  useUpdatePartBrandMutation,
-  useDeletePartBrandMutation,
+	useGetAllPartBrandsQuery,
+	useCreatePartBrandMutation,
+	useGetPartBrandQuery,
+	useUpdatePartBrandMutation,
+	useDeletePartBrandMutation,
 } = partBrandApi;
