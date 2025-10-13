@@ -21,7 +21,7 @@ interface ModulePermissions {
 	[moduleId: number]: Set<string>;
 }
 
-const ACTIONS = ["create", "read", "update", "delete"] as const;
+const ACTIONS = ["write", "read", "delete"] as const;
 
 export default function EditRolePage() {
 	const params = useParams();
@@ -101,8 +101,9 @@ export default function EditRolePage() {
 			if (
 				role &&
 				(formData.name !== role.name ||
-					formData.description !== (role.description || "") ||
-					formData.is_system !== role.is_system)
+					formData.description !== (role.description || "") 
+					// || formData.is_system !== role.is_system
+				)
 			) {
 				await updateRole({ id, body: formData }).unwrap();
 			}
@@ -210,7 +211,7 @@ export default function EditRolePage() {
 									type="text"
 									value={formData.name}
 									onChange={handleRoleChange}
-									disabled={role.is_system}
+									// disabled={role.is_system}
 									required
 									className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
 								/>
@@ -227,7 +228,7 @@ export default function EditRolePage() {
 									name="description"
 									value={formData.description}
 									onChange={handleRoleChange}
-									disabled={role.is_system}
+									// disabled={role.is_system}
 									rows={3}
 									className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500 resize-none"
 								/>
@@ -306,7 +307,7 @@ export default function EditRolePage() {
 																	e.target.checked,
 																)
 															}
-															disabled={role.is_system}
+															// disabled={role.is_system}
 															className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
 														/>
 														<span className="text-sm font-medium text-gray-900 capitalize">
@@ -327,7 +328,7 @@ export default function EditRolePage() {
 			<div className="flex flex-col sm:flex-row gap-3 justify-end">
 				<button
 					onClick={handleSave}
-					disabled={saving || role.is_system}
+					// disabled={saving || role.is_system}
 					className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
 				>
 					{saving ? (

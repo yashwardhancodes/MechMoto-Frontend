@@ -2,8 +2,12 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { RootState } from "../store";
 
 interface LiveCallRequestResponse {
-	success: any,
-	data: LiveCallRequest[]
+	data: {
+		requests: LiveCallRequest[];
+		total: number;
+		page: number;
+		limit: number;
+	};
 }
 
 interface LiveCallRequest {
@@ -17,6 +21,14 @@ interface LiveCallRequest {
 	rating: number | null;
 	created_at: string;
 	updated_at: string;
+	user?: {
+		id: string;
+		email: string;
+		profiles: {
+			full_name: string;
+			phone: string;
+		};
+	};
 }
 
 interface CreateLiveCallRequestData {
@@ -46,8 +58,14 @@ export const liveCallApi = createApi({
 	}),
 	tagTypes: ["LiveCall"],
 	endpoints: (builder) => ({
-		getLiveCallRequests: builder.query<LiveCallRequestResponse, void>({
-			query: () => "/live-call-requests",
+		getLiveCallRequests: builder.query<
+			LiveCallRequestResponse,
+			{ page?: number; limit?: number }
+		>({
+			query: ({ page = 1, limit = 10 }) => ({
+				url: "/live-call-requests",
+				params: { page, limit },
+			}),
 			providesTags: ["LiveCall"],
 		}),
 		getLiveCallRequest: builder.query<LiveCallRequest, number>({

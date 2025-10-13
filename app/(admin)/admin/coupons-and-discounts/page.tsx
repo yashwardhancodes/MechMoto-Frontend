@@ -7,15 +7,20 @@ import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard
 import { toast } from "react-hot-toast";
 import useAuth from "@/hooks/useAuth";
 import { ROLES } from "@/constants/roles";
+import { useState } from "react";
 
 export default function ManageCoupons() {
 	const { user } = useAuth();
 	const router = useRouter();
+	const [page, setPage] = useState(1);
+	const limit = 10;
 	const [deleteCoupon] = useDeleteCouponMutation();
 
 	// Fetch coupons
-	const { data, isLoading, isError } = useGetCouponsQuery({});
-	const coupons = Array.isArray(data) ? data : data?.data ?? [];
+	const { data, isLoading, isError } = useGetCouponsQuery({ page, limit });
+	const coupons = data?.data?.coupons ?? [];
+	const total = data?.data?.total ?? 0;
+	const totalPages = Math.ceil(total / limit);
 
 	// Define table columns
 	const columns: TableColumn[] = [
@@ -30,7 +35,7 @@ export default function ManageCoupons() {
 		{
 			key: "description",
 			header: "Description",
-			render: (value) => value.description || "N/A",
+			render: (item) => item.description || "N/A",
 		},
 		{
 			key: "discount_type",
@@ -39,47 +44,47 @@ export default function ManageCoupons() {
 		{
 			key: "discount_value",
 			header: "Discount Value",
-			render: (value) =>
-				`${value.discount_value}${value.discount_type === "percentage" ? "%" : "₹"}`,
+			render: (item) =>
+				`${item.discount_value}${item.discount_type === "percentage" ? "%" : "₹"}`,
 		},
 		{
 			key: "max_discount",
 			header: "Max Discount",
-			render: (value) =>
-				value.max_discount ? `₹${value.max_discount.toLocaleString()}` : "N/A",
+			render: (item) =>
+				item.max_discount ? `₹${item.max_discount.toLocaleString()}` : "N/A",
 		},
 		{
 			key: "min_order_amount",
 			header: "Min Order Amount",
-			render: (value) =>
-				value.min_order_amount ? `₹${value.min_order_amount.toLocaleString()}` : "N/A",
+			render: (item) =>
+				item.min_order_amount ? `₹${item.min_order_amount.toLocaleString()}` : "N/A",
 		},
 		{
 			key: "valid_from",
 			header: "Valid From",
-			render: (value) =>
-				value.valid_from ? new Date(value.valid_from).toLocaleDateString() : "N/A",
+			render: (item) =>
+				item.valid_from ? new Date(item.valid_from).toLocaleDateString() : "N/A",
 		},
 		{
 			key: "valid_until",
 			header: "Valid Until",
-			render: (value) =>
-				value.valid_until ? new Date(value.valid_until).toLocaleDateString() : "N/A",
+			render: (item) =>
+				item.valid_until ? new Date(item.valid_until).toLocaleDateString() : "N/A",
 		},
 		{
 			key: "usage_limit",
 			header: "Usage Limit",
-			render: (value) => value.usage_limit?.toString() || "Unlimited",
+			render: (item) => item.usage_limit?.toString() || "Unlimited",
 		},
 		{
 			key: "usage_count",
 			header: "Usage Count",
-			render: (value) => value.usage_count?.toString() || "0",
+			render: (item) => item.usage_count?.toString() || "0",
 		},
 		{
 			key: "is_active",
 			header: "Active",
-			render: (value) => (value.is_active ? "Yes" : "No"),
+			render: (item) => (item.is_active ? "Yes" : "No"),
 		},
 	];
 
@@ -111,13 +116,16 @@ export default function ManageCoupons() {
 					},
 					{
 						icon: Trash2,
-						onClick: (coupon) => {
+						onClick: async (coupon) => {
 							if (coupon?.id && typeof coupon.id === "number") {
 								if (confirm("Are you sure you want to delete this coupon?")) {
-									deleteCoupon(coupon.id)
-										.unwrap()
-										.then(() => toast.success("Coupon deleted successfully!"))
-										.catch(() => toast.error("Failed to delete coupon."));
+									try {
+										await deleteCoupon(coupon.id).unwrap();
+										toast.success("Coupon deleted successfully!");
+									} catch (error) {
+										console.error("Error deleting coupon:", error);
+										toast.error("Failed to delete coupon.");
+									}
 								}
 							} else {
 								console.error("Invalid coupon ID for delete:", coupon);
@@ -148,6 +156,17 @@ export default function ManageCoupons() {
 				getAvatarUrl: () => "/placeholder.png", // Replace with actual avatar if available
 				getAvatarAlt: (item) => item.code || "Coupon",
 			}}
+			pagination={
+				totalPages > 0
+					? {
+							currentPage: page,
+							totalPages,
+							totalItems: total,
+							pageSize: limit,
+							onPageChange: setPage,
+					  }
+					: undefined
+			}
 		/>
 	);
 }
