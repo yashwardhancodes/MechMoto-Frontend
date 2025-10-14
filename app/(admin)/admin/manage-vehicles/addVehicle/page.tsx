@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { z } from "zod";
 import { toast } from "react-hot-toast";
@@ -37,15 +37,9 @@ const AddVehicle: React.FC = () => {
   const [engineDropdownOpen, setEngineDropdownOpen] = useState(false);
 
   // ✅ Wrap in useMemo to fix dependency warnings
-  const carMakes = useMemo(
-    () => (Array.isArray(carMakesResponse?.data) ? carMakesResponse.data : []),
-    [carMakesResponse?.data]
-  );
+  const carMakes = carMakesResponse?.data?.carMakes;
 
-  const engineTypes = useMemo(
-    () => (Array.isArray(engineTypesResponse?.data) ? engineTypesResponse.data : []),
-    [engineTypesResponse?.data]
-  );
+  const engineTypes = engineTypesResponse?.data?.engineTypes;
 
   useEffect(() => {
     console.log("carMakesResponse:", carMakesResponse);

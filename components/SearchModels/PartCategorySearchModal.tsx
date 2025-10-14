@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { IoMdClose, IoIosArrowDown } from "react-icons/io";
+import { IoMdClose } from "react-icons/io";
 import { FiFilter } from "react-icons/fi";
 import Image from "next/image";
 import searchIcon from "@/public/assets/search.png";
@@ -257,12 +257,6 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({
 						)}
 					</div>
 				)}
-
-				{/* View More */}
-				<div className="mt-4 flex items-center justify-center text-black text-sm font-medium cursor-pointer hover:underline group">
-					View More
-					<IoIosArrowDown className="ml-1 text-[#9AE144] transform transition-transform duration-300 group-hover:rotate-180" />
-				</div>
 			</div>
 		</div>
 	);

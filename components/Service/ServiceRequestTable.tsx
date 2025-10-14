@@ -1,63 +1,63 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
 	useGetServiceRequestsQuery,
-	useUpdateServiceRequestMutation,
+	// useUpdateServiceRequestMutation,
 } from "@/lib/redux/api/serviceRequestApi";
-import { toast } from "react-hot-toast";
-import { Star, MapPin, Car } from "lucide-react";
+// import { toast } from "react-hot-toast";
+import { Car } from "lucide-react";
 
 export default function ServiceRequestTable() {
 	const { data, isLoading, isError, refetch } = useGetServiceRequestsQuery();
-	const [updateServiceRequest] = useUpdateServiceRequestMutation();
-	const requests = Array.isArray(data) ? data : data?.data ?? [];
-	const [isUpdating, setIsUpdating] = useState<{ [key: number]: boolean }>({});
+	// const [updateServiceRequest] = useUpdateServiceRequestMutation();
+	const requests = data?.data ?? [];
+	// const [isUpdating, setIsUpdating] = useState<{ [key: number]: boolean }>({});
 
-	const handleRatingSubmit = async (requestId: number, rating: number) => {
-		setIsUpdating((prev) => ({ ...prev, [requestId]: true }));
-		try {
-			await updateServiceRequest({ id: requestId, data: { rating } }).unwrap();
-			toast.success("Rating submitted successfully!");
-			refetch();
-		} catch (error: any) {
-			toast.error(error?.data?.message || "Failed to submit rating. Please try again.");
-		} finally {
-			setIsUpdating((prev) => ({ ...prev, [requestId]: false }));
-		}
-	};
+	// const handleRatingSubmit = async (requestId: number, rating: number) => {
+	// 	setIsUpdating((prev) => ({ ...prev, [requestId]: true }));
+	// 	try {
+	// 		await updateServiceRequest({ id: requestId, data: { rating } }).unwrap();
+	// 		toast.success("Rating submitted successfully!");
+	// 		refetch();
+	// 	} catch (error: any) {
+	// 		toast.error(error?.data?.message || "Failed to submit rating. Please try again.");
+	// 	} finally {
+	// 		setIsUpdating((prev) => ({ ...prev, [requestId]: false }));
+	// 	}
+	// };
 
-	const renderStars = (request: any, isEditable: boolean = false) => {
-		const currentRating = request.rating || 0;
-		return (
-			<div className="flex items-center gap-1">
-				{[...Array(5)].map((_, i) => (
-					<Star
-						key={i}
-						size={16}
-						className={`cursor-pointer transition-colors ${
-							isEditable && i < 5
-								? "hover:text-yellow-400"
-								: i < currentRating
-								? "text-yellow-400 fill-yellow-400"
-								: "text-gray-300"
-						} ${isUpdating[request.id] ? "cursor-not-allowed opacity-50" : ""}`}
-						fill={i < currentRating ? "currentColor" : "none"}
-						onClick={
-							isEditable && !isUpdating[request.id]
-								? () => handleRatingSubmit(request.id, i + 1)
-								: undefined
-						}
-					/>
-				))}
-				{currentRating > 0 && (
-					<span className="ml-1 text-xs sm:text-sm font-medium text-gray-900">
-						{currentRating}/5
-					</span>
-				)}
-			</div>
-		);
-	};
+	// const renderStars = (request: any, isEditable: boolean = false) => {
+	// 	const currentRating = request.rating || 0;
+	// 	return (
+	// 		<div className="flex items-center gap-1">
+	// 			{[...Array(5)].map((_, i) => (
+	// 				<Star
+	// 					key={i}
+	// 					size={16}
+	// 					className={`cursor-pointer transition-colors ${
+	// 						isEditable && i < 5
+	// 							? "hover:text-yellow-400"
+	// 							: i < currentRating
+	// 							? "text-yellow-400 fill-yellow-400"
+	// 							: "text-gray-300"
+	// 					} ${isUpdating[request.id] ? "cursor-not-allowed opacity-50" : ""}`}
+	// 					fill={i < currentRating ? "currentColor" : "none"}
+	// 					onClick={
+	// 						isEditable && !isUpdating[request.id]
+	// 							? () => handleRatingSubmit(request.id, i + 1)
+	// 							: undefined
+	// 					}
+	// 				/>
+	// 			))}
+	// 			{currentRating > 0 && (
+	// 				<span className="ml-1 text-xs sm:text-sm font-medium text-gray-900">
+	// 					{currentRating}/5
+	// 				</span>
+	// 			)}
+	// 		</div>
+	// 	);
+	// };
 
 	if (isLoading) {
 		return (
@@ -108,8 +108,8 @@ export default function ServiceRequestTable() {
 									</th>
 									<th className="p-3 text-left font-semibold">Status</th>
 									<th className="p-3 text-left font-semibold">Vehicle</th>
-									<th className="p-3 text-left font-semibold">Location</th>
-									<th className="p-3 text-left font-semibold">Rating</th>
+									{/* <th className="p-3 text-left font-semibold">Location</th>
+									<th className="p-3 text-left font-semibold">Rating</th> */}
 									<th className="p-3 text-left font-semibold">Requested At</th>
 								</tr>
 							</thead>
@@ -152,7 +152,7 @@ export default function ServiceRequestTable() {
 												</span>
 											</div>
 										</td>
-										<td className="p-3 text-gray-500 text-sm max-w-xs">
+										{/* <td className="p-3 text-gray-500 text-sm max-w-xs">
 											<div className="flex items-start gap-1">
 												<MapPin
 													size={14}
@@ -162,12 +162,12 @@ export default function ServiceRequestTable() {
 													{request.service_location || "N/A"}
 												</span>
 											</div>
-										</td>
-										<td className="p-3">
+										</td> */}
+										{/* <td className="p-3">
 											{request.status === "completed"
 												? renderStars(request, !request.rating)
 												: renderStars(request)}
-										</td>
+										</td> */}
 										<td className="p-3 text-gray-500 text-sm whitespace-nowrap">
 											{new Date(request.requested_at).toLocaleString()}
 										</td>
@@ -214,7 +214,7 @@ export default function ServiceRequestTable() {
 										</span>
 									</div>
 
-									<div className="flex items-start gap-2">
+									{/* <div className="flex items-start gap-2">
 										<MapPin
 											size={16}
 											className="text-gray-500 flex-shrink-0 mt-0.5"
@@ -235,7 +235,7 @@ export default function ServiceRequestTable() {
 												</span>
 											)}
 										</div>
-									</div>
+									</div> */}
 
 									<div className="flex justify-between pt-2 border-t border-gray-200">
 										<span className="text-gray-600">Requested:</span>

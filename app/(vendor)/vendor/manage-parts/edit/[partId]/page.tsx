@@ -97,26 +97,15 @@ const UpdatePart: React.FC = () => {
 	const [isDragging, setIsDragging] = useState(false);
 	const currentBlobUrls = useRef<string[]>([]);
 
-	const {
-		data: vehicles,
-		isLoading: isVehiclesLoading,
-		error: vehiclesError,
-	} = useGetAllVehiclesQuery({});
-	const {
-		data: subcategories,
-		isLoading: isSubcategoriesLoading,
-		error: subcategoriesError,
-	} = useGetAllSubcategoriesQuery({});
-	const {
-		data: partBrands,
-		isLoading: isPartBrandsLoading,
-		error: partBrandsError,
-	} = useGetAllPartBrandsQuery({page: 1, limit: 999999});
-	const {
-		data: discounts,
-		isLoading: isDiscountsLoading,
-		error: discountsError,
-	} = useGetAllVehiclesQuery({});
+	  const { data: vehicleResponse, isLoading: isVehiclesLoading, error: vehiclesError } = useGetAllVehiclesQuery({});
+	  const { data: subcategoryResponse, isLoading: isSubcategoriesLoading, error: subcategoriesError } = useGetAllSubcategoriesQuery({});
+	  const { data: partBrandResponse, isLoading: isPartBrandsLoading, error: partBrandsError } = useGetAllPartBrandsQuery({page: 1, limit: 999999});
+	  const { data: discounts, isLoading: isDiscountsLoading, error: discountsError } = useGetAllVehiclesQuery({});
+
+	
+  const vehicles = vehicleResponse?.data?.vehicles;
+  const subcategories = subcategoryResponse?.data?.subcategories;
+  const partBrands = partBrandResponse?.data?.brands;
 
 	// Populate form with existing part data
 	useEffect(() => {
@@ -396,7 +385,7 @@ const UpdatePart: React.FC = () => {
 						>
 							<span
 								className={
-									formData.vehicleId && Array.isArray(vehicles?.data)
+									formData.vehicleId && Array.isArray(vehicles)
 										? "text-gray-700"
 										: "text-gray-400"
 								}
@@ -405,9 +394,9 @@ const UpdatePart: React.FC = () => {
 									? "Loading vehicles..."
 									: vehiclesError
 									? "Error loading vehicles"
-									: formData.vehicleId && Array.isArray(vehicles?.data)
+									: formData.vehicleId && Array.isArray(vehicles)
 									? (() => {
-											const selected = vehicles.data.find(
+											const selected = vehicles?.find(
 												(v: Vehicle) => v.id === Number(formData.vehicleId),
 											);
 											return selected
@@ -435,10 +424,10 @@ const UpdatePart: React.FC = () => {
 						{dropdownOpen.vehicle &&
 							!isVehiclesLoading &&
 							!vehiclesError &&
-							Array.isArray(vehicles?.data) &&
-							vehicles.data.length > 0 && (
+							Array.isArray(vehicles) &&
+							vehicles?.length > 0 && (
 								<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-									{vehicles.data.map((vehicle: Vehicle) => (
+									{vehicles?.map((vehicle: Vehicle) => (
 										<button
 											key={vehicle.id}
 											type="button"
@@ -481,7 +470,7 @@ const UpdatePart: React.FC = () => {
 							>
 								<span
 									className={
-										formData.subcategoryId && Array.isArray(subcategories?.data)
+										formData.subcategoryId && Array.isArray(subcategories)
 											? "text-gray-700"
 											: "text-gray-400"
 									}
@@ -491,8 +480,8 @@ const UpdatePart: React.FC = () => {
 										: subcategoriesError
 										? "Error loading subcategories"
 										: formData.subcategoryId &&
-										  Array.isArray(subcategories?.data)
-										? subcategories.data.find(
+										  Array.isArray(subcategories)
+										? subcategories?.find(
 												(s: Subcategory) =>
 													s.id === Number(formData.subcategoryId),
 										  )?.name || "Select a Subcategory"
@@ -507,10 +496,10 @@ const UpdatePart: React.FC = () => {
 							{dropdownOpen.subcategory &&
 								!isSubcategoriesLoading &&
 								!subcategoriesError &&
-								Array.isArray(subcategories?.data) &&
-								subcategories.data.length > 0 && (
+								Array.isArray(subcategories) &&
+								subcategories?.length > 0 && (
 									<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
-										{subcategories.data.map((subcategory: Subcategory) => (
+										{subcategories?.map((subcategory: Subcategory) => (
 											<button
 												key={subcategory.id}
 												type="button"
@@ -547,7 +536,7 @@ const UpdatePart: React.FC = () => {
 							>
 								<span
 									className={
-										formData.partBrandId && Array.isArray(partBrands?.data)
+										formData.partBrandId && Array.isArray(partBrands)
 											? "text-gray-700"
 											: "text-gray-400"
 									}
@@ -556,8 +545,8 @@ const UpdatePart: React.FC = () => {
 										? "Loading part brands..."
 										: partBrandsError
 										? "Error loading part brands"
-										: formData.partBrandId && Array.isArray(partBrands?.data)
-										? partBrands.data.find(
+										: formData.partBrandId && Array.isArray(partBrands)
+										? partBrands?.find(
 												(pb: PartBrand) =>
 													pb.id.toString() === formData.partBrandId,
 										  )?.name || "Select a Part Brand"
@@ -572,10 +561,10 @@ const UpdatePart: React.FC = () => {
 							{dropdownOpen.partBrand &&
 								!isPartBrandsLoading &&
 								!partBrandsError &&
-								Array.isArray(partBrands?.data) &&
-								partBrands.data.length > 0 && (
+								Array.isArray(partBrands) &&
+								partBrands?.length > 0 && (
 									<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-										{partBrands.data.map((partBrand: PartBrand) => (
+										{partBrands?.map((partBrand: PartBrand) => (
 											<button
 												key={partBrand.id}
 												type="button"

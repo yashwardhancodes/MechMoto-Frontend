@@ -95,15 +95,20 @@ const AddPart: React.FC = () => {
 
   // ✅ Hooks must always be called
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { data: vehicles, isLoading: isVehiclesLoading, error: vehiclesError } =
-    useGetAllVehiclesQuery({});
-  const { data: subcategories, isLoading: isSubcategoriesLoading, error: subcategoriesError } =
+  const {
+		data: vehicleResponse,
+		isLoading: isVehiclesLoading,
+		error: vehiclesError,
+  } = useGetAllVehiclesQuery({});
+  const { data: subcategoryResponse, isLoading: isSubcategoriesLoading, error: subcategoriesError } =
     useGetAllSubcategoriesQuery({});
-  const { data: partBrands, isLoading: isPartBrandsLoading, error: partBrandsError } =
+  const { data: partBrandsResponse, isLoading: isPartBrandsLoading, error: partBrandsError } =
     useGetAllPartBrandsQuery({page: 1, limit: 999999});
   const { data: discounts, isLoading: isDiscountsLoading, error: discountsError } =
     useGetAllVehiclesQuery({}); // ⚠️ looks like this should be useGetAllDiscountsQuery?
-
+  const vehicles = vehicleResponse?.data?.vehicles;
+  const subcategories = subcategoryResponse?.data?.subcategories;
+  const partBrands = partBrandsResponse?.data?.brands;
   // ✅ Safe conditional side effect
   useEffect(() => {
     if (!token) {
@@ -301,7 +306,7 @@ const AddPart: React.FC = () => {
               >
                 <span
                   className={
-                    formData.vehicleId && Array.isArray(vehicles?.data)
+                    formData.vehicleId && Array.isArray(vehicles)
                       ? "text-gray-700"
                       : "text-gray-400"
                   }
@@ -310,9 +315,9 @@ const AddPart: React.FC = () => {
                     ? "Loading vehicles..."
                     : vehiclesError
                       ? "Error loading vehicles"
-                      : formData.vehicleId && Array.isArray(vehicles?.data)
+                      : formData.vehicleId && Array.isArray(vehicles)
                         ? (() => {
-                          const selected = vehicles.data.find(
+                          const selected = vehicles.find(
                             (v: Vehicle) => v.id === Number(formData.vehicleId)
                           );
                           return selected
@@ -331,10 +336,10 @@ const AddPart: React.FC = () => {
               {dropdownOpen.vehicle &&
                 !isVehiclesLoading &&
                 !vehiclesError &&
-                Array.isArray(vehicles?.data) &&
-                vehicles.data.length > 0 && (
+                Array.isArray(vehicles) &&
+                vehicles?.length > 0 && (
                   <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                    {vehicles.data.map((vehicle: Vehicle) => (
+                    {vehicles?.map((vehicle: Vehicle) => (
                       <button
                         key={vehicle.id}
                         type="button"
@@ -364,7 +369,7 @@ const AddPart: React.FC = () => {
               >
                 <span
                   className={
-                    formData.subcategoryId && Array.isArray(subcategories?.data)
+                    formData.subcategoryId && Array.isArray(subcategories)
                       ? "text-gray-700"
                       : "text-gray-400"
                   }
@@ -373,17 +378,17 @@ const AddPart: React.FC = () => {
                     ? "Loading subcategories..."
                     : subcategoriesError
                       ? "Error loading subcategories"
-                      : formData.subcategoryId && Array.isArray(subcategories?.data)
-                        ? subcategories.data.find((s: Subcategory) => s.id === Number(formData.subcategoryId))?.name || "Select a Subcategory"
+                      : formData.subcategoryId && Array.isArray(subcategories)
+                        ? subcategories?.find((s: Subcategory) => s.id === Number(formData.subcategoryId))?.name || "Select a Subcategory"
                         : "Select a Subcategory"}
                 </span>
                 <ChevronDown
                   className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.subcategory ? "rotate-180" : ""}`}
                 />
               </button>
-              {dropdownOpen.subcategory && !isSubcategoriesLoading && !subcategoriesError && Array.isArray(subcategories?.data) && subcategories.data.length > 0 && (
+              {dropdownOpen.subcategory && !isSubcategoriesLoading && !subcategoriesError && Array.isArray(subcategories) && subcategories?.length > 0 && (
                 <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                  {subcategories.data.map((subcategory: Subcategory) => (
+                  {subcategories?.map((subcategory: Subcategory) => (
                     <button
                       key={subcategory.id}
                       type="button"
@@ -412,7 +417,7 @@ const AddPart: React.FC = () => {
               >
                 <span
                   className={
-                    formData.partBrandId && Array.isArray(partBrands?.data)
+                    formData.partBrandId && Array.isArray(partBrands)
                       ? "text-gray-700"
                       : "text-gray-400"
                   }
@@ -421,17 +426,17 @@ const AddPart: React.FC = () => {
                     ? "Loading part brands..."
                     : partBrandsError
                       ? "Error loading part brands"
-                      : formData.partBrandId && Array.isArray(partBrands?.data)
-                        ? partBrands.data.find((pb: PartBrand) => pb.id === formData.partBrandId)?.name || "Select a Part Brand"
+                      : formData.partBrandId && Array.isArray(partBrands)
+                        ? partBrands?.find((pb: PartBrand) => pb.id === formData.partBrandId)?.name || "Select a Part Brand"
                         : "Select a Part Brand"}
                 </span>
                 <ChevronDown
                   className={`w-5 h-5 text-[#9AE144] ${dropdownOpen.partBrand ? "rotate-180" : ""}`}
                 />
               </button>
-              {dropdownOpen.partBrand && !isPartBrandsLoading && !partBrandsError && Array.isArray(partBrands?.data) && partBrands.data.length > 0 && (
+              {dropdownOpen.partBrand && !isPartBrandsLoading && !partBrandsError && Array.isArray(partBrands) && partBrands?.length > 0 && (
                 <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                  {partBrands.data.map((partBrand: PartBrand) => (
+                  {partBrands?.map((partBrand: PartBrand) => (
                     <button
                       key={partBrand.id}
                       type="button"

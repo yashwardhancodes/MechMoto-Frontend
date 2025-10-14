@@ -169,8 +169,8 @@ const UpdateCategory: React.FC = () => {
                 <Image
                   src={previewUrl || formData.img_src}
                   alt="Category preview"
-                  width={500}
-                  height={176}
+                  width={100}
+                  height={100}
                   className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
                 />
                 <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-[#9AE144] bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">

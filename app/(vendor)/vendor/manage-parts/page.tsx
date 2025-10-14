@@ -1,7 +1,7 @@
 "use client";
 
 import { Pencil, Eye, Trash2 } from "lucide-react";
-import { useGetAllPartsQuery, useDeletePartMutation, useGetAllPartsByVendorQuery } from "@/lib/redux/api/partApi";
+import { useDeletePartMutation, useGetAllPartsByVendorQuery } from "@/lib/redux/api/partApi";
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
 import { toast } from "react-hot-toast";
@@ -17,10 +17,9 @@ export default function ManageParts() {
 
   // Call both hooks unconditionally at the top level
   const vendorQuery = useGetAllPartsByVendorQuery({}, { skip: user?.role.name !== ROLES.VENDOR });
-  const allPartsQuery = useGetAllPartsQuery({}, { skip: user?.role.name === ROLES.VENDOR });
 
   // Determine which query result to use based on user role
-  const { data, isLoading, isError } = user?.role.name === ROLES.VENDOR ? vendorQuery : allPartsQuery;
+  const { data, isLoading, isError } = vendorQuery;
 
   // Log API data for debugging
   console.log("API data:", data);
