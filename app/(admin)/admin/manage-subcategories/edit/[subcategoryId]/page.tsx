@@ -48,8 +48,10 @@ const UpdateSubcategory: React.FC = () => {
   const { data: subcategory, isLoading: isSubcategoryLoading, error: subcategoryError } = useGetSubcategoryQuery(subcategoryId);
   const token = useSelector((state: RootState) => state.auth.token);
 
-  const { data: categories, isLoading: isCategoriesLoading, error: categoriesError } = useGetAllCategoriesQuery({});
+  const { data: categoryResponse, isLoading: isCategoriesLoading, error: categoriesError } = useGetAllCategoriesQuery({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const categories = categoryResponse?.data?.categories;
 
   useEffect(() => {
     if (!token) {
@@ -212,7 +214,7 @@ const UpdateSubcategory: React.FC = () => {
             >
               <span
                 className={
-                  formData.categoryId && Array.isArray(categories?.data)
+                  formData.categoryId && Array.isArray(categories)
                     ? "text-gray-700"
                     : "text-gray-400"
                 }
@@ -221,8 +223,8 @@ const UpdateSubcategory: React.FC = () => {
                   ? "Loading categories..."
                   : categoriesError
                     ? "Error loading categories"
-                    : formData.categoryId && Array.isArray(categories?.data)
-                      ? categories.data.find(
+                    : formData.categoryId && Array.isArray(categories)
+                      ? categories.find(
                         (c: Category) => c.id === Number(formData.categoryId)
                       )?.name || "Select a Category"
                       : "Select a Category"}
@@ -236,10 +238,10 @@ const UpdateSubcategory: React.FC = () => {
             {categoryDropdownOpen &&
               !isCategoriesLoading &&
               !categoriesError &&
-              Array.isArray(categories?.data) &&
-              categories.data.length > 0 && (
+              Array.isArray(categories) &&
+              categories.length > 0 && (
                 <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                  {categories.data.map((category: Category) => (
+                  {categories.map((category: Category) => (
                     <button
                       key={category.id}
                       type="button"
@@ -279,6 +281,8 @@ const UpdateSubcategory: React.FC = () => {
                     src={previewUrl}
                     alt="Subcategory preview"
                     className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
+                    width={100}
+                    height={100}
                   />
                   <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-[#9AE144] bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <span className="text-black font-medium text-sm">Update Image</span>

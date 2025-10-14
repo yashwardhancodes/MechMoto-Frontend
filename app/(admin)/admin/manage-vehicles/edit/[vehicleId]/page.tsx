@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { z } from 'zod';
 import { toast } from 'react-hot-toast';
@@ -56,13 +56,9 @@ const UpdateVehicle: React.FC = () => {
   const [updateVehicle, { isLoading: isUpdating }] = useUpdateVehicleMutation();
 
   // Memoized carMakes and engineTypes to fix useEffect warnings
-  const carMakes: CarMake[] = useMemo(() => {
-    return Array.isArray(carMakesResponse?.data) ? carMakesResponse.data : [];
-  }, [carMakesResponse]);
+  const carMakes: CarMake[] = carMakesResponse?.data?.carMakes ?? [];
 
-  const engineTypes: EngineType[] = useMemo(() => {
-    return Array.isArray(engineTypesResponse?.data) ? engineTypesResponse.data : [];
-  }, [engineTypesResponse]);
+  const engineTypes: EngineType[] = engineTypesResponse?.data?.engineTypes ?? [];
 
   // Populate form with vehicle data
   useEffect(() => {

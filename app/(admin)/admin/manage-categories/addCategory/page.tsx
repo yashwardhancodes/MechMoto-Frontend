@@ -115,93 +115,94 @@ const AddCategory: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-150px)] overflow-y-auto bg-white shadow-sm py-16 px-4">
-      <div className="max-w-5xl mx-auto">
-        <div className="space-y-9">
-          {/* Name Field */}
-          <div>
-            <input
-              type="text"
-              name="name"
-              placeholder="Category Name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-            )}
-          </div>
+		<div className="h-[calc(100vh-150px)] overflow-y-auto bg-white shadow-sm py-16 px-4">
+			<div className="max-w-5xl mx-auto">
+				<div className="space-y-9">
+					{/* Name Field */}
+					<div>
+						<input
+							type="text"
+							name="name"
+							placeholder="Category Name"
+							value={formData.name}
+							onChange={handleInputChange}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
+						/>
+						{errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+					</div>
 
-          {/* Description Field */}
-          <div>
-            <textarea
-              name="description"
-              placeholder="Description"
-              rows={4}
-              value={formData.description}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400 resize-none"
-            />
-            {errors.description && (
-              <p className="text-red-500 text-sm mt-1">{errors.description}</p>
-            )}
-          </div>
+					{/* Description Field */}
+					<div>
+						<textarea
+							name="description"
+							placeholder="Description"
+							rows={4}
+							value={formData.description}
+							onChange={handleInputChange}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400 resize-none"
+						/>
+						{errors.description && (
+							<p className="text-red-500 text-sm mt-1">{errors.description}</p>
+						)}
+					</div>
 
-          {/* Image Upload & Submit */}
-          <div className="flex justify-between items-center">
-            <div>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-                ref={fileInputRef}
-              />
-              {previewUrl ? (
-                <div
-                  className="relative h-44 w-full cursor-pointer group"
-                  onClick={handleImageClick}
-                  title="Click to update image"
-                >
-                  <Image
-                    src={previewUrl}
-                    alt="Category preview"
-                    fill
-                    className="object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-[#9AE144] bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <span className="text-black font-medium text-sm">Update Image</span>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleImageClick}
-                  className="w-full px-4 py-3 border border-[#808080] rounded-md text-gray-700 text-left hover:bg-gray-100 transition-colors duration-200"
-                >
-                  Choose Image
-                </button>
-              )}
-              {errors.img_src && (
-                <p className="text-red-500 text-sm mt-1">{errors.img_src}</p>
-              )}
-            </div>
+					{/* Image Upload & Submit */}
+					<div className="flex justify-between items-center">
+						<div>
+							<input
+								type="file"
+								accept="image/*"
+								onChange={handleFileChange}
+								className="hidden"
+								ref={fileInputRef}
+							/>
+							{previewUrl ? (
+								<div
+									className="relative h-44 w-full cursor-pointer group"
+									onClick={handleImageClick}
+									title="Click to update image"
+								>
+									<Image
+										src={previewUrl}
+										alt="Category preview"
+										className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
+										width={100}
+										height={100}
+									/>
+									<div className="absolute inset-0 flex items-center justify-center rounded-lg bg-[#9AE144] bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+										<span className="text-black font-medium text-sm">
+											Update Image
+										</span>
+									</div>
+								</div>
+							) : (
+								<button
+									type="button"
+									onClick={handleImageClick}
+									className="w-full px-4 py-3 border border-[#808080] rounded-md text-gray-700 text-left hover:bg-gray-100 transition-colors duration-200"
+								>
+									Choose Image
+								</button>
+							)}
+							{errors.img_src && (
+								<p className="text-red-500 text-sm mt-1">{errors.img_src}</p>
+							)}
+						</div>
 
-            <div className="flex justify-end pt-3">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isLoading}
-                className="px-8 py-3 bg-[#9AE144] hover:bg-[#9AE144] text-black font-medium rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-[#9AE144] focus:ring-offset-2 outline-none"
-              >
-                {isLoading ? "Adding..." : "Add Category"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+						<div className="flex justify-end pt-3">
+							<button
+								type="button"
+								onClick={handleSubmit}
+								disabled={isLoading}
+								className="px-8 py-3 bg-[#9AE144] hover:bg-[#9AE144] text-black font-medium rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-[#9AE144] focus:ring-offset-2 outline-none"
+							>
+								{isLoading ? "Adding..." : "Add Category"}
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
   );
 };
 
