@@ -38,10 +38,7 @@ const USERROLES = {
 
 	Vendor: [
 		"read:dashboard",
-		"read:parts",
-		"read:parts",
-		"read:category",
-		"read:subcategory",
+		"read:part",
 		"read:order",
 		"read:shipment",
 	],
