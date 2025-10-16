@@ -29,62 +29,65 @@ export default function ManageParts() {
 
   // Define table columns
   const columns: TableColumn[] = [
-    {
-      key: "part_number",
-      header: "Part Number",
-      render: (value) => (
-        <div className="flex row items-center gap-2">
-          <Image
-            src={value.image_urls?.[0] || "/placeholder.png"}
-            alt={value.part_number}
-            width={40}
-            height={40}
-            className="size-10 rounded-full object-cover"
-          />
-          <div className="flex flex-col">
-            <span className="font-semibold">{value.part_number}</span>
-            <span className="text-xs">{value.description}</span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "description",
-      header: "Description",
-    },
-    {
-      key: "vehicle.model_line",
-      header: "Vehicle Model",
-      render: (value) => `${value.vehicle?.model_line || "N/A"} (${value.vehicle?.production_year || "N/A"})`,
-    },
-    {
-      key: "subcategory.name",
-      header: "Subcategory",
-      render: (value) => value.subcategory?.name || "N/A",
-    },
-    {
-      key: "part_brand.name",
-      header: "Brand",
-      render: (value) => value.part_brand?.name || "N/A",
-    },
-    {
-      key: "price",
-      header: "Price",
-      render: (value) => `₹${value.price?.toLocaleString() || "N/A"}`,
-    },
-    {
-      key: "quantity",
-      header: "Quantity",
-    },
-    {
-      key: "availability_status",
-      header: "Availability",
-    },
-    {
-      key: "created_at",
-      header: "Created At",
-      render: (value) => new Date(value.created_at).toLocaleDateString(),
-    },
+		{
+			key: "part_number",
+			header: "Part Number",
+			render: (value) => (
+				<div className="flex row items-center gap-2">
+					<Image
+						src={value.image_urls?.[0] || "/placeholder.png"}
+						alt={value.part_number}
+						width={40}
+						height={40}
+						className="size-10 rounded-full object-cover"
+					/>
+					<div className="flex flex-col">
+						<span className="font-semibold">{value.part_number}</span>
+						<span className="text-xs">{value.description}</span>
+					</div>
+				</div>
+			),
+		},
+		{
+			key: "description",
+			header: "Description",
+		},
+		{
+			key: "vehicle.model_line",
+			header: "Vehicle Model",
+			render: (value) =>
+				`${value.vehicle?.modification?.model_line?.name || "N/A"} ${value.vehicle?.modification?.name} (${
+					value.vehicle?.production_year || "N/A"
+				})`,
+		},
+		{
+			key: "subcategory.name",
+			header: "Subcategory",
+			render: (value) => value.subcategory?.name || "N/A",
+		},
+		{
+			key: "part_brand.name",
+			header: "Brand",
+			render: (value) => value.part_brand?.name || "N/A",
+		},
+		{
+			key: "price",
+			header: "Price",
+			render: (value) => `₹${value.price?.toLocaleString() || "N/A"}`,
+		},
+		{
+			key: "quantity",
+			header: "Quantity",
+		},
+		{
+			key: "availability_status",
+			header: "Availability",
+		},
+		{
+			key: "created_at",
+			header: "Created At",
+			render: (value) => new Date(value.created_at).toLocaleDateString(),
+		},
   ];
 
   // Define table actions

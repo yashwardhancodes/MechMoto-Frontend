@@ -127,12 +127,18 @@ const menuItems: MenuItem[] = [
 				icon: <Layers size={16} />,
 				permission: "read:car_make",
 			},
-			// {
-			// 	label: "Manage Model Line",
-			// 	basePath: "manage-model-line",
-			// 	icon: <List size={16} />,
-			// 	permission: "read:car_make",
-			// },
+			{
+				label: "Manage Model Line",
+				basePath: "manage-model-line",
+				icon: <List size={16} />,
+				permission: "read:model_line",
+			},
+			{
+				label: "Manage Modification",
+				basePath: "manage-modifications",
+				icon: <List size={16} />,
+				permission: "read:modification",
+			},
 			{
 				label: "Manage Engine Type",
 				basePath: "manage-engine-type",

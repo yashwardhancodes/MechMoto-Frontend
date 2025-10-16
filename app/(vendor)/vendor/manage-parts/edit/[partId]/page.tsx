@@ -34,14 +34,28 @@ interface FormErrors {
 	[key: string]: string;
 }
 
+interface EngineType {
+	name: string;
+}
+interface CarMake {
+	name: string;
+}
 interface Vehicle {
 	id: number;
-	name: string;
-	car_make?: { name: string };
+	name?: string;
+	car_make?: CarMake;
 	model_line?: string;
-	modification?: string;
-	engine_type?: { name: string };
-	production_year?: number;
+	modification?: {
+		name: string;
+		model_line: {
+			name: string;
+			car_make: {
+				name: string;
+			};
+		};
+	};
+	engine_type?: EngineType;
+	production_year?: number | string;
 }
 
 interface Subcategory {
@@ -436,15 +450,15 @@ const UpdatePart: React.FC = () => {
 											}
 											className="w-full px-4 py-2 text-left hover:bg-gray-50"
 										>
-											{vehicle.car_make?.name || ""}{" "}
-											{vehicle.model_line || ""}{" "}
+											{vehicle?.modification?.model_line?.car_make?.name}{" "}
+											{vehicle?.modification?.model_line?.name}{" "}
 											{vehicle.modification
-												? `(${vehicle.modification})`
+												? `(${vehicle.modification.name})`
 												: ""}{" "}
 											{vehicle.engine_type?.name
 												? `- ${vehicle.engine_type.name}`
 												: ""}{" "}
-											[{vehicle.production_year || ""}]
+											[{vehicle.production_year}]
 										</button>
 									))}
 								</div>
@@ -479,8 +493,7 @@ const UpdatePart: React.FC = () => {
 										? "Loading subcategories..."
 										: subcategoriesError
 										? "Error loading subcategories"
-										: formData.subcategoryId &&
-										  Array.isArray(subcategories)
+										: formData.subcategoryId && Array.isArray(subcategories)
 										? subcategories?.find(
 												(s: Subcategory) =>
 													s.id === Number(formData.subcategoryId),

@@ -24,6 +24,8 @@ import { notificationApi } from "./api/notificationApi";
 import { rolesApi } from "./api/rolesApi";
 import { permissionsApi } from "./api/permissionsApi";
 import { userApi } from "./api/userApi";
+import { modelLineCrudApi } from "./api/modelLineCrudApi";
+import { modificationApi } from "./api/modificationApi";
 
 export const makeStore = () =>
 	configureStore({
@@ -52,7 +54,9 @@ export const makeStore = () =>
 			[notificationApi.reducerPath]: notificationApi.reducer,
 			[rolesApi.reducerPath]: rolesApi.reducer,
 			[permissionsApi.reducerPath]: permissionsApi.reducer,
-			[userApi.reducerPath]: userApi.reducer
+			[userApi.reducerPath]: userApi.reducer,
+			[modelLineCrudApi.reducerPath]: modelLineCrudApi.reducer,
+			[modificationApi.reducerPath]: modificationApi.reducer
 		},
 		middleware: (getDefaultMiddleware) =>
 			getDefaultMiddleware().concat(
@@ -76,7 +80,9 @@ export const makeStore = () =>
 				notificationApi.middleware,
 				rolesApi.middleware,
 				permissionsApi.middleware,
-				userApi.middleware
+				userApi.middleware,
+				modelLineCrudApi.middleware,
+				modificationApi.middleware
 			),
 	});
 

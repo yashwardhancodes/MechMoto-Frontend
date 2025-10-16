@@ -10,7 +10,7 @@ import {
 	useLazyGetModificationsQuery,
 	useLazyGetFilteredVehiclesQuery,
 } from "@/lib/redux/api/vehicleApi";
-import { useLazyGetModelLinesQuery } from "@/lib/redux/api/modelLineApi";
+import { ModelLine, useLazyGetModelLinesQuery } from "@/lib/redux/api/modelLineApi";
 import { useLazyGetSubcategoriesByCategoryIdQuery } from "@/lib/redux/api/subCategoriesApi";
 import toast from "react-hot-toast";
 
@@ -55,7 +55,7 @@ interface PartCategory {
 const BuyParts = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedCarMake, setSelectedCarMake] = useState<number | null>(null);
-	const [selectedModelLine, setSelectedModelLine] = useState<string | null>(null);
+	const [selectedModelLine, setSelectedModelLine] = useState<number | null>(null);
 	const [selectedProductionYear, setSelectedProductionYear] = useState<string | null>(null);
 	const [selectedModification, setSelectedModification] = useState<string | null>(null);
 	const [searchResults, setSearchResults] = useState<Vehicle[]>([]);
@@ -349,7 +349,7 @@ const BuyParts = () => {
 							className={selectClassName}
 							disabled={!selectedCarMake || modelLineLoading}
 							value={selectedModelLine ?? ""}
-							onChange={(e) => setSelectedModelLine(e.target.value)}
+							onChange={(e) => setSelectedModelLine(Number(e.target.value))}
 						>
 							<option
 								value=""
@@ -357,13 +357,13 @@ const BuyParts = () => {
 							>
 								{modelLineLoading ? "Loading..." : "🏎️ Select Model"}
 							</option>
-							{modelLineData?.data?.map((model: string, idx: number) => (
+							{modelLineData?.data?.map((model: ModelLine, idx: number) => (
 								<option
 									key={idx}
-									value={model}
+									value={model?.id}
 									className="bg-white text-gray-800 py-3 hover:bg-green-50 hover:text-green-800 font-medium transition-colors duration-150"
 								>
-									{model}
+									{model.name}
 								</option>
 							))}
 						</select>
@@ -495,7 +495,7 @@ const BuyParts = () => {
 						className={selectClassName}
 						disabled={!selectedCarMake || modelLineLoading}
 						value={selectedModelLine ?? ""}
-						onChange={(e) => setSelectedModelLine(e.target.value)}
+						onChange={(e) => setSelectedModelLine(Number(e.target.value))}
 					>
 						<option
 							value=""
@@ -503,13 +503,13 @@ const BuyParts = () => {
 						>
 							{modelLineLoading ? "Loading..." : "🏎️ Select Model"}
 						</option>
-						{modelLineData?.data?.map((model: string, idx: number) => (
+						{modelLineData?.data?.map((model: ModelLine, idx: number) => (
 							<option
 								key={idx}
-								value={model}
+								value={model.name}
 								className="bg-white text-gray-800 py-3 hover:bg-green-50 hover:text-green-800 font-medium transition-colors duration-150"
 							>
-								{model}
+								{model.name}
 							</option>
 						))}
 					</select>
