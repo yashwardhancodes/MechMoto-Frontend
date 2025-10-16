@@ -10,10 +10,17 @@ import { useState } from "react";
 // Define a type for the API response
 interface ApiVehicle {
 	id: number;
-	car_make?: { name?: string };
 	model_line?: string;
 	production_year?: number | string;
-	modification?: string;
+	modification?: {
+		name: string;
+		model_line: {
+			name: string,
+			car_make: {
+				name: string
+			}
+		}
+	};
 	// Add other fields if needed
 }
 
@@ -29,10 +36,10 @@ export default function ManageVehicle() {
 	// Safely extract and transform vehicles for table
 	const vehicles = (data?.data?.vehicles ?? []).map((vehicle: ApiVehicle) => ({
 		id: vehicle.id,
-		brand: vehicle.car_make?.name ?? "N/A",
-		model: vehicle.model_line ?? "N/A",
+		brand: vehicle?.modification?.model_line?.car_make?.name ?? "N/A",
+		model: vehicle?.modification?.model_line?.name ?? "N/A",
 		year: vehicle.production_year ?? "N/A",
-		variant: vehicle.modification ?? "N/A",
+		variant: vehicle.modification.name ?? "N/A",
 		raw: vehicle,
 	}));
 

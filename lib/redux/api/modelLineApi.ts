@@ -2,8 +2,12 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { RootState } from "../store";
 
 // Define the expected response structure
+export interface ModelLine {
+  id: number;
+  name: string;
+}
 interface ModelLinesResponse {
-  data: string[];
+  data: ModelLine[];
   success: boolean;
 }
 

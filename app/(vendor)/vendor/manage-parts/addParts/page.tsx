@@ -28,7 +28,15 @@ interface Vehicle {
   name?: string;
   car_make?: CarMake;
   model_line?: string;
-  modification?: string;
+  modification?: {
+    name: string,
+    model_line: {
+      name: string,
+      car_make: {
+        name: string
+      }
+    }
+  };
   engine_type?: EngineType;
   production_year?: number | string;
 }
@@ -363,8 +371,8 @@ const AddPart: React.FC = () => {
                         onClick={() => handleSelectChange("vehicleId", vehicle.id)}
                         className="w-full px-4 py-2 text-left hover:bg-gray-50"
                       >
-                        {vehicle.car_make?.name} {vehicle.model_line}{" "}
-                        {vehicle.modification ? `(${vehicle.modification})` : ""}{" "}
+                        {vehicle?.modification?.model_line?.car_make?.name} {vehicle?.modification?.model_line?.name}{" "}
+                        {vehicle.modification ? `(${vehicle.modification.name})` : ""}{" "}
                         {vehicle.engine_type?.name ? `- ${vehicle.engine_type.name}` : ""}{" "}
                         [{vehicle.production_year}]
                       </button>
