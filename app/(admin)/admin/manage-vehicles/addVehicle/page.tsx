@@ -166,7 +166,7 @@ const AddVehicle: React.FC = () => {
 							>
 								<span
 									className={
-										formData.carMakeId && carMakes.length > 0
+										formData.carMakeId && carMakes?.length > 0
 											? "text-gray-700"
 											: "text-gray-400"
 									}
@@ -189,7 +189,7 @@ const AddVehicle: React.FC = () => {
 							{brandDropdownOpen &&
 								!carMakesLoading &&
 								!carMakesError &&
-								carMakes.length > 0 && (
+								carMakes?.length > 0 && (
 									<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
 										{carMakes.map((brand) => (
 											<button
@@ -235,7 +235,7 @@ const AddVehicle: React.FC = () => {
 									}`}
 								/>
 							</button>
-							{modelLineDropdown && modelLines.length > 0 && (
+							{modelLineDropdown && modelLines?.length > 0 && (
 								<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
 									{modelLines.map((brand) => (
 										<button
@@ -263,7 +263,7 @@ const AddVehicle: React.FC = () => {
 							>
 								<span
 									className={
-										formData.modificationId && modifications.length > 0
+										formData.modificationId && modifications?.length > 0
 											? "text-gray-700"
 											: "text-gray-400"
 									}
@@ -286,9 +286,9 @@ const AddVehicle: React.FC = () => {
 							{modificationDropdown &&
 								!modificationsLoading &&
 								!modificationsError &&
-								modifications.length > 0 && (
+								modifications?.length > 0 && (
 									<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-										{modifications.map((brand) => (
+										{modifications?.map((brand) => (
 											<button
 												key={brand.id}
 												type="button"
@@ -348,7 +348,7 @@ const AddVehicle: React.FC = () => {
 							>
 								<span
 									className={
-										formData.engineTypeId && engineTypes.length > 0
+										formData.engineTypeId && engineTypes?.length > 0
 											? "text-gray-700"
 											: "text-gray-400"
 									}
@@ -371,7 +371,7 @@ const AddVehicle: React.FC = () => {
 							{engineDropdownOpen &&
 								!engineTypesLoading &&
 								!engineTypesError &&
-								engineTypes.length > 0 && (
+								engineTypes?.length > 0 && (
 									<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
 										{engineTypes.map((engine) => (
 											<button
