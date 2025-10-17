@@ -31,7 +31,7 @@ export default function ManageModifications() {
 	const actions: TableAction[] = [
 		{
 			icon: Pencil,
-			onClick: (row: any) => router.push(`/admin/manage-modification/edit/${row.id}`),
+			onClick: (row: any) => router.push(`/admin/manage-modifications/edit/${row.id}`),
 			tooltip: "Edit Modification",
 		},
 		{
@@ -52,7 +52,7 @@ export default function ManageModifications() {
 			isLoading={isLoading}
 			isError={isError}
 			addButtonText="Add Modification"
-			addButtonPath="/admin/manage-modification/addModification"
+			addButtonPath="/admin/manage-modifications/add"
 			pagination={{
 				currentPage: page,
 				totalPages,
