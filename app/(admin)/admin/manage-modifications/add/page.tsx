@@ -29,7 +29,7 @@ export default function AddModification() {
 			const result = await addModification(parsed).unwrap();
 			if (result?.success) {
 				toast.success("Modification added successfully!");
-				router.push("/admin/manage-modification");
+				router.push("/admin/manage-modifications");
 			} else toast.error("Failed to add Modification.");
 		} catch (err: unknown) {
 			if (err instanceof z.ZodError) {

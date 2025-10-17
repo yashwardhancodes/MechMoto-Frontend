@@ -30,12 +30,15 @@ export default function EditModification() {
 
 	const [form, setForm] = useState({ name: "", model_lineId: "" });
 	const [errors, setErrors] = useState<any>({});
-
+	const modificationData = data?.data;
 	useEffect(() => {
-		if (data) {
-			setForm({ name: data.name, model_lineId: data.model_lineId });
+		if (modificationData) {
+			if (modificationData?.model_line?.car_makeId) {
+				setSelectedMake(modificationData?.model_line?.car_makeId);
+			}
+			setForm({ name: modificationData.name, model_lineId: modificationData.model_lineId });
 		}
-	}, [data]);
+	}, [modificationData]);
 
 	const handleSubmit = async () => {
 		try {
@@ -46,7 +49,7 @@ export default function EditModification() {
 			});
 			await updateModification({ id, ...parsed }).unwrap();
 			toast.success("Modification updated successfully!");
-			router.push("/admin/manage-modification");
+			router.push("/admin/manage-modifications");
 		} catch (err: any) {
 			if (err instanceof z.ZodError) {
 				const e: any = {};

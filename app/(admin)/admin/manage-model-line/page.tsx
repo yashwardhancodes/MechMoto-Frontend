@@ -31,9 +31,9 @@ export default function ManageModelLine() {
 	const { data, isLoading, isError } = useGetAllModelLinesQuery({ page, limit });
 	const [deleteModelLine] = useDeleteModelLineMutation();
 	const router = useRouter();
-
+	console.log("data", data)
 	const modelLines: TableRow[] =
-		(data?.data?.modelLines ?? []).map((m: ModelLine) => ({
+		(data?.data ?? []).map((m: ModelLine) => ({
 			id: m.id,
 			name: m.name ?? "N/A",
 			carMake: m.car_make?.name ?? "N/A",
