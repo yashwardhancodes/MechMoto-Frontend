@@ -1,8 +1,10 @@
 "use client";
 
+
 import { Plus, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React from "react";
+import React, { Dispatch, SetStateAction } from "react";
+
 
 // Types for the table component
 export interface TableColumn {
@@ -38,7 +40,7 @@ export interface DataTableProps<T> {
 	addButtonText?: string;
 	addButtonPath?: string;
 	onAddClick?: () => void;
-	showFilters?: boolean;
+	setShowFilters?: Dispatch<SetStateAction<boolean>>;
 	pagination?: PaginationProps;
 	emptyMessage?: string;
 	errorMessage?: string;
@@ -65,7 +67,7 @@ export default function DataTable<
 	addButtonText,
 	addButtonPath,
 	onAddClick,
-	showFilters = true,
+	setShowFilters,
 	pagination,
 	emptyMessage = "No data available.",
 	errorMessage = "Failed to load data.",
@@ -151,13 +153,14 @@ export default function DataTable<
 								{addButtonText || "Add Item"}
 							</button>
 						)}
-						{showFilters && (
-							<button className="flex items-center">
-								<div className="flex items-center bg-[#9AE144] text-white p-2 rounded">
-									<SlidersHorizontal className="w-4 h-4" />
-								</div>
-							</button>
-						)}
+						<button className="flex items-center">
+							<div className="flex items-center bg-[#9AE144] text-white p-2 rounded">
+								<SlidersHorizontal
+									onClick={() => setShowFilters(true)}
+									className="w-4 h-4"
+								/>
+							</div>
+						</button>
 					</div>
 				</div>
 
@@ -294,13 +297,11 @@ export default function DataTable<
 							{addButtonText || "Add Item"}
 						</button>
 					)}
-					{showFilters && (
-						<button className="flex items-center">
-							<div className="flex items-center bg-[#9AE144] text-white p-2 rounded">
-								<SlidersHorizontal className="w-4 h-4" />
-							</div>
-						</button>
-					)}
+					<button className="flex items-center">
+						<div className="flex items-center bg-[#9AE144] text-white p-2 rounded">
+							<SlidersHorizontal onClick={() => setShowFilters(true)} className="w-4 h-4" />
+						</div>
+					</button>
 				</div>
 			</div>
 

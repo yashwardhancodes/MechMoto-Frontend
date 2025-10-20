@@ -32,10 +32,23 @@ export const vehicleApi = createApi({
 	}),
 	tagTypes: ["Vehicle"],
 	endpoints: (builder) => ({
-		getAllVehicles: builder.query<VehicleResponse, { page?: number; limit?: number }>({
-			query: ({ page = 1, limit = 10 }) => ({
+		getAllVehicles: builder.query<
+			VehicleResponse,
+			{
+				page?: number;
+				limit?: number;
+				make?: string;
+				modelLine?: string;
+				modification?: string;
+				engineType?: string;
+				productionYearFrom?: number;
+				productionYearTo?: number;
+				sortBy?: "newest" | "oldest";
+			}
+		>({
+			query: (params) => ({
 				url: "vehicles",
-				params: { page, limit },
+				params,
 			}),
 			providesTags: ["Vehicle"],
 		}),
