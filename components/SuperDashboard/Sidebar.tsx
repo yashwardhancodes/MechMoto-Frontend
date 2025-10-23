@@ -100,7 +100,7 @@ const menuItems: MenuItem[] = [
 	{
 		label: "Service Request",
 		icon: <MdMiscellaneousServices size={18} />,
-		basePath: "service-request",
+		basePath: "manage-service-requests",
 		permission: "read:service_request",
 	},
 	{
