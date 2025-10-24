@@ -506,7 +506,7 @@ const BuyParts = () => {
 						{modelLineData?.data?.map((model: ModelLine, idx: number) => (
 							<option
 								key={idx}
-								value={model.name}
+								value={model.id}
 								className="bg-white text-gray-800 py-3 hover:bg-green-50 hover:text-green-800 font-medium transition-colors duration-150"
 							>
 								{model.name}
