@@ -11,7 +11,7 @@ import { Star } from "lucide-react";
 export default function LiveCallRequests() {
 	const { data, isLoading, isError, refetch } = useGetLiveCallRequestsQuery({page: 1, limit: 999999});
 	const [updateLiveCallRequest] = useUpdateLiveCallRequestMutation();
-	const requests = data.data.requests;
+	const requests = data?.data?.requests;
 	const [isUpdating, setIsUpdating] = useState<{ [key: number]: boolean }>({});
 
 	const handleRatingSubmit = async (requestId: number, rating: number) => {
