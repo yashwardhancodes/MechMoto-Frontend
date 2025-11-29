@@ -231,47 +231,54 @@ export default function DataTable<
 
 				{/* Pagination */}
 				{pagination && totalPages > 1 && (
-					<div className="flex justify-between items-center mt-4">
-						<p className="text-sm text-gray-500">
+					<div className="flex flex-col md:flex-row md:justify-between gap-3 mt-4">
+						{/* Showing X to Y */}
+						<p className="text-sm text-gray-500 whitespace-nowrap">
 							Showing {startItem} to {endItem} of {totalItems} items
 						</p>
-						<div className="flex items-center gap-1">
-							<button
-								onClick={() => onPageChange(currentPage - 1)}
-								disabled={currentPage <= 1}
-								className="px-3 py-1 text-gray-500 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
-							>
-								Prev
-							</button>
-							{pageNumbers.map((pageNum, idx) =>
-								pageNum === "..." ? (
-									<span
-										key={idx}
-										className="px-2 text-gray-500 flex items-center"
-									>
-										...
-									</span>
-								) : (
-									<button
-										key={idx}
-										onClick={() => onPageChange(Number(pageNum))}
-										className={`w-8 h-8 rounded-full text-sm transition-colors ${
-											pageNum === currentPage
-												? "bg-[#9AE144] text-white shadow-sm"
-												: "text-[#9AE144] bg-gray-200 hover:bg-gray-300"
-										}`}
-									>
-										{pageNum}
-									</button>
-								),
-							)}
-							<button
-								onClick={() => onPageChange(currentPage + 1)}
-								disabled={currentPage >= totalPages}
-								className="px-3 py-1 text-gray-500 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
-							>
-								Next
-							</button>
+
+						{/* Pagination Buttons → scrollable on mobile */}
+						<div className="overflow-x-auto max-w-full">
+							<div className="flex items-center gap-1 w-max">
+								<button
+									onClick={() => onPageChange(currentPage - 1)}
+									disabled={currentPage <= 1}
+									className="px-3 py-1 text-gray-500 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+								>
+									Prev
+								</button>
+
+								{pageNumbers.map((pageNum, idx) =>
+									pageNum === "..." ? (
+										<span
+											key={idx}
+											className="px-2 text-gray-500 flex items-center"
+										>
+											...
+										</span>
+									) : (
+										<button
+											key={idx}
+											onClick={() => onPageChange(Number(pageNum))}
+											className={`w-8 h-8 rounded-full text-sm transition-colors ${
+												pageNum === currentPage
+													? "bg-[#9AE144] text-white shadow-sm"
+													: "text-[#9AE144] bg-gray-200 hover:bg-gray-300"
+											}`}
+										>
+											{pageNum}
+										</button>
+									),
+								)}
+
+								<button
+									onClick={() => onPageChange(currentPage + 1)}
+									disabled={currentPage >= totalPages}
+									className="px-3 py-1 text-gray-500 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+								>
+									Next
+								</button>
+							</div>
 						</div>
 					</div>
 				)}
