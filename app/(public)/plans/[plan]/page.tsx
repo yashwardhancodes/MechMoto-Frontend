@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { setRedirect } from "@/lib/redux/slices/redirectSlice";
@@ -11,187 +11,191 @@ import { useCreateSubscriptionMutation } from "@/lib/redux/api/subscriptionApi";
 import { setSubscriptionId } from "@/lib/redux/slices/authSlice";
 import { RootState } from "@/lib/redux/store";
 
-// ------------------
-// Types
-// ------------------
-interface Module {
-  id: number;
-  name: string;
-  description: string | null;
-  created_at: string;
-}
-
-interface PlanModule {
-  id: number;
-  planId: number;
-  moduleId: number;
-  quota: number;
-  quota_unit: string | null;
-  module: Module;
-}
-
-interface Plan {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  period: "monthly" | "yearly";
-  interval: number;
-  razorpay_plan_id: string | null;
-  status: "PENDING" | "ACTIVE";
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  plan_modules: PlanModule[];
-}
-
-interface ComponentPlan {
-  title: string;
-  description: string;
-  features: string[];
-}
+ 
 
 export default function PlanPage() {
   const params = useParams();
   const plan = params.plan as string;
+
   const [checked, setChecked] = useState(false);
   const dispatch = useDispatch();
   const router = useRouter();
 
-  // ✅ Get subscription info from Redux auth state
-  const subscriptionId = useSelector((state: RootState) => state.auth.user?.razorpaySubscriptionId);
+  const subscriptionId = useSelector(
+    (state: RootState) => state.auth.user?.razorpaySubscriptionId
+  );
 
-  console.log("subscriptionId plan page", subscriptionId);
+  const { data: allPlans, isLoading, isError } = useGetAllPlansQuery({
+    page: 1,
+    limit: 999999,
+  });
 
-  const { data: allPlans, isLoading, isError } = useGetAllPlansQuery({page: 1, limit: 999999});
   const [createSubscription, { isLoading: isCreating }] =
     useCreateSubscriptionMutation();
 
-  // Active plans
-  const activePlans: Plan[] = allPlans
-    ? allPlans?.plans?.filter((plan: Plan) => plan.status === "ACTIVE")
+  // ======================================
+  // Load Razorpay Script
+  // ======================================
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    script.onload = () => console.log("⚡ Razorpay SDK Loaded");
+    script.onerror = () => console.error("❌ Razorpay SDK failed to load");
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  const activePlans = allPlans
+    ? allPlans.plans.filter((p) => p.status === "ACTIVE")
     : [];
 
-  // Selected plan from URL
   const selectedPlan = activePlans.find(
-    (p: Plan) => p.name.toLowerCase().replace(/\s+/g, "-") === plan
+    (p) => p.name.toLowerCase().replace(/\s+/g, "-") === plan
   );
 
-  // Component plan structure
-  const data: ComponentPlan | undefined = selectedPlan
+  const data = selectedPlan
     ? {
-      title: selectedPlan.name,
-      description:
-        selectedPlan.description ||
-        "Get a certified mechanic to your location with this plan.",
-      features: selectedPlan.plan_modules.length
-        ? selectedPlan.plan_modules.map(
-          (module) => `${module.module.name} (Quota: ${module.quota})`
-        )
-        : ["Quick roadside assistance", "Certified expert mechanics"],
-    }
+        title: selectedPlan.name,
+        description:
+          selectedPlan.description ||
+          "Get a certified mechanic to your location with this plan.",
+        features: selectedPlan.plan_modules.length
+          ? selectedPlan.plan_modules.map(
+              (module) => `${module.module.name} (Quota: ${module.quota})`
+            )
+          : ["Quick roadside assistance", "Certified expert mechanics"],
+      }
     : undefined;
 
-  // -------------------------
-  // Handle subscription create
-  // -------------------------
+  // ======================================================
+  // 🚀 HANDLE SUBSCRIPTION CREATION + RAZORPAY CHECKOUT
+  // ======================================================
   const handleRedirect = async () => {
     const storageKey = "auth";
 
-    // ✅ Check localStorage first (persistent)
     let authData = localStorage.getItem(storageKey);
-    if (!authData) {
-      // Fallback to sessionStorage (current session)
-      authData = sessionStorage.getItem(storageKey);
-    }
+    if (!authData) authData = sessionStorage.getItem(storageKey);
+
     if (!authData) {
       router.push("/auth/login");
       dispatch(setRedirect(`/plans/${plan}`));
       return;
     }
 
-    if (!selectedPlan) return;
-
-    const newTab = window.open("", "_blank");
+    const parsedAuth = JSON.parse(authData);
 
     try {
-      const parsedAuth = JSON.parse(authData);
-      const userId = parsedAuth?.user?.id;
-
       const payload = {
-        userId,
-        planId: selectedPlan.id,
-        
+        userId: parsedAuth?.user?.id,
+        planId: selectedPlan?.id,
       };
 
-
       const res = await createSubscription(payload).unwrap();
+      if (!res) return;
 
-      if (res?.short_url && newTab) {
-        newTab.location.href = res.short_url;
-
-        const interval = setInterval(async () => {
-          try {
-            const checkRes = await fetch(
-              `${process.env.NEXT_PUBLIC_BASE_URL}subscriptions/status/${res.id}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${parsedAuth?.token}`,
-                },
-              }
-            );
-            const statusData = await checkRes.json();
-
-            if (
-              statusData?.status === "active" ||
-              statusData?.status === "completed"
-            ) {
-              clearInterval(interval);
-
-              dispatch(
-                setSubscriptionId(statusData?.razorpaySubscriptionId || null)
-              );
-
-              router.push(`/plans/${plan}/checkout/success`);
-            }
-
-            if (
-              statusData?.status === "failed" ||
-              statusData?.status === "cancelled" ||
-              statusData?.status === "expired"
-            ) {
-              clearInterval(interval);
-              router.push(`/plans/${plan}/checkout/failure`);
-            }
-          } catch (err) {
-            console.error("Error checking subscription status:", err);
-          }
-        }, 5000);
+      // ================================
+      // Check Razorpay SDK LOADED
+      // ================================
+      if (typeof window === "undefined" || !window.Razorpay) {
+        alert("Razorpay SDK failed to load. Please refresh.");
+        return;
       }
+
+      // ================================
+      // Razorpay Payment Options
+      // ================================
+      const options: any = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        subscription_id: res?.razorpay_subscription_id,
+        name: "MechMoto",
+        description: selectedPlan?.name,
+        image: "/logo.png",
+        theme: { color: "#6BDE23" },
+        handler: function (resp: any) {
+          console.log("Razorpay Success:", resp);
+        },
+        modal: {
+          ondismiss: function () {
+            console.log("Checkout closed");
+          },
+        },
+        prefill: {
+          email: parsedAuth?.user?.email,
+          contact: parsedAuth?.user?.phone || "",
+        },
+      };
+
+      const razorpayObj = new window.Razorpay(options);
+      razorpayObj.open();
+
+      // ================================
+      // Polling Subscription Status
+      // ================================
+      const interval = setInterval(async () => {
+        try {
+          const checkRes = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_URL}subscriptions/status/${res.id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${parsedAuth?.token}`,
+              },
+            }
+          );
+
+          const statusData = await checkRes.json();
+          const s = statusData?.status?.toUpperCase();
+
+          console.log("🔍 Subscription Status:", s);
+
+          // SUCCESS STATES
+          if (["AUTHENTICATED", "ACTIVE", "COMPLETED"].includes(s)) {
+            clearInterval(interval);
+
+            dispatch(
+              setSubscriptionId(statusData?.razorpaySubscriptionId || null)
+            );
+
+            router.push(`/plans/${plan}/checkout/success`);
+          }
+
+          // FAILURE STATES
+          if (["FAILED", "CANCELLED", "EXPIRED"].includes(s)) {
+            clearInterval(interval);
+            router.push(`/plans/${plan}/checkout/failure`);
+          }
+        } catch (err) {
+          console.log("Polling error:", err);
+        }
+      }, 3000);
     } catch (err) {
       console.error("Error creating subscription:", err);
-      if (newTab) newTab.close();
     }
   };
 
-  // -------------------------
-  // Render UI
-  // -------------------------
-  if (isLoading) {
-    return <div className="p-10 text-center text-gray-600">Loading plan...</div>;
-  }
+  // ======================================================
+  // UI STATES
+  // ======================================================
+  if (isLoading)
+    return <div className="text-center p-10">Loading plan...</div>;
 
-  if (isError) {
+  if (isError)
     return (
-      <div className="p-10 text-center text-red-500">Error loading plan</div>
+      <div className="text-center p-10 text-red-500">
+        Error loading plan
+      </div>
     );
-  }
 
-  if (!data) {
-    return <div className="p-10 text-center text-red-500">Plan not found</div>;
-  }
+  if (!data)
+    return (
+      <div className="text-center p-10 text-red-500">Plan not found</div>
+    );
 
-  // ✅ Case 1: Already Purchased
+  // Already Purchased
   if (subscriptionId) {
     return (
       <div className="mx-auto py-16 px-6 md:px-32">
@@ -200,37 +204,27 @@ export default function PlanPage() {
             🎉 You’ve already purchased the{" "}
             <span className="text-[#6BDE23]">{data.title}</span> Plan!
           </h2>
-          <p className="text-gray-600 mt-4">
-            You can manage your subscription in your{" "}
-            <span
-              onClick={() => router.push("/dashboard")}
-              className="text-[#6BDE23] font-semibold cursor-pointer"
-            >
-              profile
-            </span>
-            .
-          </p>
         </div>
       </div>
     );
   }
 
-  // ✅ Case 2: Show normal checkout flow
+  // ======================================================
+  // MAIN UI
+  // ======================================================
   return (
     <div className="mx-auto bg-[rgba(154,225,68,0.023)] py-16 px-6 md:px-32">
-      {/* Plan Section */}
+
       <div className="max-w-6xl mx-auto rounded-2xl bg-gradient-to-b from-[#000000] to-[#ECFFFB] p-[2px] shadow-lg">
         <div className="bg-white rounded-2xl p-10">
-          {/* Title */}
+
           <h1 className="text-4xl font-bold text-center mb-12">
             You’ve selected the <br />
             <span className="text-[#6BDE23]">{data.title}</span>{" "}
             <span className="text-4xl font-bold">Plan</span>
           </h1>
 
-          {/* Two Column Layout */}
           <div className="grid md:grid-cols-2 gap-12 items-start">
-            {/* Left - Features */}
             <div>
               <h2 className="text-2xl font-bold mb-6">
                 What you <span className="text-[#6BDE23]">get?</span>
@@ -245,7 +239,6 @@ export default function PlanPage() {
               </ul>
             </div>
 
-            {/* Right - Description */}
             <div>
               <p className="text-gray-600 leading-relaxed">{data.description}</p>
             </div>
@@ -253,11 +246,11 @@ export default function PlanPage() {
         </div>
       </div>
 
-      {/* Terms and Conditions */}
       <div className="bg-white shadow-md p-6 mt-24 rounded-xl">
         <h3 className="text-lg font-bold text-[#6BDE23] mb-3">
           Terms and Conditions
         </h3>
+
         <div className="h-52 overflow-y-auto rounded-md p-3 text-sm text-gray-600 leading-relaxed">
           <p>
             <strong>Last Revised:</strong> December 16, 2013
@@ -270,7 +263,6 @@ export default function PlanPage() {
           <p>By using this Site, you agree to these Terms and Conditions...</p>
         </div>
 
-        {/* Checkbox */}
         <label className="flex items-center space-x-2 mt-6">
           <input
             type="checkbox"
@@ -285,15 +277,15 @@ export default function PlanPage() {
         </label>
       </div>
 
-      {/* Buy Now */}
       <div className="flex justify-end items-center">
         <button
           disabled={!checked || isCreating}
           onClick={handleRedirect}
-          className={`mt-6 px-8 py-2 rounded-full text-lg font-semibold transition ${checked
+          className={`mt-6 px-8 py-2 rounded-full text-lg font-semibold transition ${
+            checked
               ? "bg-[#6BDE23] text-black"
               : "bg-gray-300 text-black cursor-not-allowed"
-            }`}
+          }`}
         >
           {isCreating ? "Processing..." : "Buy Now"}
         </button>

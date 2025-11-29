@@ -1,7 +1,7 @@
 import "./globals.css";
 import { ReduxProvider } from "../lib/redux/provider";
 import { Toaster } from "react-hot-toast";
-import "../lib/fontawesome.ts";
+import "../lib/fontawesome";
 import { Outfit, Roboto, DM_Sans, Poppins } from "next/font/google";
 import ClientLayoutWrapper from "@/components/layout/ClientLayoutWrapper";
 
@@ -44,6 +44,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 			lang="en"
 			className={`${outfit.variable} ${roboto.variable} ${dmSans.variable} ${poppins.variable} font-sans`}
 		>
+			<head>
+				  <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
+
+			</head>
 			<body className="antialiased">
 				<ReduxProvider>
 					<ClientLayoutWrapper>
