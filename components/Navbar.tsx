@@ -1,5 +1,5 @@
-// Updated Navbar component
 "use client";
+
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import navLogo from "@/public/assets/navLogo.png";
@@ -7,88 +7,78 @@ import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCartShopping } from "@fortawesome/free-solid-svg-icons";
 import { faUser, faBell } from "@fortawesome/free-regular-svg-icons";
-import { faCompress, faExpand } from "@fortawesome/free-solid-svg-icons";
 import { Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import useAuth from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useGetAllSubscriptionsQuery } from "@/lib/redux/api/subscriptionApi";
 import NotificationDropdown from "./notifications/NotificationDropdown";
 import { useNotifications } from "@/hooks/useNotifications";
 import { ROLES } from "@/constants/roles";
+import { faCompress, faExpand } from "@fortawesome/free-solid-svg-icons";
 
-// Define the Subscription interface based on the expected data structure
 interface Subscription {
 	id: number;
 	razorpay_subscription_id: string;
-	plan: {
-		id: number;
-		name: string;
-		// Add other plan fields as needed
-	};
-	// Add other subscription fields as needed
+	plan: { id: number; name: string };
 }
 
 const Navbar = () => {
-	const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
-	const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
+	const [sidebarOpen, setSidebarOpen] = useState(false);
+	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
-	const { isLoggedIn, user, loading, signOut } = useAuth();
-	const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
-	console.log(user?.razorpaySubscriptionId);
 
+	const { isLoggedIn, user, signOut } = useAuth();
 	const router = useRouter();
-
-	const { data: subscriptions } = useGetAllSubscriptionsQuery({});
-
-	const particularSubscription = subscriptions?.find(
-		(subscription: Subscription) =>
-			subscription.razorpay_subscription_id === user?.razorpaySubscriptionId,
-	);
-
-	console.log("particularSubscription", particularSubscription);
 
 	const { unreadNotifications, unreadCount, isLoading: unreadLoading } = useNotifications();
 
+	const { data: subscriptions } = useGetAllSubscriptionsQuery({});
+	const particularSubscription = subscriptions?.find(
+		(s: Subscription) => s.razorpay_subscription_id === user?.razorpaySubscriptionId,
+	);
+
+	// close desktop dropdown on outside click
 	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+		const handleClickOutside = (e: any) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
 				setDropdownOpen(false);
 			}
 		};
-
 		document.addEventListener("mousedown", handleClickOutside);
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-		};
+		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, []);
-
-	// Fullscreen toggle
-	const toggleFullScreen = () => {
-		if (!document.fullscreenElement) {
-			document.documentElement.requestFullscreen();
-			setIsFullScreen(true);
-		} else if (document.exitFullscreen) {
-			document.exitFullscreen();
-			setIsFullScreen(false);
-		}
-	};
 
 	return (
 		<>
-			{/* Desktop Navbar */}
-			<div className="fixed top-0 w-full z-50 px-6 lg:px-12 hidden md:flex justify-between items-center md:h-[50px] lg:h-[56px] bg-[#050B20] font-sans text-white">
-				<Link href={"/"} className="flex items-center">
-					<Image src={navLogo} alt="logo" className="h-[45px] lg:h-[52px] w-auto" />
+			{/* DESKTOP NAVBAR */}
+			<div className="hidden md:flex fixed top-0 w-full h-[56px] px-6 bg-[#050B20] text-white z-50 justify-between items-center border-b border-white/10 backdrop-blur-sm">
+				<Link href="/">
+					<Image
+						src={navLogo}
+						alt="logo"
+						className="h-[50px] w-auto hover:scale-105 transition duration-300"
+					/>
 				</Link>
-				<div className="flex items-center gap-4 lg:gap-8 text-xs lg:text-sm">
+
+				<div className="flex items-center gap-6 text-sm">
 					{(!isLoggedIn || user?.role.name === ROLES.USER) && (
-						<div className="flex items-center gap-4 lg:gap-8">
-							<Link href={"/"}>Home</Link>
-							<Link href={"/about"}>About Us</Link>
-							<Link href={"/about"}>Contact</Link>
-						</div>
+						<>
+							<Link href="/" className="hover:text-[#9AE144] transition">
+								Home
+							</Link>
+							<Link href="/dtc" className="hover:text-[#9AE144] transition">
+								DTC
+							</Link>
+							<Link href="/about" className="hover:text-[#9AE144] transition">
+								About Us
+							</Link>
+							<Link href="/contact" className="hover:text-[#9AE144] transition">
+								Contact
+							</Link>
+						</>
 					)}
-					{/* Notification Dropdown */}
+
 					{isLoggedIn && (
 						<NotificationDropdown
 							unreadNotifications={unreadNotifications}
@@ -96,138 +86,227 @@ const Navbar = () => {
 							isLoading={unreadLoading}
 						/>
 					)}
-					<div className="relative inline-block text-left" ref={dropdownRef}>
-						{loading ? (
-							"Loading"
-						) : isLoggedIn ? (
-							<div
-								className="rounded-full bg-green-500 text-white font-bold w-8 h-8 flex justify-center items-center text-lg cursor-pointer"
-								onClick={() => setDropdownOpen((prev) => !prev)}
+					{/* FULLSCREEN TOGGLE */}
+					<button
+						onClick={() => {
+							if (!document.fullscreenElement) {
+								document.documentElement.requestFullscreen();
+							} else {
+								document.exitFullscreen();
+							}
+						}}
+						className="p-2 rounded hover:bg-white/10 transition"
+					>
+						<FontAwesomeIcon
+							icon={document.fullscreenElement ? faCompress : faExpand}
+							className="text-lg"
+						/>
+					</button>
+
+					{/* DESKTOP DROPDOWN */}
+					<div className="relative hidden md:block" ref={dropdownRef}>
+						{!isLoggedIn ? (
+							<Link
+								href="/auth/login"
+								className="flex items-center gap-2 hover:text-[#9AE144]"
 							>
-								{user?.email[0].toUpperCase()}
-							</div>
-						) : (
-							<Link href={"/auth/login"}>
-								<div className="flex space-x-2 items-center cursor-pointer justify-center">
-									<FontAwesomeIcon icon={faUser} className="text-sm" />
-									<span>Sign in</span>
-								</div>
+								<FontAwesomeIcon icon={faUser} />
+								Sign in
 							</Link>
-						)}
-						{dropdownOpen && (
-							<div className="absolute left-0 top-12 w-44 bg-white rounded-lg shadow-md z-50">
-								<ul className="py-2 text-sm text-gray-700">
-									{/* Check the role of the user */}
-									{user?.role.name === ROLES.SUPER_ADMIN ? (
-										<>
-											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
-												Profile Settings
-											</li>
-										</>
-									) : (
-										<>
-											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
-												My Profile
-											</li>
-											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
-												<Link href="/orders">My Orders</Link>
-											</li>
-											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
-												<Link href="/wishlist">My Wishlist</Link>
-											</li>
-											<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
-												Settings
-											</li>
-										</>
-									)}
-									{/* Display Razorpay Subscription ID if present */}
-									{particularSubscription && (
-										<li className="block px-4 py-2 hover:bg-gray-100 cursor-pointer">
-											Purchased Plan: {particularSubscription.plan.name}
-										</li>
-									)}
-									{/* Sign out (common for all roles) */}
-									<li
-										className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
-										onClick={() => {
-											signOut();
-											router.push("/auth/login");
-										}}
-									>
-										Sign out
-									</li>
-								</ul>
+						) : (
+							<div
+								onClick={() => setDropdownOpen(!dropdownOpen)}
+								className="bg-green-500 w-8 h-8 rounded-full flex items-center justify-center cursor-pointer font-bold hover:scale-105 transition"
+							>
+								{user.email[0].toUpperCase()}
 							</div>
 						)}
+
+						<AnimatePresence>
+							{dropdownOpen && (
+								<motion.div
+									initial={{ opacity: 0, y: -10 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -10 }}
+									transition={{ duration: 0.18 }}
+									className="absolute right-0 mt-4 bg-white text-gray-700 w-44 rounded shadow-md z-50"
+								>
+									<ul className="py-2 text-sm">
+										<li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+											My Profile
+										</li>
+										<li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+											<Link href="/orders">My Orders</Link>
+										</li>
+										<li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+											<Link href="/wishlist">My Wishlist</Link>
+										</li>
+										{particularSubscription && (
+											<li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+												Plan: {particularSubscription.plan.name}
+											</li>
+										)}
+										<li
+											className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+											onClick={() => {
+												signOut();
+												router.push("/auth/login");
+											}}
+										>
+											Sign Out
+										</li>
+									</ul>
+								</motion.div>
+							)}
+						</AnimatePresence>
 					</div>
+
 					{isLoggedIn && user.role.name === ROLES.USER && (
 						<Link
 							href="/products/cart"
-							className="flex items-center justify-between gap-1 lg:gap-2 px-3 lg:px-4 py-2 rounded-3xl bg-gradient-to-r from-[#1F5B05] to-[#9AE144] text-black font-medium shadow-md"
+							className="px-4 py-2 rounded-3xl bg-gradient-to-r from-[#1F5B05] to-[#9AE144] text-black flex items-center gap-2 hover:opacity-90 transition"
 						>
-							<span>My Cart</span>
-							<FontAwesomeIcon icon={faCartShopping} className="text-sm" />
+							My Cart
+							<FontAwesomeIcon icon={faCartShopping} />
 						</Link>
 					)}
-					{/* Fullscreen Toggle Button */}
-					{isLoggedIn && user.role.name !== ROLES.USER && (
+				</div>
+			</div>
+
+			{/* MOBILE NAVBAR */}
+			<div className="md:hidden fixed top-0 w-full h-[48px] bg-[#050B20] text-white px-3 flex items-center justify-between z-50 border-b border-white/10 backdrop-blur">
+				<button
+					onClick={() => setSidebarOpen(true)}
+					className="w-9 h-9 bg-[#9AE144] rounded flex items-center justify-center active:scale-95 transition"
+				>
+					<Menu className="text-black w-5 h-5" />
+				</button>
+
+				<Link href="/">
+					<Image
+						src={navLogo}
+						alt="logo"
+						className="h-[38px] w-auto hover:scale-105 transition"
+					/>
+				</Link>
+
+				<div className="flex items-center gap-3">
+					{isLoggedIn && (
 						<button
-							onClick={toggleFullScreen}
-							className="flex items-center justify-center px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600"
+							onClick={() => router.push("/notifications")}
+							className="active:scale-90 transition"
 						>
-							<FontAwesomeIcon icon={isFullScreen ? faCompress : faExpand} />
+							<FontAwesomeIcon icon={faBell} className="text-sm" />
+						</button>
+					)}
+
+					{isLoggedIn ? (
+						<button
+							onClick={() => router.push("/profile")}
+							className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center font-bold active:scale-95 transition"
+						>
+							{user.email[0].toUpperCase()}
+						</button>
+					) : (
+						<button
+							onClick={() => router.push("/auth/login")}
+							className="active:scale-90 transition"
+						>
+							<FontAwesomeIcon icon={faUser} className="text-sm" />
+						</button>
+					)}
+
+					{isLoggedIn && user.role.name === ROLES.USER && (
+						<button
+							onClick={() => router.push("/products/cart")}
+							className="w-9 h-9 rounded-full bg-gradient-to-r from-[#1F5B05] to-[#9AE144] flex items-center justify-center active:scale-90 transition"
+						>
+							<FontAwesomeIcon icon={faCartShopping} className="text-xs text-black" />
 						</button>
 					)}
 				</div>
 			</div>
 
-			{/* Mobile Navbar */}
-			<div className="fixed top-0 w-full z-50 md:hidden flex justify-between items-center h-[40px] bg-[#050B20] font-sans text-white px-4">
-				<button
-					onClick={() => setSidebarOpen(!sidebarOpen)}
-					className="flex items-center justify-center rounded-full size-[25px] bg-[#9AE144] shrink-0"
-				>
-					{sidebarOpen ? (
-						<X className="size-4 text-black" />
-					) : (
-						<Menu className="size-4 text-black" />
-					)}
-				</button>
-				<div>
-					<Link href={"/"}>
-						<Image src={navLogo} alt="logo" className="h-[35px] w-auto" />
-					</Link>
-				</div>
-				<div className="flex items-center justify-center gap-2">
-					{isLoggedIn && <FontAwesomeIcon icon={faBell} className="text-sm" />}
-					<Link href={"/auth/login"}>
-						<FontAwesomeIcon icon={faUser} className="text-sm" />
-					</Link>
-					<button className="flex items-center justify-between rounded-3xl bg-gradient-to-r from-[#1F5B05] px-2 py-1.5 to-[#9AE144] text-black font-medium shadow-md">
-						<FontAwesomeIcon icon={faCartShopping} className="text-xs" />
-					</button>
-				</div>
-			</div>
+			{/* MOBILE SIDEBAR */}
+			<AnimatePresence>
+				{sidebarOpen && (
+					<>
+						{/* OVERLAY */}
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 0.5 }}
+							exit={{ opacity: 0 }}
+							transition={{ duration: 0.2 }}
+							className="fixed inset-0 bg-black/50 z-40"
+							onClick={() => setSidebarOpen(false)}
+						/>
 
-			{/* Sidebar Menu */}
-			{sidebarOpen && (
-				<div className="md:hidden fixed top-[40px] flex flex-col left-0 w-2/3 sm:w-1/2 h-full bg-[#050B20] text-white z-50 p-4 space-y-4 transition-all duration-300 ease-in-out">
-					<Link href="/" onClick={() => setSidebarOpen(false)}>
-						Home
-					</Link>
-					<Link href="/about" onClick={() => setSidebarOpen(false)}>
-						About Us
-					</Link>
-					<Link href="/about" onClick={() => setSidebarOpen(false)}>
-						Contact
-					</Link>
-					{isLoggedIn && (
-						<Link href="/notifications" onClick={() => setSidebarOpen(false)}>
-							Notifications
-						</Link>
-					)}
-				</div>
-			)}
+						{/* SIDEBAR */}
+						<motion.div
+							initial={{ x: -300 }}
+							animate={{ x: 0 }}
+							exit={{ x: -300 }}
+							transition={{ type: "tween", duration: 0.25 }}
+							className="fixed top-0 left-0 h-full w-64 bg-[#050B20] text-white z-50 pt-16 px-5 shadow-xl"
+						>
+							<button
+								onClick={() => setSidebarOpen(false)}
+								className="absolute top-4 left-4 w-9 h-9 bg-[#9AE144] rounded flex items-center justify-center active:scale-95 transition"
+							>
+								<X className="text-black w-5 h-5" />
+							</button>
+
+							<div className="flex flex-col space-y-4 text-base mt-2">
+								<Link href="/" onClick={() => setSidebarOpen(false)}>
+									Home
+								</Link>
+								<Link href="/dtc" onClick={() => setSidebarOpen(false)}>
+									DTC
+								</Link>
+								<Link href="/about" onClick={() => setSidebarOpen(false)}>
+									About Us
+								</Link>
+								<Link href="/contact" onClick={() => setSidebarOpen(false)}>
+									Contact
+								</Link>
+
+								{isLoggedIn && (
+									<>
+										<Link href="/profile" onClick={() => setSidebarOpen(false)}>
+											My Profile
+										</Link>
+										<Link href="/orders" onClick={() => setSidebarOpen(false)}>
+											My Orders
+										</Link>
+										<Link
+											href="/wishlist"
+											onClick={() => setSidebarOpen(false)}
+										>
+											My Wishlist
+										</Link>
+										<Link
+											href="/notifications"
+											onClick={() => setSidebarOpen(false)}
+										>
+											Notifications
+										</Link>
+
+										<button
+											onClick={() => {
+												signOut();
+												router.push("/auth/login");
+											}}
+											className="text-red-300 text-left mt-2"
+										>
+											Sign Out
+										</button>
+									</>
+								)}
+							</div>
+						</motion.div>
+					</>
+				)}
+			</AnimatePresence>
 		</>
 	);
 };
