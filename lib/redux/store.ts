@@ -26,6 +26,7 @@ import { permissionsApi } from "./api/permissionsApi";
 import { userApi } from "./api/userApi";
 import { modelLineCrudApi } from "./api/modelLineCrudApi";
 import { modificationApi } from "./api/modificationApi";
+import { dtcApi } from "./api/dtcApi";
 
 export const makeStore = () =>
 	configureStore({
@@ -56,7 +57,8 @@ export const makeStore = () =>
 			[permissionsApi.reducerPath]: permissionsApi.reducer,
 			[userApi.reducerPath]: userApi.reducer,
 			[modelLineCrudApi.reducerPath]: modelLineCrudApi.reducer,
-			[modificationApi.reducerPath]: modificationApi.reducer
+			[modificationApi.reducerPath]: modificationApi.reducer,
+			[dtcApi.reducerPath]: dtcApi.reducer
 		},
 		middleware: (getDefaultMiddleware) =>
 			getDefaultMiddleware().concat(
@@ -82,7 +84,8 @@ export const makeStore = () =>
 				permissionsApi.middleware,
 				userApi.middleware,
 				modelLineCrudApi.middleware,
-				modificationApi.middleware
+				modificationApi.middleware,
+				dtcApi.middleware
 			),
 	});
 

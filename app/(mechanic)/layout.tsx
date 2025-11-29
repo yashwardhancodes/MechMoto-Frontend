@@ -1,99 +1,105 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useAuth from "@/hooks/useAuth";
 import { ROLES } from "@/constants/roles";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/SuperDashboard/Sidebar";
+import Sidebar from "@/components/SuperDashboard/Sidebar"; // Adjust path if needed
 import Loading from "@/components/custom/Loading";
 import { MoveLeft } from "lucide-react";
 
 interface DashboardLayoutProps {
-    children: React.ReactNode;
+	children: React.ReactNode;
 }
 
-export default function ServiceCenterLayout({ children }: DashboardLayoutProps) {
-    const router = useRouter();
-    const pathname = usePathname();
-    const { isLoggedIn, loading, role } = useAuth();
+export default function MechanicLayout({ children }: DashboardLayoutProps) {
+	const router = useRouter();
+	const pathname = usePathname();
+	const { isLoggedIn, loading, role } = useAuth();
+	const [sidebarOpen, setSidebarOpen] = useState(false);
+	const [allowed, setAllowed] = useState(false);
+	const [activeMenu, setActiveMenu] = useState("");
 
-    // Authentication and role check
-    const allowed = useMemo(() => {
-        if (loading) return false;
-        if (!isLoggedIn) {
-            router.replace("/auth/login");
-            return false;
-        }
-        if (role !== ROLES.MECHANIC) {
-            router.replace("/mechanic");
-            return false;
-        }
-        return true;
-    }, [loading, isLoggedIn, role, router]);
+	// Authentication & role check
+	useEffect(() => {
+		if (!loading) {
+			if (!isLoggedIn) {
+				router.replace("/auth/login");
+			} else if (role !== ROLES.MECHANIC) {
+				router.replace("/mechanic");
+			} else {
+				setAllowed(true);
+			}
+		}
+	}, [loading, isLoggedIn, role, router]);
 
-    // Derive active menu from pathname
-    const currentMenu = useMemo(() => {
-        const segment = pathname?.split("/")[2];
-        if (!segment) return "Dashboard";
+	// Derive active menu from pathname
+	const currentMenu = useMemo(() => {
+		const segment = pathname?.split("/")[2] || "";
+		const menuMap: { [key: string]: string } = {
+			dashboard: "Dashboard",
+			orders: "Orders",
+			"service-request": "Service Requests",
+			"manage-parts": "Manage Parts",
+			"manage-shipments": "Manage Shipments",
+			"financial-management": "Financial Management",
+			"customer-support": "Customer Support",
+		};
+		return menuMap[segment] || "Dashboard";
+	}, [pathname]);
 
-        const menuMap: { [key: string]: string } = {
-            dashboard: "Dashboard",
-            "manage-vendors": "Manage Vendors",
-            "manage-parts": "Manage Parts",
-            "coupons-discounts": "Coupons & Discounts",
-            orders: "Orders",
-            "service-request": "Service Request",
-            "manage-mechanics": "Manage Mechanics",
-            "manage-vehicles": "Manage Vehicles",
-            "manage-car-make": "Manage Car Make",
-            "manage-model-line": "Manage Model Line",
-            "manage-engine-type": "Manage Engine Type",
-            "financial-management": "Financial Management",
-            "analytics-and-reporting": "Analytics and Reporting",
-            "customer-support": "Customer Support",
-            "manage-categories": "Manage Categories",
-            "manage-subcategories": "Manage Subcategories",
-            "manage-part-brands": "Manage Part Brands",
-            "manage-shipments": "Manage Shipments",
-            "manage-service-requests": "Manage Service Requests",
-        };
+	// Sync active menu
+	useEffect(() => {
+		setActiveMenu(currentMenu);
+	}, [currentMenu]);
 
-        return menuMap[segment] || "Dashboard";
-    }, [pathname]);
+	const handleBack = () => router.back();
 
-    const handleBack = () => {
-        router.back();
-    };
+	if (loading) return <Loading />;
+	if (!allowed) return null;
 
-    // Loading or not allowed states
-    if (loading) {
-        return <Loading />;
-    }
+	return (
+		<div className="bg-gray-50 min-h-screen">
+			<Navbar />
 
-    if (!allowed) {
-        return null;
-    }
+			{/* Mobile Menu Toggle */}
+			<button
+				className="md:hidden fixed top-3 left-3 z-[60] bg-white p-2 rounded shadow-lg"
+				onClick={() => setSidebarOpen(!sidebarOpen)}
+			>
+				<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						strokeWidth={2}
+						d="M4 6h16M4 12h16M4 18h16"
+					/>
+				</svg>
+			</button>
 
-    return (
-        <div className="bg-gray-50">
-            {/* Fixed Top Navbar */}
-            <Navbar />
+			<div className="mt-[40px] md:mt-[50px] lg:mt-[56px] flex">
+				{/* Sidebar */}
+				<Sidebar
+					activeMenu={activeMenu}
+					setActiveMenu={setActiveMenu}
+					isOpen={sidebarOpen}
+					setIsOpen={setSidebarOpen}
+				/>
 
-            <div className="mt-[40px] md:mt-[50px] lg:mt-[56px]">
-                <Sidebar activeMenu={currentMenu} setActiveMenu={() => {}} />
-
-                {/* Main Content Area */}
-                <main className="ml-63 p-2 h-[calc(100vh-100px)]">
-                    <div className="flex items-center gap-4 my-2 ml-2">
-                        <button onClick={handleBack}>
-                            <MoveLeft className="text-[#9AE144] size-9" />
-                        </button>
-                        <h1 className="text-3xl font-dm-sans font-bold">{currentMenu}</h1>
-                    </div>
-                    <div className="p-2">{children}</div>
-                </main>
-            </div>
-        </div>
-    );
+				{/* Main Content */}
+				<main className="w-full md:ml-63 p-4 h-[calc(100vh-100px)] overflow-y-auto">
+					<div className="flex items-center gap-4 my-4">
+						<button onClick={handleBack} className="hover:scale-110 transition">
+							<MoveLeft className="text-[#9AE144] size-9" />
+						</button>
+						<h1 className="text-3xl font-dm-sans font-bold text-gray-800">
+							{activeMenu}
+						</h1>
+					</div>
+					<div className="bg-white rounded-lg shadow-sm p-6 min-h-full">{children}</div>
+				</main>
+			</div>
+		</div>
+	);
 }

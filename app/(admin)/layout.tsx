@@ -17,6 +17,8 @@ export default function AdminDashboardLayout({ children }: DashboardLayoutProps)
 	const router = useRouter();
 	const pathname = usePathname();
 	const { isLoggedIn, loading, role } = useAuth();
+	const [sidebarOpen, setSidebarOpen] = useState(false);
+
 
 	const [allowed, setAllowed] = useState(false);
 	const [activeMenu, setActiveMenu] = useState("");
@@ -82,13 +84,24 @@ export default function AdminDashboardLayout({ children }: DashboardLayoutProps)
 		<div className="bg-gray-50">
 			{/* Fixed Top Navbar */}
 			<Navbar />
+			<button
+				className="md:hidden fixed top-3 left-3 z-[60] bg-white p-2 rounded shadow"
+				onClick={() => setSidebarOpen(!sidebarOpen)}
+			>
+				☰
+			</button>
 
 			<div className="mt-[40px] md:mt-[50px] lg:mt-[56px] flex">
 				{/* Sidebar with activeMenu control */}
-				<Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+				<Sidebar
+					activeMenu={activeMenu}
+					setActiveMenu={setActiveMenu}
+					isOpen={sidebarOpen}
+					setIsOpen={setSidebarOpen}
+				/>
 
 				{/* Main Content Area */}
-				<main className="ml-63 p-2 h-[calc(100vh-100px)] w-full">
+				<main className="w-full md:ml-63 p-2 h-[calc(100vh-100px)]">
 					<div className="flex items-center gap-4 my-2 ml-2">
 						<button onClick={handleBack}>
 							<MoveLeft className="text-[#9AE144] size-9" />
