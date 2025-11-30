@@ -248,6 +248,24 @@ export const partApi = createApi({
 			}),
 			invalidatesTags: ["Coupon"],
 		}),
+
+		// Add these endpoints
+		addCompatibility: builder.mutation({
+			query: ({ partId, vehicleId }) => ({
+				url: `/parts/${partId}/compatibility`,
+				method: "POST",
+				body: { vehicleId },
+			}),
+			invalidatesTags: (result, error, { partId }) => [{ type: "Part", id: partId }],
+		}),
+
+		removeCompatibility: builder.mutation({
+			query: ({ partId, vehicleId }) => ({
+				url: `/parts/${partId}/compatibility/${vehicleId}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: (result, error, { partId }) => [{ type: "Part", id: partId }],
+		}),
 	}),
 });
 
@@ -281,4 +299,6 @@ export const {
 	useCreateCouponMutation,
 	useUpdateCouponMutation,
 	useDeleteCouponMutation,
+	useAddCompatibilityMutation,
+	useRemoveCompatibilityMutation,
 } = partApi;

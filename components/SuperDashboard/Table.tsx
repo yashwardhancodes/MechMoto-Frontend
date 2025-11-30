@@ -154,11 +154,11 @@ export default function DataTable<
 							</button>
 						)}
 						<button className="flex items-center">
-							<div className="flex items-center bg-[#9AE144] text-white p-2 rounded">
-								<SlidersHorizontal
-									onClick={() => setShowFilters(true)}
-									className="w-4 h-4"
-								/>
+							<div
+								className="flex items-center bg-[#9AE144] text-white p-2 rounded cursor-pointer"
+								onClick={() => setShowFilters(true)}
+							>
+								<SlidersHorizontal className="w-4 h-4" />
 							</div>
 						</button>
 					</div>
