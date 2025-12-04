@@ -12,7 +12,8 @@ import { toast } from "react-hot-toast";
 import { z } from "zod";
 import { createPartSchema } from "@/lib/schema/partSchema";
 import { uploadImageToBackend } from "@/lib/utils/imageUpload";
-import { useGetAllSubcategoriesQuery } from "@/lib/redux/api/subCategoriesApi";
+import { useGetAllCategoriesQuery } from "@/lib/redux/api/categoriesApi";
+import { useLazyGetSubcategoriesByCategoryIdQuery } from "@/lib/redux/api/subCategoriesApi";
 import { useGetAllPartBrandsQuery } from "@/lib/redux/api/partBrandApi";
 import { ChevronDown, X } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -33,10 +34,10 @@ interface Vehicle {
 	production_year?: number | string;
 }
 
-interface Discount {
-	id: number;
-	name: string;
-}
+// interface Discount {
+// 	id: number;
+// 	name: string;
+// }
 
 interface FormData {
 	vehicleId: string;
@@ -57,7 +58,13 @@ const UpdatePart: React.FC = () => {
 	const params = useParams();
 	const partId = params.partId as string;
 
-	const { data: partRes, isLoading: isPartLoading, error: partError } = useGetPartQuery(partId);
+	const {
+		data: partRes,
+		isLoading: isPartLoading,
+		error: partError,
+		refetch,
+	} = useGetPartQuery(partId);
+
 	const [updatePart, { isLoading: isUpdating }] = useUpdatePartMutation();
 	const [addCompatibility] = useAddCompatibilityMutation();
 	const [removeCompatibility, { isLoading: isRemovingCompatibility }] =
@@ -94,10 +101,26 @@ const UpdatePart: React.FC = () => {
 	});
 
 	// Supporting data
-	const { data: subcategoryRes } = useGetAllSubcategoriesQuery({});
+	const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+
+	const { data: categoryRes } = useGetAllCategoriesQuery({ page: 1, limit: 999 });
+	const [fetchSubcategoriesByCategory, { data: filteredSubcategories }] =
+		useLazyGetSubcategoriesByCategoryIdQuery();
+
+
 	const { data: partBrandRes } = useGetAllPartBrandsQuery({ page: 1, limit: 999999 });
 
-	const subcategories = subcategoryRes?.data?.subcategories || [];
+	const subcategories = selectedCategoryId
+    ? filteredSubcategories?.data
+    : [];
+
+	useEffect(() => {
+		if (selectedCategoryId) {
+			fetchSubcategoriesByCategory(selectedCategoryId);
+		}
+	}, [selectedCategoryId, fetchSubcategoriesByCategory]);
+
+
 	const partBrands = partBrandRes?.data?.brands || [];
 
 	// Load existing part data
@@ -118,6 +141,10 @@ const UpdatePart: React.FC = () => {
 				partBrandId: p.part_brandId?.toString() || "",
 				discountId: p.discountId?.toString() || "",
 			});
+
+			if (p.subcategory) {
+				setSelectedCategoryId(p.subcategory.categoryId);
+			}
 
 			if (p.vehicle) setSelectedVehicle(p.vehicle);
 		}
@@ -236,7 +263,7 @@ const UpdatePart: React.FC = () => {
 	const originOptions = ["OEM", "Aftermarket", "Refurbished"];
 
 	return (
-		<div className="h-[calc(100vh-140px)] overflow-y-auto bg-white shadow-sm py-8 px-4">
+		<div className="overflow-y-auto bg-white py-8 px-4">
 			<div className="max-w-5xl mx-auto space-y-9">
 				{/* Part Number, Quantity, Price */}
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -339,43 +366,55 @@ const UpdatePart: React.FC = () => {
 					)}
 				</div>
 
-				{/* Subcategory, Brand, Discount */}
+				{/* CATEGORY + SUBCATEGORY + BRAND */}
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+					{/* CATEGORY DROPDOWN */}
+					<select
+						value={selectedCategoryId}
+						onChange={(e) => {
+							const id = e.target.value;
+							setSelectedCategoryId(id);
+							setFormData((prev) => ({ ...prev, subcategoryId: "" })); // reset subcategory
+							if (id) fetchSubcategoriesByCategory(id);
+						}}
+						className="px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144]"
+					>
+						<option value="">Select Category</option>
+						{categoryRes?.data?.categories?.map((cat: any) => (
+							<option key={cat.id} value={cat.id}>
+								{cat.name}
+							</option>
+						))}
+					</select>
+
+					{/* SUBCATEGORY DROPDOWN */}
 					<select
 						value={formData.subcategoryId}
 						onChange={(e) => handleSelectChange("subcategoryId", e.target.value)}
-						className="px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] outline-none"
+						className="px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144]"
+						disabled={!selectedCategoryId}
 					>
-						<option value="">Select Subcategory</option>
-						{subcategories.map((s) => (
+						<option value="">
+							{!selectedCategoryId ? "Select Category First" : "Select Subcategory"}
+						</option>
+
+						{subcategories?.map((s: any) => (
 							<option key={s.id} value={s.id}>
 								{s.name}
 							</option>
 						))}
 					</select>
 
+					{/* BRAND DROPDOWN */}
 					<select
 						value={formData.partBrandId}
 						onChange={(e) => handleSelectChange("partBrandId", e.target.value)}
-						className="px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] outline-none"
+						className="px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144]"
 					>
 						<option value="">Select Brand</option>
 						{partBrands.map((b) => (
 							<option key={b.id} value={b.id}>
 								{b.name}
-							</option>
-						))}
-					</select>
-
-					<select
-						value={formData.discountId}
-						onChange={(e) => handleSelectChange("discountId", e.target.value)}
-						className="px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] outline-none"
-					>
-						<option value="">No Discount</option>
-						{[].map((d: Discount) => (
-							<option key={d.id} value={d.id}>
-								{d.name}
 							</option>
 						))}
 					</select>
@@ -517,12 +556,14 @@ const UpdatePart: React.FC = () => {
 										</div>
 									</div>
 									<button
-										onClick={() =>
-											removeCompatibility({
+										onClick={async () => {
+											await removeCompatibility({
 												partId: parseInt(partId),
 												vehicleId: v.id,
-											}).unwrap()
-										}
+											}).unwrap();
+
+											refetch(); // 🔥 Refresh UI immediately
+										}}
 										disabled={isRemovingCompatibility}
 										className="text-red-600 hover:text-red-700 font-medium text-sm"
 									>
@@ -553,7 +594,12 @@ const UpdatePart: React.FC = () => {
 						partId: parseInt(partId),
 						vehicleId: vehicle.id,
 					}).unwrap();
+
 					toast.success("Vehicle added to compatibility");
+
+					// 🔥 Force UI to update
+					refetch();
+
 					setIsCompatibilityModalOpen(false);
 				}}
 			/>

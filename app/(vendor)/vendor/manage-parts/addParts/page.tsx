@@ -8,7 +8,8 @@ import { z } from "zod";
 import { createPartSchema } from "@/lib/schema/partSchema";
 import { uploadImageToBackend } from "@/lib/utils/imageUpload";
 import { useGetAllVehiclesQuery } from "@/lib/redux/api/vehicleApi";
-import { useGetAllSubcategoriesQuery } from "@/lib/redux/api/subCategoriesApi";
+import { useGetAllCategoriesQuery } from "@/lib/redux/api/categoriesApi";
+import { useLazyGetSubcategoriesByCategoryIdQuery } from "@/lib/redux/api/subCategoriesApi";
 import { useGetAllPartBrandsQuery } from "@/lib/redux/api/partBrandApi";
 import { ChevronDown, X } from "lucide-react";
 import { RootState } from "@/lib/redux/store";
@@ -28,397 +29,460 @@ interface Vehicle {
 	production_year?: number | string;
 }
 
-interface Subcategory {
-  id: number;
-  name: string;
-}
 
 interface PartBrand {
-  id: string;
-  name: string;
+	id: string;
+	name: string;
 }
 
 interface Discount {
-  id: number;
-  name: string;
+	id: number;
+	name: string;
 }
 
 interface FormData {
-  vehicleId: string;
-  subcategoryId: string;
-  partNumber: string;
-  description: string;
-  quantity: string;
-  imageUrls: string[];
-  price: string;
-  remarks: string;
-  availabilityStatus: string;
-  origin: string;
-  partBrandId: string;
-  discountId: string;
+	vehicleId: string;
+	subcategoryId: string;
+	partNumber: string;
+	description: string;
+	quantity: string;
+	imageUrls: string[];
+	price: string;
+	remarks: string;
+	availabilityStatus: string;
+	origin: string;
+	partBrandId: string;
+	discountId: string;
 }
 
 interface FormErrors {
-  [key: string]: string;
+	[key: string]: string;
 }
 
 const AddPart: React.FC = () => {
-  const token = useSelector((state: RootState) => state.auth.token);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
-    vehicleId: "",
-    subcategoryId: "",
-    partNumber: "",
-    description: "",
-    quantity: "1",
-    imageUrls: [],
-    price: "",
-    remarks: "",
-    availabilityStatus: "Unavailable",
-    origin: "OEM",
-    partBrandId: "",
-    discountId: "",
-  });
-  const [files, setFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [dropdownOpen, setDropdownOpen] = useState({
-    vehicle: false,
-    subcategory: false,
-    availabilityStatus: false,
-    origin: false,
-    partBrand: false,
-    discount: false,
-  });
+	const token = useSelector((state: RootState) => state.auth.token);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [isDragging, setIsDragging] = useState(false);
+	const [formData, setFormData] = useState<FormData>({
+		vehicleId: "",
+		subcategoryId: "",
+		partNumber: "",
+		description: "",
+		quantity: "1",
+		imageUrls: [],
+		price: "",
+		remarks: "",
+		availabilityStatus: "Available",
+		origin: "OEM",
+		partBrandId: "",
+		discountId: "",
+	});
+	const [files, setFiles] = useState<File[]>([]);
+	const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+	const [errors, setErrors] = useState<FormErrors>({});
+	const [dropdownOpen, setDropdownOpen] = useState({
+		vehicle: false,
+		subcategory: false,
+		availabilityStatus: false,
+		origin: false,
+		partBrand: false,
+		discount: false,
+		category: false,
+	});
 
-  const [createPart, { isLoading }] = useCreatePartMutation();
-  const { data: subcategoryResponse, isLoading: isSubcategoriesLoading, error: subcategoriesError } = useGetAllSubcategoriesQuery({});
-  const { data: partBrandResponse, isLoading: isPartBrandsLoading, error: partBrandsError } = useGetAllPartBrandsQuery({page: 1, limit: 999999});
-  const { data: discounts, isLoading: isDiscountsLoading, error: discountsError } = useGetAllVehiclesQuery({}); // Note: This seems to be incorrectly querying vehicles instead of discounts
-  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+	const [createPart, { isLoading }] = useCreatePartMutation();
+	const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+	const { data: categoryResponse } = useGetAllCategoriesQuery({ page: 1, limit: 999 });
+	const [fetchSubcategoriesByCategory, { data: filteredSubcategories }] =
+		useLazyGetSubcategoriesByCategoryIdQuery();
+	const {
+		data: partBrandResponse,
+		isLoading: isPartBrandsLoading,
+		error: partBrandsError,
+	} = useGetAllPartBrandsQuery({ page: 1, limit: 999999 });
+	const {
+		data: discounts,
+		isLoading: isDiscountsLoading,
+		error: discountsError,
+	} = useGetAllVehiclesQuery({}); // Note: This seems to be incorrectly querying vehicles instead of discounts
+	const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+	const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
-  const subcategories = subcategoryResponse?.data?.subcategories;
-  const partBrands = partBrandResponse?.data?.brands;
-  
-  useEffect(() => {
-    if (files.length > 0) {
-      const urls = files.map((file) => URL.createObjectURL(file));
-      setPreviewUrls(urls);
-      return () => urls.forEach((url) => URL.revokeObjectURL(url));
-    } else {
-      setPreviewUrls([]);
-    }
-  }, [files]);
+	const subcategories = selectedCategoryId ? filteredSubcategories?.data : [];
 
-  // Early return after hooks
-  if (!token) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-140px)]">
-        <p className="text-red-500 text-lg">You are not logged in!</p>
-      </div>
-    );
-  }
+	const partBrands = partBrandResponse?.data?.brands;
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+	useEffect(() => {
+		if (files.length > 0) {
+			const urls = files.map((file) => URL.createObjectURL(file));
+			setPreviewUrls(urls);
+			return () => urls.forEach((url) => URL.revokeObjectURL(url));
+		} else {
+			setPreviewUrls([]);
+		}
+	}, [files]);
 
-  const handleVehicleSelect = (vehicle: Vehicle) => {
+	// Early return after hooks
+	if (!token) {
+		return (
+			<div className="flex items-center justify-center h-[calc(100vh-140px)]">
+				<p className="text-red-500 text-lg">You are not logged in!</p>
+			</div>
+		);
+	}
+
+	const handleInputChange = (
+		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+	) => {
+		const { name, value } = e.target;
+		setFormData((prev) => ({
+			...prev,
+			[name]: value,
+		}));
+	};
+
+	const handleVehicleSelect = (vehicle: Vehicle) => {
 		setSelectedVehicle(vehicle);
 		setFormData((prev) => ({ ...prev, vehicleId: vehicle.id.toString() }));
-  };
+	};
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files) {
-      const newFiles = Array.from(e.dataTransfer.files).filter((file) =>
-        file.type.startsWith("image/")
-      );
-      setFiles((prev) => [...prev, ...newFiles]);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleImageClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSelectChange = (name: string, value: string | number) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value.toString(),
-    }));
-    setDropdownOpen((prev) => ({
-      ...prev,
-      [name === "vehicleId" ? "vehicle" : name === "subcategoryId" ? "subcategory" : name === "partBrandId" ? "partBrand" : name === "discountId" ? "discount" : name === "availabilityStatus" ? "availabilityStatus" : "origin"]: false,
-    }));
-  };
-
-  const handleSubmit = async () => {
-    try {
-      setErrors({});
-      let imageUrls = formData.imageUrls;
-      if (files.length > 0) {
-        imageUrls = await Promise.all(files.map((file) => uploadImageToBackend(file, token)));
-      }
-      const parsedData = createPartSchema.parse({
-        ...formData,
-        vehicleId: formData.vehicleId ? parseInt(formData.vehicleId) : undefined,
-        subcategoryId: formData.subcategoryId ? parseInt(formData.subcategoryId) : undefined,
-        partBrandId: formData.partBrandId ? parseInt(formData.partBrandId) : undefined,
-        discountId: formData.discountId ? parseInt(formData.discountId) : undefined,
-        quantity: formData.quantity ? parseInt(formData.quantity) : 1,
-        price: formData.price ? parseFloat(formData.price) : undefined,
-        imageUrls,
-      });
-      console.log("✅ Valid Data:", parsedData);
-
-      const result = await createPart(parsedData).unwrap();
-      console.log("✅ API Response:", result);
-
-      if (result?.success) {
-			const partId = result?.data?.id || result?.id; // depends on your API shape
-			if (!partId) {
-				toast.error("Part added but no part ID returned!");
-				return;
-			}
-
-			toast.success("Part added successfully! Redirecting...");
-			window.location.href = `/vendor/manage-parts/edit/${partId}`;
-		} else {
-			toast.error("Part addition failed. Please try again.");
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (e.target.files) {
+			setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
 		}
-    } catch (err: unknown) {
-      if (err instanceof z.ZodError) {
-        const formattedErrors: Record<string, string> = {};
-        err.errors.forEach((e) => {
-          formattedErrors[e.path[0] as string] = e.message;
-        });
-        setErrors(formattedErrors);
-        toast.error("Validation failed!");
-        console.log("❌ Validation Errors:", formattedErrors);
-      } else if (err && typeof err === "object" && "data" in err) {
-        const errorMessage = (err as { data?: { message?: string } }).data?.message;
-        toast.error(errorMessage || "Something went wrong!");
-        console.error("❌ Error:", err);
-      } else {
-        toast.error("Something went wrong!");
-        console.error("❌ Error:", err);
-      }
-    }
-  };
+	};
 
-  const availabilityOptions = ["Available", "Unavailable", "On Backorder"];
-  const originOptions = ["OEM", "Aftermarket", "Refurbished"];
+	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		setIsDragging(false);
+		if (e.dataTransfer.files) {
+			const newFiles = Array.from(e.dataTransfer.files).filter((file) =>
+				file.type.startsWith("image/"),
+			);
+			setFiles((prev) => [...prev, ...newFiles]);
+		}
+	};
 
-  return (
-		<div className="h-[calc(100vh-140px)] overflow-y-auto bg-white shadow-sm py-8 px-4">
-			<div className="max-w-5xl mx-auto">
-				<div className="space-y-9">
-					{/* Row 1: Part Number, Quantity, Price */}
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-						<div>
-							<input
-								type="text"
-								name="partNumber"
-								placeholder="Part Number"
-								value={formData.partNumber}
-								onChange={handleInputChange}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
-							/>
-							{errors["partNumber"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["partNumber"]}</p>
-							)}
-						</div>
-						<div>
-							<input
-								type="number"
-								name="quantity"
-								placeholder="Quantity"
-								value={formData.quantity}
-								onChange={handleInputChange}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
-							/>
-							{errors["quantity"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["quantity"]}</p>
-							)}
-						</div>
-						<div>
-							<input
-								type="number"
-								name="price"
-								placeholder="Price"
-								value={formData.price}
-								onChange={handleInputChange}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
-								step="0.01"
-							/>
-							{errors["price"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["price"]}</p>
-							)}
-						</div>
+	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		setIsDragging(true);
+	};
+
+	const handleDragLeave = () => {
+		setIsDragging(false);
+	};
+
+	const handleImageClick = () => {
+		if (fileInputRef.current) {
+			fileInputRef.current.click();
+		}
+	};
+
+	const removeImage = (index: number) => {
+		setFiles((prev) => prev.filter((_, i) => i !== index));
+	};
+
+	const handleSelectChange = (name: string, value: string | number) => {
+		setFormData((prev) => ({
+			...prev,
+			[name]: value.toString(),
+		}));
+		setDropdownOpen((prev) => ({
+			...prev,
+			[name === "vehicleId"
+				? "vehicle"
+				: name === "subcategoryId"
+				? "subcategory"
+				: name === "partBrandId"
+				? "partBrand"
+				: name === "discountId"
+				? "discount"
+				: name === "availabilityStatus"
+				? "availabilityStatus"
+				: "origin"]: false,
+		}));
+	};
+
+	const handleSubmit = async () => {
+		try {
+			setErrors({});
+			let imageUrls = formData.imageUrls;
+			if (files.length > 0) {
+				imageUrls = await Promise.all(
+					files.map((file) => uploadImageToBackend(file, token)),
+				);
+			}
+			const parsedData = createPartSchema.parse({
+				...formData,
+				vehicleId: formData.vehicleId ? parseInt(formData.vehicleId) : undefined,
+				subcategoryId: formData.subcategoryId
+					? parseInt(formData.subcategoryId)
+					: undefined,
+				partBrandId: formData.partBrandId ? parseInt(formData.partBrandId) : undefined,
+				discountId: formData.discountId ? parseInt(formData.discountId) : undefined,
+				quantity: formData.quantity ? parseInt(formData.quantity) : 1,
+				price: formData.price ? parseFloat(formData.price) : undefined,
+				imageUrls,
+			});
+			console.log("✅ Valid Data:", parsedData);
+
+			const result = await createPart(parsedData).unwrap();
+			console.log("✅ API Response:", result);
+
+			if (result?.success) {
+				const partId = result?.data?.id || result?.id; // depends on your API shape
+				if (!partId) {
+					toast.error("Part added but no part ID returned!");
+					return;
+				}
+
+				toast.success("Part added successfully! Redirecting...");
+				window.location.href = `/vendor/manage-parts/edit/${partId}`;
+			} else {
+				toast.error("Part addition failed. Please try again.");
+			}
+		} catch (err: unknown) {
+			if (err instanceof z.ZodError) {
+				const formattedErrors: Record<string, string> = {};
+				err.errors.forEach((e) => {
+					formattedErrors[e.path[0] as string] = e.message;
+				});
+				setErrors(formattedErrors);
+				toast.error("Validation failed!");
+				console.log("❌ Validation Errors:", formattedErrors);
+			} else if (err && typeof err === "object" && "data" in err) {
+				const errorMessage = (err as { data?: { message?: string } }).data?.message;
+				toast.error(errorMessage || "Something went wrong!");
+				console.error("❌ Error:", err);
+			} else {
+				toast.error("Something went wrong!");
+				console.error("❌ Error:", err);
+			}
+		}
+	};
+
+	const availabilityOptions = ["Available", "Unavailable", "On Backorder"];
+	const originOptions = ["OEM", "Aftermarket", "Refurbished"];
+
+	return (
+		<div className="bg-white py-8 px-4">
+			<div className="max-w-5xl mx-auto space-y-9">
+				{/* Row 1: Part Number, Quantity, Price */}
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<div>
+						<input
+							type="text"
+							name="partNumber"
+							placeholder="Part Number"
+							value={formData.partNumber}
+							onChange={handleInputChange}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
+						/>
+						{errors["partNumber"] && (
+							<p className="text-red-500 text-sm mt-1">{errors["partNumber"]}</p>
+						)}
+					</div>
+					<div>
+						<input
+							type="number"
+							name="quantity"
+							placeholder="Quantity"
+							value={formData.quantity}
+							onChange={handleInputChange}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
+						/>
+						{errors["quantity"] && (
+							<p className="text-red-500 text-sm mt-1">{errors["quantity"]}</p>
+						)}
+					</div>
+					<div>
+						<input
+							type="number"
+							name="price"
+							placeholder="Price"
+							value={formData.price}
+							onChange={handleInputChange}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400"
+							step="0.01"
+						/>
+						{errors["price"] && (
+							<p className="text-red-500 text-sm mt-1">{errors["price"]}</p>
+						)}
+					</div>
+				</div>
+
+				{/* Row 2: Description, Remarks */}
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div>
+						<textarea
+							name="description"
+							placeholder="Description"
+							rows={4}
+							value={formData.description}
+							onChange={handleInputChange}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400 resize-none"
+						/>
+						{errors["description"] && (
+							<p className="text-red-500 text-sm mt-1">{errors["description"]}</p>
+						)}
+					</div>
+					<div>
+						<textarea
+							name="remarks"
+							placeholder="Remarks"
+							rows={4}
+							value={formData.remarks}
+							onChange={handleInputChange}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400 resize-none"
+						/>
+						{errors["remarks"] && (
+							<p className="text-red-500 text-sm mt-1">{errors["remarks"]}</p>
+						)}
+					</div>
+				</div>
+
+				{/* Row 3: Vehicle, Subcategory */}
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div className="relative">
+						<button
+							type="button"
+							onClick={() => setIsVehicleModalOpen(true)}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg text-left flex justify-between items-center hover:border-[#9AE144] transition-colors"
+						>
+							<span className={selectedVehicle ? "text-gray-700" : "text-gray-400"}>
+								{selectedVehicle
+									? `${
+											selectedVehicle.modification?.model_line?.car_make
+												?.name || ""
+									  } ${selectedVehicle.modification?.model_line?.name || ""} ${
+											selectedVehicle.modification?.name
+												? `(${selectedVehicle.modification.name})`
+												: ""
+									  } ${
+											selectedVehicle.engine_type?.name
+												? `- ${selectedVehicle.engine_type.name}`
+												: ""
+									  } [${selectedVehicle.production_year}]`
+									: "Click to select vehicle"}
+							</span>
+							<ChevronDown className="w-5 h-5 text-[#9AE144]" />
+						</button>
+
+						{errors["vehicleId"] && (
+							<p className="text-red-500 text-sm mt-1">{errors["vehicleId"]}</p>
+						)}
 					</div>
 
-					{/* Row 2: Description, Remarks */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div>
-							<textarea
-								name="description"
-								placeholder="Description"
-								rows={4}
-								value={formData.description}
-								onChange={handleInputChange}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400 resize-none"
-							/>
-							{errors["description"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["description"]}</p>
-							)}
-						</div>
-						<div>
-							<textarea
-								name="remarks"
-								placeholder="Remarks"
-								rows={4}
-								value={formData.remarks}
-								onChange={handleInputChange}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144] focus:border-transparent outline-none transition-all duration-200 text-gray-700 placeholder-gray-400 resize-none"
-							/>
-							{errors["remarks"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["remarks"]}</p>
-							)}
-						</div>
-					</div>
-
-					{/* Row 3: Vehicle, Subcategory */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div className="relative">
-							<button
-								type="button"
-								onClick={() => setIsVehicleModalOpen(true)}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg text-left flex justify-between items-center hover:border-[#9AE144] transition-colors"
+					{/* CATEGORY DROPDOWN */}
+					<div className="relative">
+						<button
+							type="button"
+							onClick={() =>
+								setDropdownOpen((prev) => ({
+									...prev,
+									category: !prev.category,
+								}))
+							}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
+						>
+							<span
+								className={selectedCategoryId ? "text-gray-700" : "text-gray-400"}
 							>
-								<span
-									className={selectedVehicle ? "text-gray-700" : "text-gray-400"}
-								>
-									{selectedVehicle
-										? `${
-												selectedVehicle.modification?.model_line?.car_make
-													?.name || ""
-										  } ${
-												selectedVehicle.modification?.model_line?.name || ""
-										  } ${
-												selectedVehicle.modification?.name
-													? `(${selectedVehicle.modification.name})`
-													: ""
-										  } ${
-												selectedVehicle.engine_type?.name
-													? `- ${selectedVehicle.engine_type.name}`
-													: ""
-										  } [${selectedVehicle.production_year}]`
-										: "Click to select vehicle"}
-								</span>
-								<ChevronDown className="w-5 h-5 text-[#9AE144]" />
-							</button>
+								{selectedCategoryId
+									? categoryResponse?.data?.categories.find(
+											(c: any) => c.id === Number(selectedCategoryId),
+									  )?.name
+									: "Select Category"}
+							</span>
+							<ChevronDown
+								className={`w-5 h-5 text-[#9AE144] ${
+									dropdownOpen.category ? "rotate-180" : ""
+								}`}
+							/>
+						</button>
 
-							{errors["vehicleId"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["vehicleId"]}</p>
+						{/* CATEGORY OPTIONS */}
+						{dropdownOpen.category &&
+							categoryResponse?.data?.categories &&
+							categoryResponse.data.categories.length > 0 && (
+								<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
+									{categoryResponse.data.categories.map((category: any) => (
+										<button
+											key={category.id}
+											type="button"
+											onClick={() => {
+												setSelectedCategoryId(category.id.toString());
+												setFormData((prev) => ({
+													...prev,
+													subcategoryId: "",
+												}));
+												fetchSubcategoriesByCategory(category.id);
+												setDropdownOpen((prev) => ({
+													...prev,
+													category: false,
+												}));
+											}}
+											className="w-full px-4 py-2 text-left hover:bg-gray-50"
+										>
+											{category.name}
+										</button>
+									))}
+								</div>
 							)}
-						</div>
+					</div>
 
-						<div className="relative">
-							<button
-								type="button"
-								onClick={() =>
-									setDropdownOpen((prev) => ({
-										...prev,
-										subcategory: !prev.subcategory,
-									}))
+					<div className="relative">
+						<button
+							type="button"
+							onClick={() =>
+								setDropdownOpen((prev) => ({
+									...prev,
+									subcategory: !prev.subcategory,
+								}))
+							}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
+							disabled={!selectedCategoryId}
+						>
+							<span
+								className={
+									formData.subcategoryId && Array.isArray(subcategories)
+										? "text-gray-700"
+										: "text-gray-400"
 								}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
-								disabled={isSubcategoriesLoading || !!subcategoriesError}
 							>
-								<span
-									className={
-										formData.subcategoryId && Array.isArray(subcategories)
-											? "text-gray-700"
-											: "text-gray-400"
-									}
-								>
-									{isSubcategoriesLoading
-										? "Loading subcategories..."
-										: subcategoriesError
-										? "Error loading subcategories"
-										: formData.subcategoryId && Array.isArray(subcategories)
-										? subcategories?.find(
-												(s: Subcategory) =>
-													s.id === Number(formData.subcategoryId),
-										  )?.name || "Select a Subcategory"
-										: "Select a Subcategory"}
-								</span>
-								<ChevronDown
-									className={`w-5 h-5 text-[#9AE144] ${
-										dropdownOpen.subcategory ? "rotate-180" : ""
-									}`}
-								/>
-							</button>
-							{dropdownOpen.subcategory &&
-								!isSubcategoriesLoading &&
-								!subcategoriesError &&
-								Array.isArray(subcategories) &&
-								subcategories?.length > 0 && (
-									<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
-										{subcategories?.map((subcategory: Subcategory) => (
-											<button
-												key={subcategory.id}
-												type="button"
-												onClick={() =>
-													handleSelectChange(
-														"subcategoryId",
-														subcategory.id,
-													)
-												}
-												className="w-full px-4 py-2 text-left hover:bg-gray-50"
-											>
-												{subcategory.name}
-											</button>
-										))}
-									</div>
-								)}
-							{errors["subcategoryId"] && (
-								<p className="text-red-500 text-sm mt-1">
-									{errors["subcategoryId"]}
-								</p>
+								{!selectedCategoryId
+									? "Select a Category first"
+									: formData.subcategoryId && Array.isArray(subcategories)
+									? subcategories.find(
+											(s: any) => s.id === Number(formData.subcategoryId),
+									  )?.name || "Select Subcategory"
+									: "Select Subcategory"}
+							</span>
+							<ChevronDown
+								className={`w-5 h-5 text-[#9AE144] ${
+									dropdownOpen.subcategory ? "rotate-180" : ""
+								}`}
+							/>
+						</button>
+
+						{dropdownOpen.subcategory &&
+							Array.isArray(subcategories) &&
+							subcategories.length > 0 && (
+								<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
+									{subcategories.map((subcategory: any) => (
+										<button
+											key={subcategory.id}
+											type="button"
+											onClick={() =>
+												handleSelectChange("subcategoryId", subcategory.id)
+											}
+											className="w-full px-4 py-2 text-left hover:bg-gray-50"
+										>
+											{subcategory.name}
+										</button>
+									))}
+								</div>
 							)}
-						</div>
 					</div>
 
 					{/* Row 4: Part Brand, Discount */}
@@ -546,92 +610,89 @@ const AddPart: React.FC = () => {
 					</div>
 
 					{/* Row 5: Availability Status, Origin */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div className="relative">
-							<button
-								type="button"
-								onClick={() =>
-									setDropdownOpen((prev) => ({
-										...prev,
-										availabilityStatus: !prev.availabilityStatus,
-									}))
+					<div className="relative">
+						<button
+							type="button"
+							onClick={() =>
+								setDropdownOpen((prev) => ({
+									...prev,
+									availabilityStatus: !prev.availabilityStatus,
+								}))
+							}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
+						>
+							<span
+								className={
+									formData.availabilityStatus ? "text-gray-700" : "text-gray-400"
 								}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
 							>
-								<span
-									className={
-										formData.availabilityStatus
-											? "text-gray-700"
-											: "text-gray-400"
-									}
-								>
-									{formData.availabilityStatus || "Select Availability Status"}
-								</span>
-								<ChevronDown
-									className={`w-5 h-5 text-[#9AE144] ${
-										dropdownOpen.availabilityStatus ? "rotate-180" : ""
-									}`}
-								/>
-							</button>
-							{dropdownOpen.availabilityStatus && (
-								<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
-									{availabilityOptions.map((status) => (
-										<button
-											key={status}
-											type="button"
-											onClick={() =>
-												handleSelectChange("availabilityStatus", status)
-											}
-											className="w-full px-4 py-2 text-left hover:bg-gray-50"
-										>
-											{status}
-										</button>
-									))}
-								</div>
-							)}
-							{errors["availabilityStatus"] && (
-								<p className="text-red-500 text-sm mt-1">
-									{errors["availabilityStatus"]}
-								</p>
-							)}
-						</div>
-						<div className="relative">
-							<button
-								type="button"
-								onClick={() =>
-									setDropdownOpen((prev) => ({ ...prev, origin: !prev.origin }))
-								}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
-							>
-								<span
-									className={formData.origin ? "text-gray-700" : "text-gray-400"}
-								>
-									{formData.origin || "Select Origin"}
-								</span>
-								<ChevronDown
-									className={`w-5 h-5 text-[#9AE144] ${
-										dropdownOpen.origin ? "rotate-180" : ""
-									}`}
-								/>
-							</button>
-							{dropdownOpen.origin && (
-								<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
-									{originOptions.map((origin) => (
-										<button
-											key={origin}
-											type="button"
-											onClick={() => handleSelectChange("origin", origin)}
-											className="w-full px-4 py-2 text-left hover:bg-gray-50"
-										>
-											{origin}
-										</button>
-									))}
-								</div>
-							)}
-							{errors["origin"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["origin"]}</p>
-							)}
-						</div>
+								{formData.availabilityStatus || "Select Availability Status"}
+							</span>
+							<ChevronDown
+								className={`w-5 h-5 text-[#9AE144] ${
+									dropdownOpen.availabilityStatus ? "rotate-180" : ""
+								}`}
+							/>
+						</button>
+						{dropdownOpen.availabilityStatus && (
+							<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
+								{availabilityOptions.map((status) => (
+									<button
+										key={status}
+										type="button"
+										onClick={() =>
+											handleSelectChange("availabilityStatus", status)
+										}
+										className="w-full px-4 py-2 text-left hover:bg-gray-50"
+									>
+										{status}
+									</button>
+								))}
+							</div>
+						)}
+						{errors["availabilityStatus"] && (
+							<p className="text-red-500 text-sm mt-1">
+								{errors["availabilityStatus"]}
+							</p>
+						)}
+					</div>
+					<div className="relative">
+						<button
+							type="button"
+							onClick={() =>
+								setDropdownOpen((prev) => ({
+									...prev,
+									origin: !prev.origin,
+								}))
+							}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
+						>
+							<span className={formData.origin ? "text-gray-700" : "text-gray-400"}>
+								{formData.origin || "Select Origin"}
+							</span>
+							<ChevronDown
+								className={`w-5 h-5 text-[#9AE144] ${
+									dropdownOpen.origin ? "rotate-180" : ""
+								}`}
+							/>
+						</button>
+						{dropdownOpen.origin && (
+							<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
+								{originOptions.map((origin) => (
+									<button
+										key={origin}
+										type="button"
+										onClick={() => handleSelectChange("origin", origin)}
+										className="w-full px-4 py-2 text-left hover:bg-gray-50"
+									>
+										{origin}
+									</button>
+								))}
+							</div>
+						)}
+						{errors["origin"] && (
+							<p className="text-red-500 text-sm mt-1">{errors["origin"]}</p>
+						)}
 					</div>
 
 					{/* Row 6: Image Upload, Submit Button */}
@@ -707,7 +768,9 @@ const AddPart: React.FC = () => {
 								<p className="text-red-500 text-sm mt-1">{errors["imageUrls"]}</p>
 							)}
 						</div>
+					</div>
 
+					<div className="flex justify-between items-start">
 						<div className="flex justify-end pt-3">
 							<button
 								type="button"
@@ -720,15 +783,16 @@ const AddPart: React.FC = () => {
 						</div>
 					</div>
 				</div>
+
+				{/* Vehicle Selector Modal */}
+				<VehicleSelectorModal
+					isOpen={isVehicleModalOpen}
+					onClose={() => setIsVehicleModalOpen(false)}
+					onSelect={handleVehicleSelect}
+				/>
 			</div>
-			{/* Vehicle Selector Modal */}
-			<VehicleSelectorModal
-				isOpen={isVehicleModalOpen}
-				onClose={() => setIsVehicleModalOpen(false)}
-				onSelect={handleVehicleSelect}
-			/>
 		</div>
-  );
+	);
 };
 
 export default AddPart;
