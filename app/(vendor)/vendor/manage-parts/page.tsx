@@ -49,16 +49,12 @@ export default function ManageParts() {
 			),
 		},
 		{
-			key: "description",
-			header: "Description",
-		},
-		{
 			key: "vehicle.model_line",
 			header: "Vehicle Model",
 			render: (value) =>
-				`${value.vehicle?.modification?.model_line?.name || "N/A"} ${value.vehicle?.modification?.name} (${
-					value.vehicle?.production_year || "N/A"
-				})`,
+				`${value.vehicle?.modification?.model_line?.name || "N/A"} ${
+					value.vehicle?.modification?.name
+				} (${value.vehicle?.production_year || "N/A"})`,
 		},
 		{
 			key: "subcategory.name",
@@ -70,24 +66,24 @@ export default function ManageParts() {
 			header: "Brand",
 			render: (value) => value.part_brand?.name || "N/A",
 		},
-		{
-			key: "price",
-			header: "Price",
-			render: (value) => `₹${value.price?.toLocaleString() || "N/A"}`,
-		},
-		{
-			key: "quantity",
-			header: "Quantity",
-		},
-		{
-			key: "availability_status",
-			header: "Availability",
-		},
-		{
-			key: "created_at",
-			header: "Created At",
-			render: (value) => new Date(value.created_at).toLocaleDateString(),
-		},
+		// {
+		// 	key: "price",
+		// 	header: "Price",
+		// 	render: (value) => `₹${value.price?.toLocaleString() || "N/A"}`,
+		// },
+		// {
+		// 	key: "quantity",
+		// 	header: "Quantity",
+		// },
+		// {
+		// 	key: "availability_status",
+		// 	header: "Availability",
+		// },
+		// {
+		// 	key: "created_at",
+		// 	header: "Created At",
+		// 	render: (value) => new Date(value.created_at).toLocaleDateString(),
+		// },
   ];
 
   // Define table actions
