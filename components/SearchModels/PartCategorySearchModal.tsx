@@ -110,7 +110,7 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({
 	const vehicleId = vehicles.length > 0 ? vehicles[0].id : null;
 	const vehicleName =
 		vehicles.length > 0
-			? `${vehicles[0].car_make.name} ${vehicles[0].model_line} ${
+			? `${vehicles[0]?.modification?.model_line?.name} ${vehicles[0].model_line} ${
 					vehicles[0].modification || ""
 			  }`
 			: "";
@@ -211,7 +211,7 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({
 						) : (
 							subcategories.map((item, index) => {
 								const subcatHref = vehicleId
-									? `/products?sub_category_id=${item.id}&vehicle_id=${vehicleId}&category_id=${selectedCategory.id}&make=${vehicles[0].car_make.name}&model=${vehicles[0].model_line}&year=${productionYear}`
+									? `/products?sub_category_id=${item.id}&vehicle_id=${vehicleId}&category_id=${selectedCategory.id}&make=${vehicles[0]?.modification?.model_line?.car_make?.name}&model=${vehicles[0]?.modification?.model_line?.name}&year=${productionYear}`
 									: `/products?sub_category_id=${item.id}&category_id=${selectedCategory.id}`;
 								return (
 									<Link
