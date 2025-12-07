@@ -87,21 +87,24 @@ const Navbar = () => {
 						/>
 					)}
 					{/* FULLSCREEN TOGGLE */}
-					<button
-						onClick={() => {
-							if (!document.fullscreenElement) {
-								document.documentElement.requestFullscreen();
-							} else {
-								document.exitFullscreen();
-							}
-						}}
-						className="p-2 rounded hover:bg-white/10 transition"
-					>
-						<FontAwesomeIcon
-							icon={document.fullscreenElement ? faCompress : faExpand}
-							className="text-lg"
-						/>
-					</button>
+					{
+						isLoggedIn && user.role.name !== ROLES.USER &&
+						<button
+							onClick={() => {
+								if (!document.fullscreenElement) {
+									document.documentElement.requestFullscreen();
+								} else {
+									document.exitFullscreen();
+								}
+							}}
+							className="p-2 rounded hover:bg-white/10 transition"
+						>
+							<FontAwesomeIcon
+								icon={document.fullscreenElement ? faCompress : faExpand}
+								className="text-lg"
+							/>
+						</button>
+					}
 
 					{/* DESKTOP DROPDOWN */}
 					<div className="relative hidden md:block" ref={dropdownRef}>

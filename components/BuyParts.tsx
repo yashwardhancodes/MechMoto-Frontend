@@ -1,7 +1,6 @@
-// Updated: src/components/ProductListing/BuyParts.tsx (for persistence)
 "use client";
 import React, { useCallback, useEffect, useState } from "react";
-import { FaSearch, FaSpinner } from "react-icons/fa";
+import { FaSearch, FaSpinner, FaCar, FaCalendarAlt, FaCog } from "react-icons/fa";
 import CategoryGrid from "./CategoryGrid";
 import PartCategorySearchModal from "./SearchModels/PartCategorySearchModal";
 import { useGetAllCarMakesQuery } from "@/lib/redux/api/caeMakeApi";
@@ -22,14 +21,12 @@ interface CarMake {
 interface Part {
 	id: number;
 	name: string;
-	// Add other relevant fields based on your data structure
 }
 
 interface Compatibility {
 	id: number;
 	vehicleId: number;
 	partId: number;
-	// Add other relevant fields based on your data structure
 }
 
 interface Vehicle {
@@ -37,7 +34,15 @@ interface Vehicle {
 	car_makeId: number;
 	model_line: string;
 	production_year: number;
-	modification: string | null;
+	modification: {
+		name: string;
+		model_line: {
+			name: string;
+			car_make: {
+				name: string;
+			};
+		};
+	};
 	engine_typeId: number | null;
 	created_at: string;
 	car_make: { id: number; name: string };
@@ -99,13 +104,12 @@ const BuyParts = () => {
 				sessionStorage.removeItem(STORAGE_KEY);
 			}
 		}
-		// Mark hydration complete after initial load
 		setHydrated(true);
 	}, []);
 
 	// Save to sessionStorage on changes
 	useEffect(() => {
-		if (!hydrated) return; // skip until first load completes
+		if (!hydrated) return;
 		sessionStorage.setItem(
 			STORAGE_KEY,
 			JSON.stringify({
@@ -127,7 +131,10 @@ const BuyParts = () => {
 		selectedSubCategory,
 	]);
 
-	const { data: carMakesData, isLoading: carMakeLoading } = useGetAllCarMakesQuery({page: 1, limit: 999999});
+	const { data: carMakesData, isLoading: carMakeLoading } = useGetAllCarMakesQuery({
+		page: 1,
+		limit: 999999,
+	});
 	const [triggerGetModels, { data: modelLineData, isFetching: modelLineLoading }] =
 		useLazyGetModelLinesQuery();
 	const [
@@ -142,7 +149,7 @@ const BuyParts = () => {
 		useLazyGetSubcategoriesByCategoryIdQuery();
 
 	useEffect(() => {
-		if (!hydrated) return; // ⛔️ Skip during initial load
+		if (!hydrated) return;
 		if (selectedCarMake) {
 			triggerGetModels({ car_make: selectedCarMake });
 		} else {
@@ -177,7 +184,6 @@ const BuyParts = () => {
 		}
 	}, [selectedCategory, hydrated, triggerGetSubcategories]);
 
-	
 	const handleSearch = useCallback(async () => {
 		if (
 			!selectedCarMake &&
@@ -207,7 +213,7 @@ const BuyParts = () => {
 		selectedModelLine,
 		selectedProductionYear,
 		selectedModification,
-		triggerGetFilteredVehicles, // ✅ include hook trigger
+		triggerGetFilteredVehicles,
 	]);
 
 	// Auto-trigger search and open modal if category is persisted
@@ -230,7 +236,7 @@ const BuyParts = () => {
 		selectedModelLine,
 		selectedProductionYear,
 		selectedModification,
-		handleSearch
+		handleSearch,
 	]);
 
 	const LoadingSpinner = ({ size = "sm" }: { size?: "sm" | "md" }) => (
@@ -239,7 +245,6 @@ const BuyParts = () => {
 		/>
 	);
 
-	// Enhanced dropdown styling with custom CSS classes
 	const dropdownStyles = `
     .custom-select {
       background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23374151' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
@@ -455,11 +460,14 @@ const BuyParts = () => {
 				</button>
 			</div>
 
-			{/* Mobile Layout - Vertical */}
-			<div className="md:hidden flex flex-col bg-white rounded-3xl border-2 border-gray-200 shadow-lg w-full max-w-md backdrop-blur-sm p-4 space-y-3">
+			{/* Mobile Layout - Professional & Clean */}
+			<div className="md:hidden flex flex-col bg-white rounded-xl border border-gray-200 w-full max-w-md p-3 space-y-2.5">
 				<div className="relative">
+					<div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+						<FaCar className="text-sm" />
+					</div>
 					<select
-						className={selectClassName}
+						className="custom-select bg-white focus:outline-none text-gray-700 font-medium text-sm w-full pl-9 pr-8 py-2.5 disabled:text-gray-400 appearance-none cursor-pointer hover:bg-gray-50 rounded-lg transition-all duration-200 disabled:cursor-not-allowed border border-gray-200 focus:border-[rgba(154,225,68,0.8)] focus:ring-2 focus:ring-[rgba(154,225,68,0.2)]"
 						value={selectedCarMake ?? ""}
 						disabled={carMakeLoading}
 						onChange={(e) => {
@@ -467,121 +475,102 @@ const BuyParts = () => {
 							setSelectedCarMake(selectedId);
 						}}
 					>
-						<option
-							value=""
-							className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-600 py-3 font-medium"
-						>
-							{carMakeLoading ? "Loading..." : "🚗 Select Car Make"}
+						<option value="" className="text-gray-500">
+							{carMakeLoading ? "Loading..." : "Select Car Make"}
 						</option>
 						{carMakesData?.data?.carMakes.map((carMake: CarMake) => (
-							<option
-								key={carMake.id}
-								value={carMake.id}
-								className="bg-white text-gray-800 py-3 hover:bg-green-50 hover:text-green-800 font-medium transition-colors duration-150"
-							>
+							<option key={carMake.id} value={carMake.id} className="text-gray-800">
 								{carMake.name}
 							</option>
 						))}
 					</select>
 					{carMakeLoading && (
-						<div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+						<div className="absolute right-8 top-1/2 transform -translate-y-1/2">
 							<LoadingSpinner />
 						</div>
 					)}
 				</div>
 
 				<div className="relative">
+					<div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+						<FaCar className="text-sm" />
+					</div>
 					<select
-						className={selectClassName}
+						className="custom-select bg-white focus:outline-none text-gray-700 font-medium text-sm w-full pl-9 pr-8 py-2.5 disabled:text-gray-400 appearance-none cursor-pointer hover:bg-gray-50 rounded-lg transition-all duration-200 disabled:cursor-not-allowed border border-gray-200 focus:border-[rgba(154,225,68,0.8)] focus:ring-2 focus:ring-[rgba(154,225,68,0.2)]"
 						disabled={!selectedCarMake || modelLineLoading}
 						value={selectedModelLine ?? ""}
 						onChange={(e) => setSelectedModelLine(Number(e.target.value))}
 					>
-						<option
-							value=""
-							className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-600 py-3 font-medium"
-						>
-							{modelLineLoading ? "Loading..." : "🏎️ Select Model"}
+						<option value="" className="text-gray-500">
+							{modelLineLoading ? "Loading..." : "Select Model"}
 						</option>
 						{modelLineData?.data?.map((model: ModelLine, idx: number) => (
-							<option
-								key={idx}
-								value={model.id}
-								className="bg-white text-gray-800 py-3 hover:bg-green-50 hover:text-green-800 font-medium transition-colors duration-150"
-							>
+							<option key={idx} value={model.id} className="text-gray-800">
 								{model.name}
 							</option>
 						))}
 					</select>
 					{modelLineLoading && (
-						<div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+						<div className="absolute right-8 top-1/2 transform -translate-y-1/2">
 							<LoadingSpinner />
 						</div>
 					)}
 				</div>
 
 				<div className="relative">
+					<div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+						<FaCalendarAlt className="text-sm" />
+					</div>
 					<select
-						className={selectClassName}
+						className="custom-select bg-white focus:outline-none text-gray-700 font-medium text-sm w-full pl-9 pr-8 py-2.5 disabled:text-gray-400 appearance-none cursor-pointer hover:bg-gray-50 rounded-lg transition-all duration-200 disabled:cursor-not-allowed border border-gray-200 focus:border-[rgba(154,225,68,0.8)] focus:ring-2 focus:ring-[rgba(154,225,68,0.2)]"
 						disabled={!selectedModelLine || productionYearsLoading}
 						value={selectedProductionYear ?? ""}
 						onChange={(e) => setSelectedProductionYear(e.target.value)}
 					>
-						<option
-							value=""
-							className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-600 py-3 font-medium"
-						>
-							{productionYearsLoading ? "Loading..." : "📅 Select Year"}
+						<option value="" className="text-gray-500">
+							{productionYearsLoading ? "Loading..." : "Select Year"}
 						</option>
 						{productionYearsData?.data?.map((year: string, idx: number) => (
-							<option
-								key={idx}
-								value={year}
-								className="bg-white text-gray-800 py-3 hover:bg-green-50 hover:text-green-800 font-medium transition-colors duration-150"
-							>
+							<option key={idx} value={year} className="text-gray-800">
 								{year}
 							</option>
 						))}
 					</select>
 					{productionYearsLoading && (
-						<div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+						<div className="absolute right-8 top-1/2 transform -translate-y-1/2">
 							<LoadingSpinner />
 						</div>
 					)}
 				</div>
 
 				<div className="relative">
+					<div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+						<FaCog className="text-sm" />
+					</div>
 					<select
-						className={selectClassName}
+						className="custom-select bg-white focus:outline-none text-gray-700 font-medium text-sm w-full pl-9 pr-8 py-2.5 disabled:text-gray-400 appearance-none cursor-pointer hover:bg-gray-50 rounded-lg transition-all duration-200 disabled:cursor-not-allowed border border-gray-200 focus:border-[rgba(154,225,68,0.8)] focus:ring-2 focus:ring-[rgba(154,225,68,0.2)]"
 						disabled={!selectedProductionYear || modificationsLoading}
 						value={selectedModification ?? ""}
 						onChange={(e) => setSelectedModification(e.target.value)}
 					>
-						<option
-							value=""
-							className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-600 py-3 font-medium"
-						>
-							{modificationsLoading ? "Loading..." : "⚙️ Select Modification"}
+						<option value="" className="text-gray-500">
+							{modificationsLoading ? "Loading..." : "Select Modification"}
 						</option>
 						{modificationsData?.data?.map((modification: string, idx: number) => (
-							<option
-								key={idx}
-								value={modification}
-								className="bg-white text-gray-800 py-3 hover:bg-green-50 hover:text-green-800 font-medium transition-colors duration-150"
-							>
+							<option key={idx} value={modification} className="text-gray-800">
 								{modification}
 							</option>
 						))}
 					</select>
 					{modificationsLoading && (
-						<div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+						<div className="absolute right-8 top-1/2 transform -translate-y-1/2">
 							<LoadingSpinner />
 						</div>
 					)}
 				</div>
 
 				<button
-					className="flex items-center justify-center bg-gradient-to-r from-[rgba(154,225,68,0.8)] to-[rgba(154,225,68,0.9)] hover:from-[rgba(154,225,68,0.9)] hover:to-[rgba(154,225,68,1)] text-gray-800 font-semibold px-6 py-3 rounded-full transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+					className="flex items-center justify-center border border-[rgba(99,176,3,0.85)]   text-gray-800 font-semibold px-5 py-2.5 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
 					onClick={handleSearch}
 					disabled={filteredVehiclesLoading}
 				>
@@ -589,34 +578,37 @@ const BuyParts = () => {
 						<LoadingSpinner size="md" />
 					) : (
 						<>
-							<FaSearch className="mr-2 text-sm" />
-							<span className="text-sm">Search</span>
+							<FaSearch className="mr-2 text-sm text-[rgba(75,136,1,0.85)]" />
+							<span className="text-sm text-[rgba(75,136,1,0.85)]">Search Parts</span>
 						</>
 					)}
 				</button>
 			</div>
 
-			<div className="flex items-center my-4 md:my-6 w-full max-w-xs">
-				<div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
-				<span className="mx-3 text-xs md:text-sm text-gray-600 font-semibold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+			<div className="flex items-center my-5 md:my-6 w-full max-w-xs">
+				<div className="flex-1 h-px bg-gray-200"></div>
+				<span className="mx-3 text-xs md:text-sm text-gray-500 font-medium bg-white px-2.5 py-0.5">
 					OR
 				</span>
-				<div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+				<div className="flex-1 h-px bg-gray-200"></div>
 			</div>
 
 			<div className="flex items-center justify-between bg-gradient-to-r from-[#D7F3B4] to-[#c5e89a] rounded-full px-4 py-3 w-full max-w-md shadow-lg hover:shadow-xl transition-all duration-300 border border-green-200">
+				{" "}
 				<div className="flex items-center flex-1 min-w-0">
+					{" "}
 					<span className="font-semibold text-gray-800 text-xs md:text-sm whitespace-nowrap mr-3">
-						Search By Number Plate
-					</span>
-					<div className="h-4 w-px bg-gray-500 mr-3"></div>
-					<span className="text-lg mr-2 flex-shrink-0">🔍</span>
+						{" "}
+						Search By Number Plate{" "}
+					</span>{" "}
+					<div className="h-4 w-px bg-gray-500 mr-3"></div>{" "}
+					<span className="text-lg mr-2 flex-shrink-0">🔍</span>{" "}
 					<input
 						type="text"
 						placeholder="IND: MH19 AD 7755"
 						className="bg-transparent outline-none text-gray-700 placeholder-gray-400 text-xs md:text-sm flex-1 min-w-0 font-medium focus:placeholder-gray-400 transition-colors duration-200"
-					/>
-				</div>
+					/>{" "}
+				</div>{" "}
 			</div>
 
 			<div className="mt-6 md:mt-8 w-full">
