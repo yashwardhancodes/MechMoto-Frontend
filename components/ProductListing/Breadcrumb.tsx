@@ -1,50 +1,104 @@
+// 'use client';
+
+// import { useSelector } from 'react-redux';
+// import Link from 'next/link';
+// import { RootState } from '@/lib/redux/store';
+
+// interface BreadcrumbItem {
+//   label: string;
+//   href?: string;
+// }
+
+// export default function Breadcrumb() {
+//   const items = useSelector((state: RootState) => state.breadcrumb.items) as BreadcrumbItem[];
+
+//   if (!Array.isArray(items) || items.length === 0) return null;
+
+//   return (
+//     <nav aria-label="Breadcrumb" className="py-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
+//       <ol className="flex items-center text-sm md:text-base font-medium">
+//         {items.map((item, index) => {
+//           const isLast = index === items.length - 1;
+
+//           return (
+//             <li key={item.href || item.label} className="flex items-center">
+//               {index > 0 && (
+//                 <span className="mx-2 text-gray-400" aria-hidden="true">
+//                   ›
+//                 </span>
+//               )}
+
+//               {item.href && !isLast ? (
+//                 <Link
+//                   href={item.href}
+//                   className="text-gray-600 hover:text-gray-800 hover:underline transition-colors"
+//                 >
+//                   {item.label}
+//                 </Link>
+//               ) : (
+//                 <span className="text-[#9AE144] font-semibold">
+//                   {item.label}
+//                 </span>
+//               )}
+//             </li>
+//           );
+//         })}
+//       </ol>
+//     </nav>
+//   );
+// }
+
+
+
 'use client';
 
 import { useSelector } from 'react-redux';
-import Link from 'next/link';
-import { RootState } from '@/lib/redux/store'; // Adjust the import path based on your project structure
+import { RootState } from '@/lib/redux/store';
 
-// Define the BreadcrumbItem interface
 interface BreadcrumbItem {
   label: string;
   href?: string;
 }
 
-function Breadcrumb() {
+export default function Breadcrumb() {
   const items = useSelector((state: RootState) => state.breadcrumb.items) as BreadcrumbItem[];
 
-  console.log('Breadcrumb items:', items);
-
-  if (!Array.isArray(items)) {
-    return null;
-  }
-
-  if (items.length === 0) return null;
+  if (!Array.isArray(items) || items.length === 0) return null;
 
   return (
-    <nav aria-label="breadcrumb">
-      <ol style={{ listStyle: 'none', display: 'flex', gap: '8px' }}>
-        {items.map((item, index) => (
-          <li key={item.href || item.label}>
-            {index > 0 && <span> &gt; </span>}
-            {item.href ? (
-              <Link
-                href={item.href || '#'}
-                style={{
-                  color: index === items.length - 1 ? 'green' : 'black',
-                  textDecoration: 'none',
-                }}
+    <nav
+      aria-label="Breadcrumb"
+      className="py-3 overflow-x-auto whitespace-nowrap scrollbar-hide"
+    >
+      <ol className="flex items-center text-sm md:text-base font-medium">
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
+
+          return (
+            <li key={item.label} className="flex items-center">
+              {/* Separator */}
+              {index > 0 && (
+                <span className="mx-2 text-gray-400" aria-hidden="true">
+                  ›
+                </span>
+              )}
+
+              {/* Always render as plain text – no Link, no hover */}
+              <span
+                className={`${
+                  isLast
+                    ? 'text-[#9AE144] font-semibold'
+                    : 'text-gray-600'
+                }`}
+                // Optional: add aria-current for accessibility
+                {...(isLast ? { 'aria-current': 'page' } : {})}
               >
                 {item.label}
-              </Link>
-            ) : (
-              <span style={{ color: 'green' }}>{item.label}</span>
-            )}
-          </li>
-        ))}
+              </span>
+            </li>
+          );
+        })}
       </ol>
     </nav>
   );
 }
-
-export default Breadcrumb;

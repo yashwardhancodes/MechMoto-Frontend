@@ -28,7 +28,7 @@ const Carousel = () => {
         </SwiperSlide>
         <SwiperSlide>
           <Image
-            src="/assets/banner1.png"
+            src="/assets/banner2.png"
             alt="Slide 2"
             width={1200}
             height={500}
@@ -37,8 +37,17 @@ const Carousel = () => {
         </SwiperSlide>
         <SwiperSlide>
           <Image
-            src="/assets/banner1.png"
+            src="/assets/banner3.png"
             alt="Slide 3"
+            width={1200}
+            height={500}
+            className="w-full h-auto"
+          />
+        </SwiperSlide>
+        <SwiperSlide>
+          <Image
+            src="/assets/banner4.png"
+            alt="Slide 4"
             width={1200}
             height={500}
             className="w-full h-auto"
