@@ -23,7 +23,15 @@ interface Vehicle {
 	id: number;
 	car_make: CarMake;
 	model_line: string;
-	modification: string | null;
+	modification: {
+		name: string;
+		model_line: {
+			name: string;
+			car_make: {
+				name: string;
+			}
+		}
+	};
 }
 
 interface Category {

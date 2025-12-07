@@ -416,7 +416,7 @@ const FilterSection: React.FC = () => {
 								onChange={handleCategoryChange}
 							>
 								<option value="">Select Category</option>
-								{categoriesList.map((cat) => (
+								{categoriesList?.map((cat) => (
 									<option key={cat.id} value={cat.id}>
 										{cat.name}
 									</option>
