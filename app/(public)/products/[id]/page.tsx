@@ -1,7 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Star, Eye, MapPin, Heart, Truck, ShieldCheck, RefreshCw, Wrench, Package } from "lucide-react";
+import {
+	Star,
+	Eye,
+	MapPin,
+	Heart,
+	Truck,
+	ShieldCheck,
+	RefreshCw,
+	Wrench,
+	Package,
+} from "lucide-react";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { useAddToWishlistMutation, useGetPartQuery } from "@/lib/redux/api/partApi";
 import { useParams, useRouter } from "next/navigation";
@@ -27,12 +37,12 @@ export default function ToyotaNexusBelt() {
 	const { data: response, isLoading, error } = useGetPartQuery(id);
 	const part = response?.data;
 	const { token } = useSelector((state: RootState) => state.auth);
-const [showAllVehicles, setShowAllVehicles] = useState(false);
+	const [showAllVehicles, setShowAllVehicles] = useState(false);
 	const images = part?.image_urls?.length
 		? part.image_urls
 		: [
-			"https://png.pngtree.com/png-clipart/20240927/original/pngtree-car-engine-against-transparent-background-png-image_16100504.png",
-		];
+				"https://png.pngtree.com/png-clipart/20240927/original/pngtree-car-engine-against-transparent-background-png-image_16100504.png",
+		  ];
 
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [isInWishlist, setIsInWishlist] = useState(false);
@@ -329,10 +339,11 @@ const [showAllVehicles, setShowAllVehicles] = useState(false);
 									<div
 										key={index}
 										onClick={() => setCurrentIndex(index)}
-										className={`size-20 md:size-28 lg:size-32 rounded bg-[#F5F5F5] flex items-center mr-2 md:mr-0 justify-center cursor-pointer border-2 ${currentIndex === index
-											? "border-[#9AE144]"
-											: "border-transparent"
-											}`}
+										className={`size-20 md:size-28 lg:size-32 rounded bg-[#F5F5F5] flex items-center mr-2 md:mr-0 justify-center cursor-pointer border-2 ${
+											currentIndex === index
+												? "border-[#9AE144]"
+												: "border-transparent"
+										}`}
 									>
 										<Image
 											src={img}
@@ -352,126 +363,134 @@ const [showAllVehicles, setShowAllVehicles] = useState(false);
 			{/* Additional Information Section */}
 			<div className="font-[var(--font-poppins)] px-3 lg:px-6 pb-6 bg-gray-50">
 				<div className="w-full mt-4 max-w-7xl mx-auto space-y-6">
-					
 					{/* Key Features Grid */}
-						<div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 ">
-							<div className="bg-white p-4 rounded-lg border-l-4 border-[#9AE144] shadow-sm">
-								<div className="flex items-center gap-3">
-									<Truck className="w-6 h-6 text-[#9AE144]" />
-									<div>
-										<p className="text-xs text-gray-600">Delivery</p>
-										<p className="text-sm font-bold text-[#050B20]">2-5 Days</p>
-									</div>
-								</div>
-							</div>
-							<div className="bg-white p-4 rounded-lg border-l-4 border-[#9AE144] shadow-sm">
-								<div className="flex items-center gap-3">
-									<ShieldCheck className="w-6 h-6 text-[#9AE144]" />
-									<div>
-										<p className="text-xs text-gray-600">Warranty</p>
-										<p className="text-sm font-bold text-[#050B20]">6 Months</p>
-									</div>
-								</div>
-							</div>
-							<div className="bg-white p-4 rounded-lg border-l-4 border-[#9AE144] shadow-sm">
-								<div className="flex items-center gap-3">
-									<RefreshCw className="w-6 h-6 text-[#9AE144]" />
-									<div>
-										<p className="text-xs text-gray-600">Return Policy</p>
-										<p className="text-sm font-bold text-[#050B20]">7 Days</p>
-									</div>
-								</div>
-							</div>
-							<div className="bg-white p-4 rounded-lg border-l-4 border-[#9AE144] shadow-sm">
-								<div className="flex items-center gap-3">
-									<Package className="w-6 h-6 text-[#9AE144]" />
-									<div>
-										<p className="text-xs text-gray-600">Part Type</p>
-										<p className="text-sm font-bold text-[#050B20]">{part.origin}</p>
-									</div>
+					<div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 ">
+						<div className="bg-white p-4 rounded-lg border-l-4 border-[#9AE144] shadow-sm">
+							<div className="flex items-center gap-3">
+								<Truck className="w-6 h-6 text-[#9AE144]" />
+								<div>
+									<p className="text-xs text-gray-600">Delivery</p>
+									<p className="text-sm font-bold text-[#050B20]">2-5 Days</p>
 								</div>
 							</div>
 						</div>
+						<div className="bg-white p-4 rounded-lg border-l-4 border-[#9AE144] shadow-sm">
+							<div className="flex items-center gap-3">
+								<ShieldCheck className="w-6 h-6 text-[#9AE144]" />
+								<div>
+									<p className="text-xs text-gray-600">Warranty</p>
+									<p className="text-sm font-bold text-[#050B20]">6 Months</p>
+								</div>
+							</div>
+						</div>
+						<div className="bg-white p-4 rounded-lg border-l-4 border-[#9AE144] shadow-sm">
+							<div className="flex items-center gap-3">
+								<RefreshCw className="w-6 h-6 text-[#9AE144]" />
+								<div>
+									<p className="text-xs text-gray-600">Return Policy</p>
+									<p className="text-sm font-bold text-[#050B20]">7 Days</p>
+								</div>
+							</div>
+						</div>
+						<div className="bg-white p-4 rounded-lg border-l-4 border-[#9AE144] shadow-sm">
+							<div className="flex items-center gap-3">
+								<Package className="w-6 h-6 text-[#9AE144]" />
+								<div>
+									<p className="text-xs text-gray-600">Part Type</p>
+									<p className="text-sm font-bold text-[#050B20]">
+										{part.origin}
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
 
 					{/* Vehicle Compatibility Section - NOW SHOWS ALL COMPATIBLE CARS */}
 					{/* Vehicle Compatibility Section - Mobile: 3 only | Desktop: Show All */}
-<div className="bg-white p-6 rounded-lg shadow-sm">
-    <h3 className="text-xl font-bold text-[#050B20] mb-4 flex items-center gap-2">
-        <div className="w-1 h-6 bg-[#9AE144] rounded"></div>
-        Compatible Vehicles
-    </h3>
+					<div className="bg-white p-6 rounded-lg shadow-sm">
+						<h3 className="text-xl font-bold text-[#050B20] mb-4 flex items-center gap-2">
+							<div className="w-1 h-6 bg-[#9AE144] rounded"></div>
+							Compatible Vehicles
+						</h3>
 
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {compatibleVehicles
-            .slice(
-                0,
-                // On mobile: limit to 3 unless "View All" is clicked
-                // On desktop/tablet: show all always
-                window.innerWidth >= 768 || showAllVehicles
-                    ? undefined
-                    : 3
-            )
-            .map((vehicle, index) => (
-                <div
-                    key={index}
-                    className="border-2 border-[#E1F6C7] rounded-lg p-4 hover:border-[#9AE144] transition-colors"
-                >
-                    <div className="space-y-2">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <p className="font-bold text-[#050B20] text-base">
-                                    {vehicle.make} {vehicle.model}
-                                </p>
-                                <p className="text-xs text-gray-600 mt-1">
-                                    {vehicle.variant}
-                                </p>
-                            </div>
-                            <span className="bg-[#E1F6C7] text-[#050B20] text-xs font-semibold px-2 py-1 rounded">
-                                {vehicle.year}
-                            </span>
-                        </div>
-                        <div className="pt-2 border-t border-gray-200">
-                            <p className="text-xs text-gray-600">
-                                Fuel: <span className="font-semibold text-[#050B20]">{vehicle.fuelType}</span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            ))}
-    </div>
+						<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+							{compatibleVehicles
+								.slice(
+									0,
+									// On mobile: limit to 3 unless "View All" is clicked
+									// On desktop/tablet: show all always
+									window.innerWidth >= 768 || showAllVehicles ? undefined : 3,
+								)
+								.map((vehicle, index) => (
+									<div
+										key={index}
+										className="border-2 border-[#E1F6C7] rounded-lg p-4 hover:border-[#9AE144] transition-colors"
+									>
+										<div className="space-y-2">
+											<div className="flex justify-between items-start">
+												<div>
+													<p className="font-bold text-[#050B20] text-base">
+														{vehicle.make} {vehicle.model}
+													</p>
+													<p className="text-xs text-gray-600 mt-1">
+														{vehicle.variant}
+													</p>
+												</div>
+												<span className="bg-[#E1F6C7] text-[#050B20] text-xs font-semibold px-2 py-1 rounded">
+													{vehicle.year}
+												</span>
+											</div>
+											<div className="pt-2 border-t border-gray-200">
+												<p className="text-xs text-gray-600">
+													Fuel:{" "}
+													<span className="font-semibold text-[#050B20]">
+														{vehicle.fuelType}
+													</span>
+												</p>
+											</div>
+										</div>
+									</div>
+								))}
+						</div>
 
-    {/* View All Button - Visible ONLY on Mobile AND when there are more than 3 */}
-    {compatibleVehicles.length > 3 && window.innerWidth < 768 && !showAllVehicles && (
-        <div className="mt-5 text-center">
-            <button
-                onClick={() => setShowAllVehicles(true)}
-                className="text-[#050B20] font-semibold text-sm underline underline-offset-4 hover:text-[#9AE144] transition-colors"
-            >
-                View All Compatible Vehicles (+{compatibleVehicles.length - 3} more)
-            </button>
-        </div>
-    )}
+						{/* View All Button - Visible ONLY on Mobile AND when there are more than 3 */}
+						{compatibleVehicles.length > 3 &&
+							window.innerWidth < 768 &&
+							!showAllVehicles && (
+								<div className="mt-5 text-center">
+									<button
+										onClick={() => setShowAllVehicles(true)}
+										className="text-[#050B20] font-semibold text-sm underline underline-offset-4 hover:text-[#9AE144] transition-colors"
+									>
+										View All Compatible Vehicles (+
+										{compatibleVehicles.length - 3} more)
+									</button>
+								</div>
+							)}
 
-    {/* Show Less Button - Only on mobile after expanding */}
-    {showAllVehicles && window.innerWidth < 768 && (
-        <div className="mt-4 text-center">
-            <button
-                onClick={() => setShowAllVehicles(false)}
-                className="text-gray-600 text-sm underline underline-offset-4 hover:text-[#050B20]"
-            >
-                Show Less
-            </button>
-        </div>
-    )}
+						{/* Show Less Button - Only on mobile after expanding */}
+						{showAllVehicles && window.innerWidth < 768 && (
+							<div className="mt-4 text-center">
+								<button
+									onClick={() => setShowAllVehicles(false)}
+									className="text-gray-600 text-sm underline underline-offset-4 hover:text-[#050B20]"
+								>
+									Show Less
+								</button>
+							</div>
+						)}
 
-    {compatibleVehicles.length === 0 && (
-        <p className="text-sm text-gray-500 italic mt-4">No compatibility data available yet.</p>
-    )}
+						{compatibleVehicles.length === 0 && (
+							<p className="text-sm text-gray-500 italic mt-4">
+								No compatibility data available yet.
+							</p>
+						)}
 
-    <p className="text-xs text-gray-600 mt-4 italic">
-        * Please verify compatibility with your vehicle's VIN or consult with our technical support team
-    </p>
-</div>
+						<p className="text-xs text-gray-600 mt-4 italic">
+							* Please verify compatibility with your vehicle&apos;s VIN or consult
+							with our technical support team
+						</p>
+					</div>
 
 					{/* Product Details Grid */}
 					<div className="grid md:grid-cols-2 gap-6">
@@ -484,15 +503,21 @@ const [showAllVehicles, setShowAllVehicles] = useState(false);
 							<div className="space-y-3">
 								<div className="flex justify-between items-center py-2 border-b border-gray-200">
 									<span className="text-sm text-gray-600">Brand</span>
-									<span className="text-sm font-semibold text-[#050B20]">{part.part_brand?.name}</span>
+									<span className="text-sm font-semibold text-[#050B20]">
+										{part.part_brand?.name}
+									</span>
 								</div>
 								<div className="flex justify-between items-center py-2 border-b border-gray-200">
 									<span className="text-sm text-gray-600">Quantity</span>
-									<span className="text-sm font-semibold text-[#050B20]">{part.quantity} Available</span>
+									<span className="text-sm font-semibold text-[#050B20]">
+										{part.quantity} Available
+									</span>
 								</div>
 								<div className="flex justify-between items-center py-2">
 									<span className="text-sm text-gray-600">Part Origin</span>
-									<span className="text-sm font-semibold text-[#9AE144]">{part.origin}</span>
+									<span className="text-sm font-semibold text-[#9AE144]">
+										{part.origin}
+									</span>
 								</div>
 							</div>
 						</div>
@@ -507,16 +532,16 @@ const [showAllVehicles, setShowAllVehicles] = useState(false);
 								<p className="text-base font-bold text-[#050B20]">
 									{part.vendor?.shop_name}
 								</p>
-								<p className="text-sm text-gray-600">
-									{part.vendor?.address}
-								</p>
+								<p className="text-sm text-gray-600">{part.vendor?.address}</p>
 								<p className="text-sm text-gray-600">
 									{part.vendor?.city}, {part.vendor?.state} - {part.vendor?.zip}
 								</p>
 								<div className="pt-3 mt-3 border-t border-gray-200">
 									<p className="text-sm">
 										<span className="text-gray-600">Contact:</span>{" "}
-										<span className="font-semibold text-[#050B20]">{part.vendor?.phone}</span>
+										<span className="font-semibold text-[#050B20]">
+											{part.vendor?.phone}
+										</span>
 									</p>
 								</div>
 							</div>
@@ -539,8 +564,9 @@ const [showAllVehicles, setShowAllVehicles] = useState(false);
 			<div className="flex text-left justify-center sm:justify-end pr-0 sm:pr-12 items-center gap-2 text-black cursor-pointer py-6 bg-white">
 				<Heart
 					onClick={handleToggleWishlist}
-					className={`size-5 sm:size-6 ${isInWishlist ? "fill-red-500 text-red-500" : "text-black"
-						}`}
+					className={`size-5 sm:size-6 ${
+						isInWishlist ? "fill-red-500 text-red-500" : "text-black"
+					}`}
 				/>
 				<h1 className="text-lg sm:text-xl font-bold">
 					{isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
