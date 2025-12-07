@@ -30,7 +30,9 @@ interface Vehicle {
 	id: number;
 	car_make: CarMake;
 	model_line: string;
-	modification: string | null;
+	modification: {
+		name: string
+	};
 	production_year?: number;
 	engine_type?: { id: number; name: string } | null;
 }
@@ -96,7 +98,7 @@ const ProductsSection: React.FC = () => {
 		partsData?.data?.map((part: Part) => ({
 			id: part.id,
 			title: part.part_number || "Unknown Part",
-			specs: `${part.subcategory.name} • ${part.vehicle.modification || "N/A"}`,
+			specs: `${part.subcategory.name} • ${part?.vehicle?.modification?.name || "N/A"}`,
 			price: `Rs-${part.price}`,
 			oldPrice: part.discount
 				? `Rs-${Math.round(part.price / (1 - parseFloat(part.discount.percentage) / 100))}`
@@ -150,9 +152,10 @@ const ProductsSection: React.FC = () => {
 	const getTitle = () => {
 		if (partsData?.data[0]?.vehicle) {
 			const vehicle = partsData.data[0].vehicle;
+			console.log("vehicle", vehicle)
 			return `${partsData?.data[0]?.subcategory.name || "Parts"} for ${
-				vehicle.car_make?.name
-			} ${vehicle.model_line} ${vehicle.modification}`;
+				vehicle?.modification?.model_line?.car_make?.name
+			} ${vehicle?.modification?.model_line?.name} ${vehicle.modification.name}`;
 		}
 		return "Filtered Parts";
 	};
@@ -173,7 +176,7 @@ const ProductsSection: React.FC = () => {
 					{products.length} Parts available
 				</div>
 			</div>
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
 				{products.map((product) => (
 					<ProductCard key={product.id} product={product} />
 				))}
