@@ -4,6 +4,7 @@ import { Pencil, Eye, Trash2 } from "lucide-react";
 import { useGetAllPlansQuery } from "@/lib/redux/api/planApi";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface PlanModule {
 	id: number;
@@ -28,6 +29,8 @@ export default function ManagePlans() {
 	const total = data?.total ?? 0;
 	const totalPages = Math.ceil(total / limit);
 
+	const router = useRouter();
+
 	// Define table columns
 	const columns: TableColumn[] = [
 		{
@@ -36,7 +39,7 @@ export default function ManagePlans() {
 			render: (item) => (
 				<div className="flex flex-col">
 					<span className="font-semibold">{item.name}</span>
-					<span className="text-xs">{item.description || "No description"}</span>
+					{/* <span className="text-xs">{item.description || "No description"}</span> */}
 				</div>
 			),
 		},
@@ -94,7 +97,7 @@ export default function ManagePlans() {
 			onClick: (plan) => {
 				console.log("Edit plan:", plan);
 				if (plan?.id && typeof plan.id === "number") {
-					// router.push(`/admin/dashboard/manage-plans/edit/${plan.id}`);
+					router.push(`/admin/manage-plans/edit/${plan.id}`);
 				} else {
 					console.error("Invalid plan ID for edit:", plan);
 				}

@@ -12,7 +12,10 @@ export const dtcApi = createApi({
 	}),
 	tagTypes: ["DTC"],
 	endpoints: (builder) => ({
-		getAllDtcs: builder.query<any, { page?: number; limit?: number }>({
+		getAllDtcs: builder.query<
+			any,
+			{ page?: number; limit?: number; search?: string; system?: string }
+		>({
 			query: (params) => ({ url: "", params }),
 			providesTags: ["DTC"],
 		}),

@@ -61,7 +61,7 @@ export default function VendorLayout({ children }: DashboardLayoutProps) {
 			<Navbar />
 
 			<button
-				className="md:hidden fixed top-3 left-3 z-[60] bg-white p-2 rounded shadow-lg"
+				className="md:hidden fixed top-3 left-3 z-[60] bg-white p-2 rounded"
 				onClick={() => setSidebarOpen(!sidebarOpen)}
 			>
 				<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,16 +82,14 @@ export default function VendorLayout({ children }: DashboardLayoutProps) {
 					setIsOpen={setSidebarOpen}
 				/>
 
-				<main className="w-full md:ml-63 p-4 h-[calc(100vh-100px)] overflow-y-auto">
-					<div className="flex items-center gap-4 my-4">
-						<button onClick={handleBack} className="hover:scale-110 transition">
+				<main className="w-full md:ml-63 p-2 h-[calc(100vh-100px)]">
+					<div className="flex items-center gap-4 my-2 ml-2">
+						<button onClick={handleBack}>
 							<MoveLeft className="text-[#9AE144] size-9" />
 						</button>
-						<h1 className="text-3xl font-dm-sans font-bold text-gray-800">
-							{activeMenu}
-						</h1>
+						<h1 className="text-3xl font-dm-sans font-bold">{activeMenu}</h1>
 					</div>
-					<div className="bg-white rounded-lg shadow-sm p-6 min-h-full">{children}</div>
+					<div className="p-2">{children}</div>
 				</main>
 			</div>
 		</div>
