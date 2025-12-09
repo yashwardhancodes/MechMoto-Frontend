@@ -81,8 +81,8 @@ export default function ManageDtcs() {
 			addButtonPath="/admin/dtc/add"
 			pagination={{
 				currentPage: page,
-				totalPages: Math.ceil((data?.total || 0) / limit),
-				totalItems: data?.total || 0,
+				totalPages: ((data?.data?.total || 0) / limit),
+				totalItems: data?.data?.total || 0,
 				pageSize: limit,
 				onPageChange: setPage,
 			}}

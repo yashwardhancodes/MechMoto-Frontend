@@ -66,7 +66,7 @@ export default function Mvendor() {
 			onClick: (vendor) => {
 				// Handle edit action
 				console.log("Edit vendor:", vendor);
-				router.push(`/admin/dashboard/manage-vendors/edit/${vendor.id}`);
+				router.push(`/admin/manage-vendors/edit/${vendor.id}`);
 			},
 			tooltip: "Edit vendor",
 		},

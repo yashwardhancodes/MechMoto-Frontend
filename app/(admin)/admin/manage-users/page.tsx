@@ -48,37 +48,32 @@ export default function ManageUsers() {
 			header: "Phone",
 			render: (item) => item.profiles?.phone || "-",
 		},
-		{
-			key: "created_at",
-			header: "Created At",
-			render: (item) => new Date(item.created_at).toLocaleDateString(),
-		},
-		{
-			key: "status",
-			header: "Status",
-			render: (item) => {
-				// Assuming a status based on role-specific fields, e.g., is_active for Vendor/ServiceCenter
-				let status = "Active";
-				if (item.vendors?.length > 0) {
-					status = item.vendors[0].is_active ? "Active" : "Inactive";
-				} else if (item.service_centers?.length > 0) {
-					status = item.service_centers[0].is_active ? "Active" : "Inactive";
-				} else if (item.mechanics?.length > 0) {
-					status = item.mechanics[0].is_available ? "Available" : "Unavailable";
-				}
-				return (
-					<span
-						className={`px-2 py-1 rounded-full text-xs ${
-							status === "Active" || status === "Available"
-								? "bg-green-100 text-green-800"
-								: "bg-red-100 text-red-800"
-						}`}
-					>
-						{status}
-					</span>
-				);
-			},
-		},
+		// {
+		// 	key: "status",
+		// 	header: "Status",
+		// 	render: (item) => {
+		// 		// Assuming a status based on role-specific fields, e.g., is_active for Vendor/ServiceCenter
+		// 		let status = "Active";
+		// 		if (item.vendors?.length > 0) {
+		// 			status = item.vendors[0].is_active ? "Active" : "Inactive";
+		// 		} else if (item.service_centers?.length > 0) {
+		// 			status = item.service_centers[0].is_active ? "Active" : "Inactive";
+		// 		} else if (item.mechanics?.length > 0) {
+		// 			status = item.mechanics[0].is_available ? "Available" : "Unavailable";
+		// 		}
+		// 		return (
+		// 			<span
+		// 				className={`px-2 py-1 rounded-full text-xs ${
+		// 					status === "Active" || status === "Available"
+		// 						? "bg-green-100 text-green-800"
+		// 						: "bg-red-100 text-red-800"
+		// 				}`}
+		// 			>
+		// 				{status}
+		// 			</span>
+		// 		);
+		// 	},
+		// },
 	];
 
 	// Define table actions
@@ -88,7 +83,7 @@ export default function ManageUsers() {
 			onClick: (user) => {
 				// Handle edit action
 				console.log("Edit user:", user);
-				router.push(`/admin/dashboard/manage-users/edit/${user.id}`);
+				router.push(`/admin/manage-users/edit/${user.id}`);
 			},
 			tooltip: "Edit user",
 		},
