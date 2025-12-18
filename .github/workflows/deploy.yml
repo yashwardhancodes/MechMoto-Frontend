@@ -18,24 +18,23 @@ jobs:
           port: ${{ secrets.PORT }}
           key: ${{ secrets.SSHKEY }}
           timeout: 30s
-          command_timeout: 10m
+          command_timeout: 30m
           script: |
             set -e
 
-            echo "📂 Moving to frontend directory"
             cd /var/www/frontend/MechMoto-Frontend
-
-            echo "🔧 Setting PATH"
             export PATH=$PATH:/usr/bin:/usr/local/bin
 
-            echo "📦 Pulling latest code"
-            git pull origin master
+            echo "🔄 Syncing with GitHub"
+            git fetch origin
+            git reset --hard origin/master
+            git clean -fd
 
             echo "📥 Installing dependencies"
             npm install
 
-            echo "🏗 Building frontend"
-            npm run build
+            echo "🏗 Building frontend (high memory)"
+            NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
             echo "🚀 Restarting frontend via PM2"
             pm2 restart frontend || pm2 start npm --name frontend -- start
