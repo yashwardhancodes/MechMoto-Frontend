@@ -64,7 +64,7 @@ export default function UsersPage() {
             }`}
             onClick={() => setSelectedTab("repair")}
           >
-            Repair my carff
+            Repair my carf
           </button>
         </div>
       </div>
