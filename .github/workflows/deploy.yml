@@ -1,26 +1,37 @@
 name: Deploy Frontend
+
 on:
   push:
     branches: [master]
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v3
-    - name: Deploy to VPS
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        port: ${{ secrets.PORT }}
-        key: ${{ secrets.SSHKEY }}
-        script: |
-          cd /var/www/frontend/MechMoto-Frontend || exit
-          export PATH=$PATH:/usr/bin:/usr/local/bin
-          pwd
-          git pull origin master
-          pwd
-          npm install
-          npm audit fix
-          npm run build
-          pm2 restart frontend || pm2 start build/index.js --name frontend
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          port: ${{ secrets.PORT }}
+          key: ${{ secrets.SSHKEY }}
+          script: |
+            cd /var/www/frontend/MechMoto-Frontend || exit 1
+
+            export PATH=$PATH:/usr/bin:/usr/local/bin
+
+            echo "📦 Pulling latest code"
+            git pull origin master
+
+            echo "📥 Installing dependencies"
+            npm install --production=false
+
+            echo "🏗 Building frontend"
+            npm run build
+
+            echo "🚀 Restarting PM2"
+            pm2 restart frontend || pm2 start npm --name frontend -- start
+
+            pm2 save
+            echo "✅ Deployment completed successfully"
