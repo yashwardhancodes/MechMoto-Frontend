@@ -4,8 +4,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, A11y } from 'swiper/modules';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import React, { useState } from 'react';
-import nikhil from "@/public/assets/testimonials/NikhilSingar.jpeg"
-
+ 
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
