@@ -56,7 +56,7 @@ const testimonials = [
     name: 'Chetan Dolas',
     role: 'Customer',
     image: '/assets/testimonials/ChetanDolas.jpeg',
-    title: 'Great First Experience',
+    title: 'Reliable Roadside Support',
     text: 'I had taken a Mech-Moto subscription, and it turned out to be extremely useful for me. When my car broke down on the roadside, the Mech-Moto team immediately arranged a mechanic and resolved the problem quickly. I received proper guidance over the call, which helped me avoid unnecessary expenses. Because of the subscription, the service was fast and the experience was completely tension-free. For car owners, Mech-Moto is truly a trustworthy and helpful service, and I would definitely recommend it 👍',
     rating: 4.5
   }
