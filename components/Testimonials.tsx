@@ -3,6 +3,8 @@ import Image from 'next/image';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, A11y } from 'swiper/modules';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import nikhil from "@/public/assets/testimonials/NikhilSingar.jpeg"
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -10,35 +12,52 @@ import 'swiper/css/pagination';
 
 const testimonials = [
   {
-    name: 'Leslie Alexander',
-    role: 'Facebook',
-    image: 'https://randomuser.me/api/portraits/women/1.jpg',
+    name: 'Nikhil Singar',
+    role: 'Customer',
+    image: '/assets/testimonials/NikhilSingar.jpeg',
     title: 'Great Work',
-    text: 'Amazing design, easy to customize and a design quality superlative account on its cloud platform for the optimized performance. And we didn’t on our original designs.',
+    text: 'I have purchased car spare parts from Mech-Moto multiple times. The prices are very reasonable compared to the market, and the parts are original and genuine. Delivery is always on time, and customer support is helpful and responsive. Mech-Moto is a highly trustworthy platform for both car owners and mechanics. Highly recommended 👍',
     rating: 5
   },
+  
   {
-    name: 'Floyd Miles',
-    role: 'Designer',
+    name: 'Pandurang More',
+    role: 'Mechanic',
+    image: '/assets/testimonials/PandurangMore.jpeg',
+    title: 'Mechanic Trusted',
+    text: 'I am a mechanic, and Mech-Moto has been extremely useful for me. Correct part selection, proper guidance, and fast delivery help save both my time and money. The availability of technical support is a big plus point. It is one of the best spare parts platforms for workshops.',
+    rating: 4.5
+  },
+  {
+    name: 'Sachin Shinde',
+    role: 'Customer',
+    image: '/assets/testimonials/SachinShinde.jpeg',
+    title: 'Great First Experience',
+    text: 'I placed my first order from Mech-Moto today, and the experience was very good. The pricing is transparent with no hidden charges, and the parts quality is top class. In the future, I will source all my spare parts requirements from here.',
+    rating: 4.5
+  },
+  {
+    name: 'Nilesh Khamkar,',
+    role: 'Customer',
+    image: '/assets/testimonials/NileshKhamkar.jpeg',
+    title: 'Trusted Auto Parts',
+    text: 'Original Parts, Best Price & Trusted Support👍. Mech-Moto = Trusted auto spare parts platform',
+    rating: 4.5
+  },
+  {
+    name: 'Prashant Raut',
+    role: 'Customer',
     image: 'https://randomuser.me/api/portraits/men/75.jpg',
-    title: 'Awesome Design',
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-    rating: 4.5
+    title: 'Reliable Platform',
+    text: 'I ordered spare parts from Mech-Moto based on my friend’s recommendation, received a good discount, and had no complaints regarding the quality. The customer handling and follow-up were very professional. Nowadays, duplicate parts are a major concern, but Mech-Moto provides genuine parts, and I will definitely place another order.',
+    rating: 4
   },
   {
-    name: 'Jane Doe',
-    role: 'YouTube',
-    image: 'https://randomuser.me/api/portraits/women/2.jpg',
-    title: 'Excellent Service',
-    text: 'Very responsive and professional team. Love the product interface and how it just works perfectly for us!',
-    rating: 4.5
-  },
-  {
-    name: 'John Smith',
-    role: 'Developer',
-    image: 'https://randomuser.me/api/portraits/men/65.jpg',
-    title: 'Highly Recommend',
-    text: 'Fast, reliable, and excellent customer support. This is everything we needed and more.',
+    name: 'Chetan Dolas',
+    role: 'Customer',
+    image: '/assets/testimonials/ChetanDolas.jpeg',
+    title: 'Great First Experience',
+    text: 'I had taken a Mech-Moto subscription, and it turned out to be extremely useful for me. When my car broke down on the roadside, the Mech-Moto team immediately arranged a mechanic and resolved the problem quickly. I received proper guidance over the call, which helped me avoid unnecessary expenses. Because of the subscription, the service was fast and the experience was completely tension-free. For car owners, Mech-Moto is truly a trustworthy and helpful service, and I would definitely recommend it 👍',
     rating: 4.5
   }
 ];
@@ -54,17 +73,63 @@ const renderStars = (rating: number) => {
   );
 };
 
+// New Component for Truncated Text with Read More/Less
+const TestimonialText: React.FC<{ text: string }> = ({ text }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const words = text.trim().split(/\s+/);
+  const isLong = words.length > 10;
+  const shortText = isLong ? words.slice(0, 20).join(' ') + '...' : text;
+  const displayText = isExpanded ? text : shortText;
+
+  return (
+    <p
+      className={`text-[#050B20] text-xs md:text-xs lg:text-sm mb-6 text-left transition-all duration-300 relative ${
+        isExpanded
+          ? 'bg-white p-6 rounded-xl   z-20 -mx-6 md:-mx-3 lg:-mx-8 -my-4'
+          : 'md:h-14 lg:h-16'
+      }`}
+      style={isExpanded ? { zIndex: 20 } : undefined}
+    >
+      “{displayText}
+      {isLong && !isExpanded && (
+        <>
+          {' '}
+          <span
+            onClick={() => setIsExpanded(true)}
+            className="  cursor-pointer underline   font-medium"
+          >
+            read more
+          </span>
+        </>
+      )}
+      {isExpanded && isLong && (
+        <>
+          {' '}
+          <span
+            onClick={() => setIsExpanded(false)}
+            className="text-blue-600 cursor-pointer underline hover:text-blue-800 font-medium"
+          >
+            read less
+          </span>
+        </>
+      )}
+      ”
+    </p>
+  );
+};
+
 export default function Testimonials() {
   return (
     <>
-            <h1 className="text-2xl md:text-4xl font-sans text-center mb-10 font-bold">
+      <h1 className="text-2xl md:text-4xl font-sans text-center mb-10 font-bold">
         What Our{" "}
         <span className="bg-gradient-to-r from-[#9AE144] to-[#547B25] bg-clip-text text-transparent">
           Customers Say
         </span>
       </h1>
 
-      <section className="bg-[#9AE144] py-8 lg:py-12 pb-16 lg:pb-20 md:px-6 px-10  lg:px-12">
+      <section className="bg-[#9AE144] py-8 lg:py-12 pb-16 lg:pb-20 md:px-6 px-10 lg:px-12">
         <p className="text-right hidden md:block md:text-[12px] lg:text-sm text-gray-900 mb-6">
           Rated 4.7 / 5 based on 28,370 reviews Showing our 4 & 5 star reviews
         </p>
@@ -86,7 +151,7 @@ export default function Testimonials() {
           >
             {testimonials.map((testimonial, idx) => (
               <SwiperSlide key={idx}>
-                <div className="bg-white flex flex-col md:block justify-between rounded-xl h-60 md:h-full p-3 px-6 md:px-3 md:p-6 lg:px-8 shadow-md  ">
+                <div className="bg-white flex flex-col md:block justify-between rounded-xl h-60 md:h-full p-3 px-6 md:px-3 md:p-6 lg:px-8 shadow-md">
                   <div className="flex justify-between items-start">
                     <h3 className="text-[20px] md:text-sm lg:text-lg font-semibold text-[#050B20]">
                       {testimonial.title}
@@ -95,9 +160,10 @@ export default function Testimonials() {
                       “
                     </span>
                   </div>
-                  <p className="text-[#050B20] text-xs md:text-xs lg:text-sm mb-6 text-left md:h-14 lg:h-16">
-                    “{testimonial.text}”
-                  </p>
+
+                  {/* Replaced the original <p> with the new component */}
+                  <TestimonialText text={testimonial.text} />
+
                   <div className="flex md:flex-row flex-col md:items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Image
@@ -127,18 +193,15 @@ export default function Testimonials() {
           </Swiper>
 
           {/* Unique Navigation Buttons for this Swiper only */}
-          <button
-            className="testimonial-prev absolute -bottom-12 md:-bottom-14 lg:-bottom-16 left-1/2 transform -translate-x-[180%] z-10 bg-white px-4 py-2 rounded-full shadow hover:bg-gray-100 transition"
-          >
+          <button className="testimonial-prev absolute -bottom-12 md:-bottom-14 lg:-bottom-16 left-1/2 transform -translate-x-[180%] z-10 bg-white px-4 py-2 rounded-full shadow hover:bg-gray-100 transition">
             <ChevronLeft size={20} />
           </button>
-          <button
-            className="testimonial-next absolute -bottom-12 md:-bottom-14 lg:-bottom-16 left-1/2 transform translate-x-[80%] z-10 bg-white px-4 py-2 rounded-full shadow hover:bg-gray-100 transition"
-          >
+          <button className="testimonial-next absolute -bottom-12 md:-bottom-14 lg:-bottom-16 left-1/2 transform translate-x-[80%] z-10 bg-white px-4 py-2 rounded-full shadow hover:bg-gray-100 transition">
             <ChevronRight size={20} />
           </button>
         </div>
       </section>
+
       <div className="w-full overflow-hidden rotate-180 leading-none relative md:-mt-8">
         <svg
           viewBox="0 0 1440 200"
@@ -146,79 +209,55 @@ export default function Testimonials() {
           xmlns="http://www.w3.org/2000/svg"
           preserveAspectRatio="none"
         >
-          <path
-            fill="#9AE144"
-            d="M0,0 C480,200 960,200 1440,0 L1440,200 L0,200 Z"
-          ></path>
+          <path fill="#9AE144" d="M0,0 C480,200 960,200 1440,0 L1440,200 L0,200 Z"></path>
         </svg>
       </div>
 
       {/* testimonial video */}
-
-    <div className="bg-white py-8 px-4 md:mx-auto md:px-auto">
-      {/* ✅ Mobile View - Custom Layout */}
-      <div className="max-w-2xl mx-auto grid grid-cols-6 gap-4 md:hidden">
-        {/* Row 1: Centered video (middle 3 columns) */}
-        <div></div>
-        <div className="col-span-3 rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video h-32">
-          <video
-            className="w-full h-full object-cover"
-            controls
-            preload="metadata"
-          >
-            <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-        <div></div>
-
-        {/* Row 2: Left and Right videos */}
-        <div className="col-span-2 rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video h-20">
-          <video
-            className="w-full h-full object-cover"
-            controls
-            preload="metadata"
-          >
-            <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-        <div></div>
-        <div className="col-span-2 rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video h-20">
-          <video
-            className="w-full h-full object-cover"
-            controls
-            preload="metadata"
-          >
-            <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-      </div>
-
-      {/* ✅ Tablet & Desktop View - Original Layout */}
-      <div className="hidden md:grid max-w-7xl mx-auto grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-6">
-        {[1, 2, 3].map((_, index: number) => (
-          <div
-            key={index}
-            className="rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video flex items-center justify-center"
-          >
-            <video
-              className="w-full h-full object-cover"
-              controls
-              preload="metadata"
-            >
+      <div className="bg-white py-8 px-4 md:mx-auto md:px-auto">
+        {/* ✅ Mobile View - Custom Layout */}
+        <div className="max-w-2xl mx-auto grid grid-cols-6 gap-4 md:hidden">
+          {/* Row 1: Centered video (middle 3 columns) */}
+          <div></div>
+          <div className="col-span-3 rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video h-32">
+            <video className="w-full h-full object-cover" controls preload="metadata">
               <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
           </div>
-        ))}
+          <div></div>
+
+          {/* Row 2: Left and Right videos */}
+          <div className="col-span-2 rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video h-20">
+            <video className="w-full h-full object-cover" controls preload="metadata">
+              <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          <div></div>
+          <div className="col-span-2 rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video h-20">
+            <video className="w-full h-full object-cover" controls preload="metadata">
+              <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+
+        {/* ✅ Tablet & Desktop View - Original Layout */}
+        <div className="hidden md:grid max-w-7xl mx-auto grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((_, index: number) => (
+            <div
+              key={index}
+              className="rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video flex items-center justify-center"
+            >
+              <video className="w-full h-full object-cover" controls preload="metadata">
+                <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-
-
-
-
     </>
   );
 }
