@@ -8,6 +8,7 @@ import Testimonials from "@/components/Testimonials";
 import TrendingProducts from "@/components/TrendingProducts";
 import { Footer } from "@/components/Footer";
 import Service from "@/components/Service/Service";
+import TrustSection from "@/components/TrustSection";
 
 export default function UsersPage() {
   const [selectedTab, setSelectedTab] = useState("buy");
@@ -74,6 +75,7 @@ export default function UsersPage() {
         {selectedTab === "buy" ? (
           <div>
             <BuyParts />
+            <TrustSection />
             <Testimonials />
             <TrendingProducts />
             <Footer />
