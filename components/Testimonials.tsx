@@ -14,17 +14,17 @@ const testimonials = [
     name: 'Nikhil Singar',
     role: 'Customer',
     image: '/assets/testimonials/NikhilSingar.jpeg',
-    title: 'Great Work',
-    text: 'I have purchased car spare parts from Mech-Moto multiple times. The prices are very reasonable compared to the market, and the parts are original and genuine. Delivery is always on time, and customer support is helpful and responsive. Mech-Moto is a highly trustworthy platform for both car owners and mechanics. Highly recommended 👍',
+    title: 'विश्वसनीय Spare Parts Platform',
+    text: 'Mech-Moto कडून मी अनेक वेळा car spare parts घेतले असून price market पेक्षा reasonable आहेत, parts original quality चे मिळाले, delivery वेळेवर झाली आणि car owners व mechanics दोघांसाठीही हा एक भरोसेमंद platform आहे – highly recommended 👍',
     rating: 5
   },
   
   {
     name: 'Pandurang More',
-    role: 'Mechanic',
+    role: 'Customer',
     image: '/assets/testimonials/PandurangMore.jpeg',
-    title: 'Mechanic Trusted',
-    text: 'I am a mechanic, and Mech-Moto has been extremely useful for me. Correct part selection, proper guidance, and fast delivery help save both my time and money. The availability of technical support is a big plus point. It is one of the best spare parts platforms for workshops.',
+    title: 'Mechanic’s Best Choice',
+    text: 'मी mechanic असून Mech-Moto मुळे correct part selection, proper guidance, fast delivery आणि technical support मिळाल्याने माझा वेळ व पैसा दोन्ही वाचतो आणि workshop साठी हे best spare parts platform आहे.',
     rating: 4.5
   },
   {
@@ -32,37 +32,37 @@ const testimonials = [
     role: 'Customer',
     image: '/assets/testimonials/SachinShinde.jpeg',
     title: 'Great First Experience',
-    text: 'I placed my first order from Mech-Moto today, and the experience was very good. The pricing is transparent with no hidden charges, and the parts quality is top class. In the future, I will source all my spare parts requirements from here.',
+    text: 'आज पहिल्यांदा Mech-Moto वरून order केली, experience खूपच चांगला राहिला, pricing transparent आहे, hidden charges नाहीत, parts quality top class आहे आणि future मध्ये सगळी spare parts requirement इथूनच घेणार आहे.',
     rating: 4.5
   },
   {
     name: 'Nilesh Khamkar,',
     role: 'Customer',
     image: '/assets/testimonials/NileshKhamkar.jpeg',
-    title: 'Trusted Auto Parts',
-    text: 'Original Parts, Best Price & Trusted Support👍. Mech-Moto = Trusted auto spare parts platform',
+    title: 'भरोसेमंद Auto Parts',
+    text: 'Original parts, best price आणि excellent support 👍 Mech-Moto = Trusted auto spare parts platform',
     rating: 4.5
   },
   {
     name: 'Prashant Raut',
     role: 'Customer',
-    image: 'https://randomuser.me/api/portraits/men/75.jpg',
+    image: '/assets/testimonials/PrashantRaut.jpeg',
     title: 'Reliable Platform',
-    text: 'I ordered spare parts from Mech-Moto based on my friend’s recommendation, received a good discount, and had no complaints regarding the quality. The customer handling and follow-up were very professional. Nowadays, duplicate parts are a major concern, but Mech-Moto provides genuine parts, and I will definitely place another order.',
-    rating: 4
+    text: 'मी माझ्या friend च्या reference ने Mech-Moto वरून parts मागवले, चांगला discount मिळाला, quality बाबत कुठलीही तक्रार नाही, customer handling खूप professional आहे आणि duplicate parts च्या काळातही इथे genuine parts मिळतात, त्यामुळे नक्कीच पुन्हा order करणार.',
+    rating: 5
   },
   {
     name: 'Chetan Dolas',
     role: 'Customer',
     image: '/assets/testimonials/ChetanDolas.jpeg',
-    title: 'Reliable Roadside Support',
+    title: 'Lifesaver Service',
     text: 'I had taken a Mech-Moto subscription, and it turned out to be extremely useful for me. When my car broke down on the roadside, the Mech-Moto team immediately arranged a mechanic and resolved the problem quickly. I received proper guidance over the call, which helped me avoid unnecessary expenses. Because of the subscription, the service was fast and the experience was completely tension-free. For car owners, Mech-Moto is truly a trustworthy and helpful service, and I would definitely recommend it 👍',
     rating: 4.5
   }
 ];
 
 const renderStars = (rating: number) => {
-  const fullStars = Math.floor(rating);
+  const fullStars = Math.floor(rating); 
   const halfStar = rating % 1 !== 0;
   return (
     <div className="text-black text-2xl md:text-lg">
