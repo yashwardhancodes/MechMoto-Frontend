@@ -5,6 +5,7 @@ import {
   RefreshCcw,
   Users
 } from "lucide-react";
+import Image from "next/image";
 
 type TrustCardProps = {
   title: string;
@@ -25,11 +26,10 @@ const TrustCard: React.FC<TrustCardProps> = ({
     <div
       className={`rounded-2xl border p-6 transition-all duration-300
       hover:shadow-xl hover:-translate-y-1
-      ${
-        highlight
+      ${highlight
           ? "bg-gradient-to-br from-lime-50 to-white border-[#9AE144]"
           : "bg-gray-50"
-      }`}
+        }`}
     >
       {/* Icon Badge */}
       <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-lime-100 text-[#9AE144] mb-5">
@@ -67,10 +67,10 @@ const TrustSection: React.FC = () => {
         </h1>
 
         <p className="text-gray-800 text-center max-w-4xl mx-auto mt-5 mb-16">
-  A trusted online marketplace for genuine spare parts and on-demand roadside
-  assistance for subscribed users — delivering faster, starting from Maharashtra
-  and expanding across India.
-</p>
+          A trusted online marketplace for genuine spare parts and on-demand roadside
+          assistance for subscribed users — delivering faster, starting from Maharashtra
+          and expanding across India.
+        </p>
 
 
         {/* Cards */}
@@ -105,15 +105,20 @@ const TrustSection: React.FC = () => {
             </p>
 
             <div className="flex items-center gap-4">
-              <img
+              <Image
                 src="/assets/trustsection/razorpay.svg"
                 alt="Razorpay"
-                className="h-6 object-contain"
+                width={80}
+                height={24}
+                className="h-6 w-auto object-contain"
               />
-              <img
+
+              <Image
                 src="/assets/trustsection/phonepe.svg"
                 alt="PhonePe"
-                className="h-6 object-contain"
+                width={80}
+                height={24}
+                className="h-6 w-auto object-contain"
               />
             </div>
           </TrustCard>
@@ -121,7 +126,7 @@ const TrustSection: React.FC = () => {
         </div>
 
         {/* Bottom Trust Note */}
-        
+
 
       </div>
     </section>
