@@ -141,10 +141,14 @@ const AddPart: React.FC = () => {
 		}));
 	};
 
-	const handleVehicleSelect = (vehicle: Vehicle) => {
-		setSelectedVehicle(vehicle);
-		setFormData((prev) => ({ ...prev, vehicleId: vehicle.id.toString() }));
-	};
+const handleVehicleSelect = (vehicles: Vehicle[]) => {
+	if (vehicles.length === 0) return;
+
+	const vehicle = vehicles[0]; // Single mode guarantees only one
+	setSelectedVehicle(vehicle);
+	setFormData((prev) => ({ ...prev, vehicleId: vehicle.id.toString() }));
+	setIsVehicleModalOpen(false); // Optional: ensure close (already handled by modal in single mode)
+};
 
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files) {
@@ -789,6 +793,7 @@ const AddPart: React.FC = () => {
 					isOpen={isVehicleModalOpen}
 					onClose={() => setIsVehicleModalOpen(false)}
 					onSelect={handleVehicleSelect}
+					mode="single"
 				/>
 			</div>
 		</div>

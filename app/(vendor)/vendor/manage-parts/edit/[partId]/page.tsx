@@ -34,11 +34,6 @@ interface Vehicle {
 	production_year?: number | string;
 }
 
-// interface Discount {
-// 	id: number;
-// 	name: string;
-// }
-
 interface FormData {
 	vehicleId: string;
 	subcategoryId: string;
@@ -85,6 +80,9 @@ const UpdatePart: React.FC = () => {
 
 	const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
+	// Loading state for bulk compatibility add
+	const [isAddingCompatibility, setIsAddingCompatibility] = useState(false);
+
 	const [formData, setFormData] = useState<FormData>({
 		vehicleId: "",
 		subcategoryId: "",
@@ -111,8 +109,8 @@ const UpdatePart: React.FC = () => {
 	const { data: partBrandRes } = useGetAllPartBrandsQuery({ page: 1, limit: 999999 });
 
 	const subcategories = selectedCategoryId
-    ? filteredSubcategories?.data
-    : [];
+		? filteredSubcategories?.data
+		: [];
 
 	useEffect(() => {
 		if (selectedCategoryId) {
@@ -181,9 +179,13 @@ const UpdatePart: React.FC = () => {
 		setFormData((prev) => ({ ...prev, [name]: value.toString() }));
 	};
 
-	const handleVehicleSelect = (vehicle: Vehicle) => {
-		setSelectedVehicle(vehicle);
-		setFormData((prev) => ({ ...prev, vehicleId: vehicle.id.toString() }));
+	// Changed to accept Vehicle[]
+	const handleVehicleSelect = (vehicles: Vehicle[]) => {
+		if (vehicles.length > 0) {
+			const vehicle = vehicles[0];
+			setSelectedVehicle(vehicle);
+			setFormData((prev) => ({ ...prev, vehicleId: vehicle.id.toString() }));
+		}
 		setIsVehicleModalOpen(false);
 	};
 
@@ -261,6 +263,13 @@ const UpdatePart: React.FC = () => {
 
 	const availabilityOptions = ["Available", "Unavailable", "On Backorder"];
 	const originOptions = ["OEM", "Aftermarket", "Refurbished"];
+
+	// Extract existing compatible vehicle IDs
+	const existingCompatibilityIds =
+		partRes?.data?.compatibility
+			?.map((c: any) => c.vehicle?.id)
+			.filter(Boolean) || [];
+
 
 	return (
 		<div className="overflow-y-auto bg-white py-8 px-4">
@@ -345,18 +354,15 @@ const UpdatePart: React.FC = () => {
 					>
 						<span className={selectedVehicle ? "text-gray-700" : "text-gray-400"}>
 							{selectedVehicle
-								? `${
-										selectedVehicle.modification?.model_line?.car_make?.name ||
-										""
-								  } ${selectedVehicle.modification?.model_line?.name || ""} ${
-										selectedVehicle.modification?.name
-											? `(${selectedVehicle.modification.name})`
-											: ""
-								  } ${
-										selectedVehicle.engine_type?.name
-											? `- ${selectedVehicle.engine_type.name}`
-											: ""
-								  } [${selectedVehicle.production_year}]`
+								? `${selectedVehicle.modification?.model_line?.car_make?.name ||
+								""
+								} ${selectedVehicle.modification?.model_line?.name || ""} ${selectedVehicle.modification?.name
+									? `(${selectedVehicle.modification.name})`
+									: ""
+								} ${selectedVehicle.engine_type?.name
+									? `- ${selectedVehicle.engine_type.name}`
+									: ""
+								} [${selectedVehicle.production_year}]`
 								: "Click to select vehicle"}
 						</span>
 						<ChevronDown className="w-5 h-5 text-[#9AE144]" />
@@ -483,11 +489,10 @@ const UpdatePart: React.FC = () => {
 							))
 						) : (
 							<div
-								className={`h-44 w-44 border-2 border-dashed rounded-lg flex items-center justify-center text-center cursor-pointer transition-all ${
-									isDragging
-										? "border-[#9AE144] bg-[#9AE144]/10"
-										: "border-[#808080]"
-								}`}
+								className={`h-44 w-44 border-2 border-dashed rounded-lg flex items-center justify-center text-center cursor-pointer transition-all ${isDragging
+									? "border-[#9AE144] bg-[#9AE144]/10"
+									: "border-[#808080]"
+									}`}
 								onDrop={handleDrop}
 								onDragOver={handleDragOver}
 								onDragLeave={handleDragLeave}
@@ -529,10 +534,12 @@ const UpdatePart: React.FC = () => {
 					<h3 className="text-lg font-semibold">Compatible Vehicles</h3>
 					<button
 						onClick={() => setIsCompatibilityModalOpen(true)}
-						className="px-4 py-2 bg-[#9AE144] text-black rounded-lg font-medium text-sm"
+						disabled={isAddingCompatibility}
+						className="px-4 py-2 bg-[#9AE144] text-black rounded-lg font-medium text-sm disabled:opacity-60"
 					>
-						Add Compatible Vehicle
+						{isAddingCompatibility ? "Adding..." : "Add Compatible Vehicle"}
 					</button>
+
 				</div>
 
 				{partRes?.data?.compatibility && partRes.data.compatibility.length > 0 ? (
@@ -581,27 +588,55 @@ const UpdatePart: React.FC = () => {
 			</div>
 
 			{/* Modals */}
+			{/* Modals */}
 			<VehicleSelectorModal
 				isOpen={isVehicleModalOpen}
 				onClose={() => setIsVehicleModalOpen(false)}
 				onSelect={handleVehicleSelect}
+				mode="single"
+			// Note: Only the first selected vehicle will be used as primary
 			/>
 			<VehicleSelectorModal
 				isOpen={isCompatibilityModalOpen}
 				onClose={() => setIsCompatibilityModalOpen(false)}
-				onSelect={async (vehicle) => {
-					await addCompatibility({
-						partId: parseInt(partId),
-						vehicleId: vehicle.id,
-					}).unwrap();
+				onSelect={async (vehicles: Vehicle[]) => {
+					if (vehicles.length === 0) return;
 
-					toast.success("Vehicle added to compatibility");
 
-					// 🔥 Force UI to update
-					refetch();
+					setIsAddingCompatibility(true);
 
-					setIsCompatibilityModalOpen(false);
+					// Filter out already compatible vehicles
+					const newVehicles = vehicles.filter(
+						(v) => !existingCompatibilityIds.includes(v.id)
+					);
+
+					let addedCount = 0;
+
+					try {
+						for (const vehicle of newVehicles) {
+							await addCompatibility({
+								partId: parseInt(partId),
+								vehicleId: vehicle.id,
+							}).unwrap();
+							addedCount++;
+						}
+
+						if (addedCount > 0) {
+							toast.success(`${addedCount} vehicle(s) added to compatibility`);
+							refetch();
+							setIsCompatibilityModalOpen(false);
+						} else {
+							toast("Selected vehicles are already compatible");
+							setIsCompatibilityModalOpen(false);
+						}
+					} catch (err: any) {
+						toast.error("Failed to add some vehicles",err?.data?.message);
+						// Do not close modal on error so user can retry
+					} finally {
+						setIsAddingCompatibility(false);
+					}
 				}}
+				mode="multi"
 			/>
 		</div>
 	);
