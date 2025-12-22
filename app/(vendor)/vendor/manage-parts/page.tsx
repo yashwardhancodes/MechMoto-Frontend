@@ -29,12 +29,26 @@ export default function ManageParts() {
   const [deletePart] = useDeletePartMutation();
 
   // -----------------------------
+  // SAFE SKIP LOGIC (FIX)
+  // -----------------------------
+  const shouldSkip =
+    !user || !user.role || user.role.name !== ROLES.VENDOR;
+
+  // -----------------------------
   // API CALL
   // -----------------------------
   const { data, isLoading, isError } = useGetAllPartsByVendorQuery(
     { page, limit },
-    { skip: user?.role?.name !== ROLES.VENDOR }
+    { skip: shouldSkip }
   );
+
+  // -----------------------------
+  // DEBUG LOGS (REMOVE AFTER FIX)
+  // -----------------------------
+  console.log("🧑 USER:", user);
+  console.log("👤 ROLE:", user?.role?.name);
+  console.log("⛔ SHOULD SKIP API:", shouldSkip);
+  console.log("📦 RAW API DATA:", data);
 
   /**
    * ✅ CORRECT DATA EXTRACTION
@@ -43,6 +57,9 @@ export default function ManageParts() {
    */
   const parts = Array.isArray(data?.data?.data) ? data.data.data : [];
   const meta = data?.data?.meta;
+
+  console.log("📄 PARTS ARRAY:", parts);
+  console.log("📊 META:", meta);
 
   const total = meta?.total ?? 0;
   const totalPages = meta?.totalPages ?? 0;
