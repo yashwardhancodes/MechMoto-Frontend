@@ -167,7 +167,7 @@ export default function DataTable<
 				<hr />
 
 				{/* Table Container */}
-				<div className="w-full h-[calc(100vh-250px)] pt-2 overflow-y-auto">
+				<div className="w-full h-[calc(100vh-290px)] pt-2 overflow-y-auto">
 					{isLoading ? (
 						<p className="text-sm text-gray-500 p-4">{loadingMessage}</p>
 					) : isError ? (
