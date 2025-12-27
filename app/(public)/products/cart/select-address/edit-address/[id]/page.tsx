@@ -67,24 +67,27 @@ export default function EditAddress() {
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		try {
-			const addressData = {
-				id: parseInt(id as string),
-				label: form.label || "Custom",
-				address_line1: `${form.house}, ${form.area}, ${form.landmark}`,
-				address_line2: "",
-				city: form.city,
-				state: form.state,
-				zip: form.pincode,
-				country: "India",
-			};
-			await updateAddress(addressData).unwrap();
-			router.push("/products/cart/select-address");
-		} catch  {
-			setErrorMessage("Failed to update address. Please try again.");
-		}
-	};
+  e.preventDefault();
+  try {
+    await updateAddress({
+      id : id as string,
+      data: {
+        label: form.label || "Custom",
+        address_line1: `${form.house}, ${form.area}, ${form.landmark}`,
+        address_line2: "",
+        city: form.city,
+        state: form.state,
+        zip: form.pincode,
+        country: "India",
+      },
+    }).unwrap();
+
+    router.push("/products/cart/select-address");
+  } catch {
+    setErrorMessage("Failed to update address. Please try again.");
+  }
+};
+
 
 	return (
 		<div className="bg-white px-3 md:px-16 lg:px-24 font-sans">

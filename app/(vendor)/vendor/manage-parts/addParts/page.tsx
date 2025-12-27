@@ -16,19 +16,8 @@ import { RootState } from "@/lib/redux/store";
 import Image from "next/image";
 import VehicleSelectorModal from "@/components/SearchModels/VehicleSelectorModal";
 
-interface Vehicle {
-	id: number;
-	modification?: {
-		name: string;
-		model_line: {
-			name: string;
-			car_make: { name: string };
-		};
-	};
-	engine_type?: { name: string };
-	production_year?: number | string;
-}
-
+// Removed local Vehicle interface to avoid conflict
+// The correct Vehicle type comes from the modal or API
 
 interface PartBrand {
 	id: string;
@@ -106,7 +95,7 @@ const AddPart: React.FC = () => {
 		error: discountsError,
 	} = useGetAllVehiclesQuery({}); // Note: This seems to be incorrectly querying vehicles instead of discounts
 	const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
-	const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+	const [selectedVehicle, setSelectedVehicle] = useState<any | null>(null); // Using 'any' temporarily to avoid deep type conflict
 
 	const subcategories = selectedCategoryId ? filteredSubcategories?.data : [];
 
@@ -141,14 +130,15 @@ const AddPart: React.FC = () => {
 		}));
 	};
 
-const handleVehicleSelect = (vehicles: Vehicle[]) => {
-	if (vehicles.length === 0) return;
+	// Fixed type: accepts array of vehicles from modal (single mode still takes first)
+	const handleVehicleSelect = (vehicles: any[]) => {
+		if (vehicles.length === 0) return;
 
-	const vehicle = vehicles[0]; // Single mode guarantees only one
-	setSelectedVehicle(vehicle);
-	setFormData((prev) => ({ ...prev, vehicleId: vehicle.id.toString() }));
-	setIsVehicleModalOpen(false); // Optional: ensure close (already handled by modal in single mode)
-};
+		const vehicle = vehicles[0];
+		setSelectedVehicle(vehicle);
+		setFormData((prev) => ({ ...prev, vehicleId: vehicle.id.toString() }));
+		setIsVehicleModalOpen(false);
+	};
 
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files) {
@@ -233,18 +223,15 @@ const handleVehicleSelect = (vehicles: Vehicle[]) => {
 			const result = await createPart(parsedData).unwrap();
 			console.log("✅ API Response:", result);
 
-			if (result?.success) {
-				const partId = result?.data?.id || result?.id; // depends on your API shape
-				if (!partId) {
-					toast.error("Part added but no part ID returned!");
-					return;
-				}
-
-				toast.success("Part added successfully! Redirecting...");
-				window.location.href = `/vendor/manage-parts/edit/${partId}`;
-			} else {
-				toast.error("Part addition failed. Please try again.");
+			// Fixed: safely access part ID from response
+			const partId = result?.data?.id;
+			if (!partId) {
+				toast.error("Part added but no part ID returned!");
+				return;
 			}
+
+			toast.success("Part added successfully! Redirecting...");
+			window.location.href = `/vendor/manage-parts/edit/${partId}`;
 		} catch (err: unknown) {
 			if (err instanceof z.ZodError) {
 				const formattedErrors: Record<string, string> = {};
@@ -345,7 +332,7 @@ const handleVehicleSelect = (vehicles: Vehicle[]) => {
 					</div>
 				</div>
 
-				{/* Row 3: Vehicle, Subcategory */}
+				{/* Row 3: Vehicle, Category, Subcategory */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div className="relative">
 						<button
@@ -405,7 +392,6 @@ const handleVehicleSelect = (vehicles: Vehicle[]) => {
 							/>
 						</button>
 
-						{/* CATEGORY OPTIONS */}
 						{dropdownOpen.category &&
 							categoryResponse?.data?.categories &&
 							categoryResponse.data.categories.length > 0 && (
@@ -434,7 +420,10 @@ const handleVehicleSelect = (vehicles: Vehicle[]) => {
 								</div>
 							)}
 					</div>
+				</div>
 
+				{/* Subcategory */}
+				<div className="grid grid-cols-1 gap-4">
 					<div className="relative">
 						<button
 							type="button"
@@ -488,132 +477,134 @@ const handleVehicleSelect = (vehicles: Vehicle[]) => {
 								</div>
 							)}
 					</div>
+				</div>
 
-					{/* Row 4: Part Brand, Discount */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div className="relative">
-							<button
-								type="button"
-								onClick={() =>
-									setDropdownOpen((prev) => ({
-										...prev,
-										partBrand: !prev.partBrand,
-									}))
+				{/* Row 4: Part Brand, Discount */}
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div className="relative">
+						<button
+							type="button"
+							onClick={() =>
+								setDropdownOpen((prev) => ({
+									...prev,
+									partBrand: !prev.partBrand,
+								}))
+							}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
+							disabled={isPartBrandsLoading || !!partBrandsError}
+						>
+							<span
+								className={
+									formData.partBrandId && Array.isArray(partBrands)
+										? "text-gray-700"
+										: "text-gray-400"
 								}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
-								disabled={isPartBrandsLoading || !!partBrandsError}
 							>
-								<span
-									className={
-										formData.partBrandId && Array.isArray(partBrands)
-											? "text-gray-700"
-											: "text-gray-400"
-									}
-								>
-									{isPartBrandsLoading
-										? "Loading part brands..."
-										: partBrandsError
-										? "Error loading part brands"
-										: formData.partBrandId && Array.isArray(partBrands)
-										? partBrands?.find(
-												(pb: PartBrand) =>
-													pb.id.toString() === formData.partBrandId,
-										  )?.name || "Select a Part Brand"
-										: "Select a Part Brand"}
-								</span>
-								<ChevronDown
-									className={`w-5 h-5 text-[#9AE144] ${
-										dropdownOpen.partBrand ? "rotate-180" : ""
-									}`}
-								/>
-							</button>
-							{dropdownOpen.partBrand &&
-								!isPartBrandsLoading &&
-								!partBrandsError &&
-								Array.isArray(partBrands) &&
-								partBrands?.length > 0 && (
-									<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
-										{partBrands?.map((partBrand: PartBrand) => (
-											<button
-												key={partBrand.id}
-												type="button"
-												onClick={() =>
-													handleSelectChange("partBrandId", partBrand.id)
-												}
-												className="w-full px-4 py-2 text-left hover:bg-gray-50"
-											>
-												{partBrand.name}
-											</button>
-										))}
-									</div>
-								)}
-							{errors["partBrandId"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["partBrandId"]}</p>
+								{isPartBrandsLoading
+									? "Loading part brands..."
+									: partBrandsError
+									? "Error loading part brands"
+									: formData.partBrandId && Array.isArray(partBrands)
+									? partBrands?.find(
+											(pb: PartBrand) =>
+												pb.id.toString() === formData.partBrandId,
+									  )?.name || "Select a Part Brand"
+									: "Select a Part Brand"}
+							</span>
+							<ChevronDown
+								className={`w-5 h-5 text-[#9AE144] ${
+									dropdownOpen.partBrand ? "rotate-180" : ""
+								}`}
+							/>
+						</button>
+						{dropdownOpen.partBrand &&
+							!isPartBrandsLoading &&
+							!partBrandsError &&
+							Array.isArray(partBrands) &&
+							partBrands?.length > 0 && (
+								<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
+									{partBrands?.map((partBrand: PartBrand) => (
+										<button
+											key={partBrand.id}
+											type="button"
+											onClick={() =>
+												handleSelectChange("partBrandId", partBrand.id)
+											}
+											className="w-full px-4 py-2 text-left hover:bg-gray-50"
+										>
+											{partBrand.name}
+										</button>
+									))}
+								</div>
 							)}
-						</div>
-						<div className="relative">
-							<button
-								type="button"
-								onClick={() =>
-									setDropdownOpen((prev) => ({
-										...prev,
-										discount: !prev.discount,
-									}))
-								}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
-								disabled={isDiscountsLoading || !!discountsError}
-							>
-								<span
-									className={
-										formData.discountId && Array.isArray(discounts?.data)
-											? "text-gray-700"
-											: "text-gray-400"
-									}
-								>
-									{isDiscountsLoading
-										? "Loading discounts..."
-										: discountsError
-										? "Error loading discounts"
-										: formData.discountId && Array.isArray(discounts?.data)
-										? discounts.data.find(
-												(d: Discount) =>
-													d.id === Number(formData.discountId),
-										  )?.name || "Select a Discount"
-										: "Select a Discount"}
-								</span>
-								<ChevronDown
-									className={`w-5 h-5 text-[#9AE144] ${
-										dropdownOpen.discount ? "rotate-180" : ""
-									}`}
-								/>
-							</button>
-							{dropdownOpen.discount &&
-								!isDiscountsLoading &&
-								!discountsError &&
-								Array.isArray(discounts?.data) &&
-								discounts.data.length > 0 && (
-									<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
-										{discounts.data.map((discount: Discount) => (
-											<button
-												key={discount.id}
-												type="button"
-												onClick={() =>
-													handleSelectChange("discountId", discount.id)
-												}
-												className="w-full px-4 py-2 text-left hover:bg-gray-50"
-											>
-												{discount.name}
-											</button>
-										))}
-									</div>
-								)}
-							{errors["discountId"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["discountId"]}</p>
-							)}
-						</div>
+						{errors["partBrandId"] && (
+							<p className="text-red-500 text-sm mt-1">{errors["partBrandId"]}</p>
+						)}
 					</div>
+					<div className="relative">
+						<button
+							type="button"
+							onClick={() =>
+								setDropdownOpen((prev) => ({
+									...prev,
+									discount: !prev.discount,
+								}))
+							}
+							className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
+							disabled={isDiscountsLoading || !!discountsError}
+						>
+							<span
+								className={
+									formData.discountId && Array.isArray(discounts?.data)
+										? "text-gray-700"
+										: "text-gray-400"
+								}
+							>
+								{isDiscountsLoading
+									? "Loading discounts..."
+									: discountsError
+									? "Error loading discounts"
+									: formData.discountId && Array.isArray(discounts?.data)
+									? discounts.data.find(
+											(d: Discount) =>
+												d.id === Number(formData.discountId),
+									  )?.name || "Select a Discount"
+									: "Select a Discount"}
+							</span>
+							<ChevronDown
+								className={`w-5 h-5 text-[#9AE144] ${
+									dropdownOpen.discount ? "rotate-180" : ""
+								}`}
+							/>
+						</button>
+						{dropdownOpen.discount &&
+							!isDiscountsLoading &&
+							!discountsError &&
+							Array.isArray(discounts?.data) &&
+							discounts.data.length > 0 && (
+								<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto">
+									{discounts.data.map((discount: Discount) => (
+										<button
+											key={discount.id}
+											type="button"
+											onClick={() =>
+												handleSelectChange("discountId", discount.id)
+											}
+											className="w-full px-4 py-2 text-left hover:bg-gray-50"
+										>
+											{discount.name}
+										</button>
+									))}
+								</div>
+							)}
+						{errors["discountId"] && (
+							<p className="text-red-500 text-sm mt-1">{errors["discountId"]}</p>
+						)}
+					</div>
+				</div>
 
-					{/* Row 5: Availability Status, Origin */}
+				{/* Row 5: Availability Status, Origin */}
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div className="relative">
 						<button
 							type="button"
@@ -698,104 +689,103 @@ const handleVehicleSelect = (vehicles: Vehicle[]) => {
 							<p className="text-red-500 text-sm mt-1">{errors["origin"]}</p>
 						)}
 					</div>
+				</div>
 
-					{/* Row 6: Image Upload, Submit Button */}
-					<div className="flex justify-between items-start">
-						<div className="flex gap-4">
-							<div className="flex flex-wrap gap-4">
-								{previewUrls.length > 0 ? (
-									previewUrls.map((url, index) => (
-										<div
-											key={index}
-											className="relative h-44 w-44 cursor-pointer group"
-											onClick={handleImageClick}
-											title="Click to add more images"
-										>
-											<Image
-												src={url}
-												alt={`Part preview ${index + 1}`}
-												className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
-												width={100}
-												height={100}
-											/>
-											<button
-												onClick={(e) => {
-													e.stopPropagation();
-													removeImage(index);
-												}}
-												className="absolute top-2 right-2 p-1 z-10 bg-red-500 rounded-full text-white hover:bg-red-600 transition-colors duration-200"
-												title="Remove image"
-											>
-												<X className="w-5 h-5" />
-											</button>
-											<div className="absolute inset-0 flex items-center justify-center rounded-lg bg-[#9AE144] bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-												<span className="text-black font-medium text-sm">
-													Add More Images
-												</span>
-											</div>
-										</div>
-									))
-								) : (
+				{/* Row 6: Image Upload */}
+				<div className="flex justify-between items-start">
+					<div className="flex gap-4">
+						<div className="flex flex-wrap gap-4">
+							{previewUrls.length > 0 ? (
+								previewUrls.map((url, index) => (
 									<div
-										className={`h-44 w-44 border-2 border-dashed rounded-lg p-4 flex items-center justify-center text-center transition-all duration-200 ${
-											isDragging
-												? "border-[#9AE144] bg-[#9AE144]/10"
-												: "border-[#808080]"
-										}`}
-										onDrop={handleDrop}
-										onDragOver={handleDragOver}
-										onDragLeave={handleDragLeave}
+										key={index}
+										className="relative h-44 w-44 cursor-pointer group"
 										onClick={handleImageClick}
+										title="Click to add more images"
 									>
-										<div>
-											<p className="text-gray-700">
-												{isDragging
-													? "Drop images here"
-													: "Drag & drop or click to select"}
-											</p>
-											<p className="text-gray-400 text-sm mt-1">
-												Supports multiple images
-											</p>
+										<Image
+											src={url}
+											alt={`Part preview ${index + 1}`}
+											className="w-full h-full p-4 object-cover rounded-lg border border-[#808080] group-hover:opacity-80 transition-opacity duration-200"
+											width={100}
+											height={100}
+										/>
+										<button
+											onClick={(e) => {
+												e.stopPropagation();
+												removeImage(index);
+											}}
+											className="absolute top-2 right-2 p-1 z-10 bg-red-500 rounded-full text-white hover:bg-red-600 transition-colors duration-200"
+											title="Remove image"
+										>
+											<X className="w-5 h-5" />
+										</button>
+										<div className="absolute inset-0 flex items-center justify-center rounded-lg bg-[#9AE144] bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+											<span className="text-black font-medium text-sm">
+												Add More Images
+											</span>
 										</div>
 									</div>
-								)}
-							</div>
-							<input
-								type="file"
-								accept="image/*"
-								multiple
-								onChange={handleFileChange}
-								className="hidden"
-								ref={fileInputRef}
-							/>
-							{errors["imageUrls"] && (
-								<p className="text-red-500 text-sm mt-1">{errors["imageUrls"]}</p>
+								))
+							) : (
+								<div
+									className={`h-44 w-44 border-2 border-dashed rounded-lg p-4 flex items-center justify-center text-center transition-all duration-200 ${
+										isDragging
+											? "border-[#9AE144] bg-[#9AE144]/10"
+											: "border-[#808080]"
+									}`}
+									onDrop={handleDrop}
+									onDragOver={handleDragOver}
+									onDragLeave={handleDragLeave}
+									onClick={handleImageClick}
+								>
+									<div>
+										<p className="text-gray-700">
+											{isDragging
+												? "Drop images here"
+												: "Drag & drop or click to select"}
+										</p>
+										<p className="text-gray-400 text-sm mt-1">
+											Supports multiple images
+										</p>
+									</div>
+								</div>
 							)}
 						</div>
-					</div>
-
-					<div className="flex justify-between items-start">
-						<div className="flex justify-end pt-3">
-							<button
-								type="button"
-								onClick={handleSubmit}
-								disabled={isLoading}
-								className="px-8 py-3 bg-[#9AE144] hover:bg-[#9AE144] text-black font-medium rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-[#9AE144] focus:ring-offset-2 outline-none"
-							>
-								{isLoading ? "Adding..." : "Add Part"}
-							</button>
-						</div>
+						<input
+							type="file"
+							accept="image/*"
+							multiple
+							onChange={handleFileChange}
+							className="hidden"
+							ref={fileInputRef}
+						/>
+						{errors["imageUrls"] && (
+							<p className="text-red-500 text-sm mt-1">{errors["imageUrls"]}</p>
+						)}
 					</div>
 				</div>
 
-				{/* Vehicle Selector Modal */}
-				<VehicleSelectorModal
-					isOpen={isVehicleModalOpen}
-					onClose={() => setIsVehicleModalOpen(false)}
-					onSelect={handleVehicleSelect}
-					mode="single"
-				/>
+				{/* Submit Button */}
+				<div className="flex justify-end pt-3">
+					<button
+						type="button"
+						onClick={handleSubmit}
+						disabled={isLoading}
+						className="px-8 py-3 bg-[#9AE144] hover:bg-[#9AE144]/90 text-black font-medium rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-[#9AE144] focus:ring-offset-2 outline-none"
+					>
+						{isLoading ? "Adding..." : "Add Part"}
+					</button>
+				</div>
 			</div>
+
+			{/* Vehicle Selector Modal */}
+			<VehicleSelectorModal
+				isOpen={isVehicleModalOpen}
+				onClose={() => setIsVehicleModalOpen(false)}
+				onSelect={handleVehicleSelect}
+				mode="single"
+			/>
 		</div>
 	);
 };

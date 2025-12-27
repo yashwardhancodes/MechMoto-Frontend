@@ -136,6 +136,12 @@ const menuItems: MenuItem[] = [
 				permission: "read:model_line",
 			},
 			{
+				label: "Manage Generations",
+				basePath: "manage-model",
+				icon: <List size={16} />,
+				permission: "read:vehicle", // ← Now safe to use
+			},
+			{
 				label: "Manage Modification",
 				basePath: "manage-modifications",
 				icon: <List size={16} />,
@@ -227,16 +233,16 @@ export default function Sidebar({ setActiveMenu, isOpen, setIsOpen }: Props) {
 				path: `${getBasePath(user?.role?.name)}/${item.basePath}`,
 				subItems: item.subItems
 					? item.subItems
-							.filter((sub) =>
-								hasPermission({
-									user,
-									permission: sub.permission as UserPermission,
-								}),
-							)
-							.map((sub) => ({
-								...sub,
-								path: `${getBasePath(user.role.name)}/${sub.basePath}`,
-							}))
+						.filter((sub) =>
+							hasPermission({
+								user,
+								permission: sub.permission as UserPermission,
+							}),
+						)
+						.map((sub) => ({
+							...sub,
+							path: `${getBasePath(user.role.name)}/${sub.basePath}`,
+						}))
 					: undefined,
 			}));
 	}, [user]);
@@ -332,9 +338,8 @@ export default function Sidebar({ setActiveMenu, isOpen, setIsOpen }: Props) {
 								<div key={item.label}>
 									<li
 										onClick={() => handleClick(item)}
-										className={`p-2 rounded-md flex items-center gap-2 cursor-pointer ${
-											isActive ? "bg-[#DCF4BE]" : "hover:bg-gray-100"
-										}`}
+										className={`p-2 rounded-md flex items-center gap-2 cursor-pointer ${isActive ? "bg-[#DCF4BE]" : "hover:bg-gray-100"
+											}`}
 									>
 										{item.icon}
 										{item.label}
@@ -359,12 +364,11 @@ export default function Sidebar({ setActiveMenu, isOpen, setIsOpen }: Props) {
 															router.push("/admin/unauthorized");
 														}
 													}}
-													className={`p-2 rounded-md cursor-pointer flex items-center gap-2 ${
-														pathname === sub.path ||
-														pathname.startsWith(sub.path + "/")
+													className={`p-2 rounded-md cursor-pointer flex items-center gap-2 ${pathname === sub.path ||
+															pathname.startsWith(sub.path + "/")
 															? "bg-[#DCF4BE]"
 															: "hover:bg-gray-100"
-													}`}
+														}`}
 												>
 													{sub.icon}
 													{sub.label}

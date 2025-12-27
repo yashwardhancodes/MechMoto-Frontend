@@ -60,14 +60,15 @@ const Page: React.FC = () => {
 
 		const newQuantity = Math.max(0, cartItem.quantity + change);
 		if (newQuantity === 0) {
-			await removeFromCart(id);
+			await removeFromCart(id.toString());
+
 		} else {
-			await updateCartItem({ id, quantity: newQuantity });
+			await updateCartItem({ id: id.toString(), quantity: newQuantity });
 		}
 	};
 
 	const removeItem = async (id: number) => {
-		await removeFromCart(id);
+		await removeFromCart(id.toString());
 	};
 
 	const itemsTotal = cartItems.reduce(

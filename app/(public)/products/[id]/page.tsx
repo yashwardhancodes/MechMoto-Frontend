@@ -34,7 +34,7 @@ export default function ToyotaNexusBelt() {
 	const { isLoggedIn } = useAuth();
 	const [addToCart, { isLoading: isAddingToCart }] = useAddToCartMutation();
 	const [addToWishlist] = useAddToWishlistMutation();
-	const { data: response, isLoading, error } = useGetPartQuery(id);
+	const { data: response, isLoading, error } = useGetPartQuery(Array.isArray(id) ? id[0] : id);
 	const part = response?.data;
 	const { token } = useSelector((state: RootState) => state.auth);
 	const [showAllVehicles, setShowAllVehicles] = useState(false);

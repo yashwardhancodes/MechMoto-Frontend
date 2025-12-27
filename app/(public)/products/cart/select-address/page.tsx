@@ -45,7 +45,7 @@ export default function SelectAddress() {
 
 	const handleDelete = async (id: number) => {
 		try {
-			await deleteAddress(id).unwrap();
+await deleteAddress(id.toString()).unwrap();
 			setShowConfirmDelete(null);
 			if (selected === id) setSelected(null);
 		} catch   {

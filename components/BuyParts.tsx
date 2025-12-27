@@ -9,7 +9,7 @@ import {
 	useLazyGetModificationsQuery,
 	useLazyGetFilteredVehiclesQuery,
 } from "@/lib/redux/api/vehicleApi";
-import { ModelLine, useLazyGetModelLinesQuery } from "@/lib/redux/api/modelLineApi";
+import { useLazyGetModelLinesQuery } from "@/lib/redux/api/modelLineApi";
 import { useLazyGetSubcategoriesByCategoryIdQuery } from "@/lib/redux/api/subCategoriesApi";
 import toast from "react-hot-toast";
 
@@ -18,37 +18,39 @@ interface CarMake {
 	name: string;
 }
 
-interface Part {
+interface ModelLine {
 	id: number;
 	name: string;
+	car_make: { id: number; name: string };
+	models: Array<{
+		id: number;
+		name: string;
+		modifications: Array<{
+			id: number;
+			name: string;
+		}>;
+	}>;
 }
 
-interface Compatibility {
-	id: number;
-	vehicleId: number;
-	partId: number;
-}
+ 
 
 interface Vehicle {
 	id: number;
-	car_makeId: number;
-	model_line: string;
-	production_year: number;
 	modification: {
+		id: number;
 		name: string;
-		model_line: {
+		models: {
+			id: number;
 			name: string;
-			car_make: {
+			model_line: {
+				id: number;
 				name: string;
+				car_make: { id: number; name: string };
 			};
-		};
+		}[];
 	};
-	engine_typeId: number | null;
-	created_at: string;
-	car_make: { id: number; name: string };
-	engine_type: { id: number; name: string } | null;
-	parts: Part[];
-	compatibility: Compatibility[];
+	engine_type?: { id: number; name: string } | null;
+	production_year: number;
 }
 
 interface PartCategory {
@@ -75,8 +77,14 @@ const BuyParts = () => {
 		const saved = sessionStorage.getItem(STORAGE_KEY);
 		if (saved) {
 			try {
-				const { carMake, modelLine, productionYear, modification, category, subcategory } =
-					JSON.parse(saved);
+				const {
+					carMake,
+					modelLine,
+					productionYear,
+					modification,
+					category,
+					subcategory,
+				} = JSON.parse(saved);
 				setSelectedCarMake(carMake || null);
 				setSelectedModelLine(modelLine || null);
 				setSelectedProductionYear(productionYear || null);
@@ -171,7 +179,7 @@ const BuyParts = () => {
 		if (selectedProductionYear && selectedModelLine) {
 			triggerGetModifications({
 				modelLine: selectedModelLine,
-				productionYear: selectedProductionYear,
+				productionYear: Number(selectedProductionYear),
 			});
 		} else {
 			setSelectedModification(null);
@@ -191,17 +199,18 @@ const BuyParts = () => {
 			!selectedProductionYear &&
 			!selectedModification
 		) {
-			alert("Please select at least one filter to search.");
+			toast.error("Please select at least one filter to search.");
 			return;
 		}
 
 		try {
 			const result = await triggerGetFilteredVehicles({
-				carMakeId: selectedCarMake,
-				modelLine: selectedModelLine,
-				productionYear: selectedProductionYear,
-				modification: selectedModification,
+				carMakeId: selectedCarMake ?? undefined,
+				modelLine: selectedModelLine?.toString(),
+				productionYear: selectedProductionYear ? Number(selectedProductionYear) : undefined,
+				modification: selectedModification ?? undefined,
 			}).unwrap();
+
 			setSearchResults(result.data || []);
 			setIsModalOpen(true);
 		} catch (error) {
@@ -216,7 +225,6 @@ const BuyParts = () => {
 		triggerGetFilteredVehicles,
 	]);
 
-	// Auto-trigger search and open modal if category is persisted
 	useEffect(() => {
 		if (
 			hydrated &&
@@ -258,49 +266,33 @@ const BuyParts = () => {
       border-color: rgba(154, 225, 68, 0.5);
     }
 
-    .custom-select option {
+    .custom-select optgroup {
+      font-weight: 600;
+      color: #065f46;
+      background-color: #ecfdf5;
       padding: 8px 12px;
-      border-radius: 6px;
-      margin: 2px 0;
-      background-color: white;
+    }
+
+    .custom-select optgroup option {
+      padding-left: 24px;
       color: #1f2937;
       font-weight: 500;
-      transition: all 0.15s ease-in-out;
     }
 
     .custom-select option:hover {
-      background-color: #f3f4f6;
-      color: #111827;
+      background-color: #f0fdf4;
     }
 
-    .custom-select option:checked,
-    .custom-select option:focus {
-      background-color: rgba(154, 225, 68, 0.1);
+    .custom-select option:checked {
+      background-color: rgba(154, 225, 68, 0.2);
       color: #065f46;
       font-weight: 600;
-    }
-
-    .custom-select option[disabled] {
-      background-color: #f9fafb;
-      color: #9ca3af;
-      cursor: not-allowed;
     }
 
     .custom-select:disabled {
       background-color: #f9fafb;
       cursor: not-allowed;
       opacity: 0.6;
-    }
-
-    .custom-select:disabled option {
-      color: #9ca3af;
-    }
-
-    @media (max-width: 768px) {
-      .custom-select option {
-        padding: 10px 8px;
-        font-size: 14px;
-      }
     }
   `;
 
@@ -311,7 +303,7 @@ const BuyParts = () => {
 		<div className="w-full flex flex-col items-center px-3 sm:px-4 md:px-6">
 			<style jsx>{dropdownStyles}</style>
 
-			{/* Desktop Layout - Horizontal */}
+			{/* Desktop Layout */}
 			<div className="hidden md:flex items-center bg-white rounded-full border-2 border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 px-4 py-3 w-full max-w-xl lg:max-w-4xl backdrop-blur-sm">
 				<div className="flex items-center flex-1 space-x-4">
 					<div className="relative flex-1 min-w-0">
@@ -324,18 +316,9 @@ const BuyParts = () => {
 								setSelectedCarMake(selectedId);
 							}}
 						>
-							<option
-								value=""
-								className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-600 py-3 font-medium"
-							>
-								{carMakeLoading ? "Loading..." : "🚗 Select Car Make"}
-							</option>
+							<option value="">{carMakeLoading ? "Loading..." : "🚗 Select Car Make"}</option>
 							{carMakesData?.data?.carMakes.map((carMake: CarMake) => (
-								<option
-									key={carMake.id}
-									value={carMake.id}
-									className="bg-white text-gray-800 py-3 hover:bg-green-50 hover:text-green-800 font-medium transition-colors duration-150"
-								>
+								<option key={carMake.id} value={carMake.id}>
 									{carMake.name}
 								</option>
 							))}
@@ -354,20 +337,11 @@ const BuyParts = () => {
 							className={selectClassName}
 							disabled={!selectedCarMake || modelLineLoading}
 							value={selectedModelLine ?? ""}
-							onChange={(e) => setSelectedModelLine(Number(e.target.value))}
+							onChange={(e) => setSelectedModelLine(e.target.value ? Number(e.target.value) : null)}
 						>
-							<option
-								value=""
-								className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-600 py-3 font-medium"
-							>
-								{modelLineLoading ? "Loading..." : "🏎️ Select Model"}
-							</option>
-							{modelLineData?.data?.map((model: ModelLine, idx: number) => (
-								<option
-									key={idx}
-									value={model?.id}
-									className="bg-white text-gray-800 py-3 hover:bg-green-50 hover:text-green-800 font-medium transition-colors duration-150"
-								>
+							<option value="">{modelLineLoading ? "Loading..." : "🏎️ Select Model"}</option>
+							{modelLineData?.data?.map((model: ModelLine) => (
+								<option key={model.id} value={model.id}>
 									{model.name}
 								</option>
 							))}
@@ -386,20 +360,11 @@ const BuyParts = () => {
 							className={selectClassName}
 							disabled={!selectedModelLine || productionYearsLoading}
 							value={selectedProductionYear ?? ""}
-							onChange={(e) => setSelectedProductionYear(e.target.value)}
+							onChange={(e) => setSelectedProductionYear(e.target.value || null)}
 						>
-							<option
-								value=""
-								className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-600 py-3 font-medium"
-							>
-								{productionYearsLoading ? "Loading..." : "📅 Select Year"}
-							</option>
-							{productionYearsData?.data?.map((year: string, idx: number) => (
-								<option
-									key={idx}
-									value={year}
-									className="bg-white text-gray-800 py-3 hover:bg-green-50 hover:text-green-800 font-medium transition-colors duration-150"
-								>
+							<option value="">{productionYearsLoading ? "Loading..." : "📅 Select Year"}</option>
+							{productionYearsData?.data?.map((year: string) => (
+								<option key={year} value={year}>
 									{year}
 								</option>
 							))}
@@ -418,22 +383,17 @@ const BuyParts = () => {
 							className={selectClassName}
 							disabled={!selectedProductionYear || modificationsLoading}
 							value={selectedModification ?? ""}
-							onChange={(e) => setSelectedModification(e.target.value)}
+							onChange={(e) => setSelectedModification(e.target.value || null)}
 						>
-							<option
-								value=""
-								className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-600 py-3 font-medium"
-							>
-								{modificationsLoading ? "Loading..." : "⚙️ Select Modification"}
-							</option>
-							{modificationsData?.data?.map((modification: string, idx: number) => (
-								<option
-									key={idx}
-									value={modification}
-									className="bg-white text-gray-800 py-3 hover:bg-green-50 hover:text-green-800 font-medium transition-colors duration-150"
-								>
-									{modification}
-								</option>
+							<option value="">{modificationsLoading ? "Loading..." : "⚙️ Select Modification"}</option>
+							{modificationsData?.data?.map((model: any) => (
+								<optgroup key={model.id} label={model.name}>
+									{model.modifications.map((mod: any) => (
+										<option key={mod.id} value={mod.name}>
+											{mod.name}
+										</option>
+									))}
+								</optgroup>
 							))}
 						</select>
 						{modificationsLoading && (
@@ -460,7 +420,7 @@ const BuyParts = () => {
 				</button>
 			</div>
 
-			{/* Mobile Layout - Professional & Clean */}
+			{/* Mobile Layout */}
 			<div className="md:hidden flex flex-col bg-white rounded-xl border border-gray-200 w-full max-w-md p-3 space-y-2.5">
 				<div className="relative">
 					<div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
@@ -475,11 +435,9 @@ const BuyParts = () => {
 							setSelectedCarMake(selectedId);
 						}}
 					>
-						<option value="" className="text-gray-500">
-							{carMakeLoading ? "Loading..." : "Select Car Make"}
-						</option>
+						<option value="">{carMakeLoading ? "Loading..." : "Select Car Make"}</option>
 						{carMakesData?.data?.carMakes.map((carMake: CarMake) => (
-							<option key={carMake.id} value={carMake.id} className="text-gray-800">
+							<option key={carMake.id} value={carMake.id}>
 								{carMake.name}
 							</option>
 						))}
@@ -499,13 +457,11 @@ const BuyParts = () => {
 						className="custom-select bg-white focus:outline-none text-gray-700 font-medium text-sm w-full pl-9 pr-8 py-2.5 disabled:text-gray-400 appearance-none cursor-pointer hover:bg-gray-50 rounded-lg transition-all duration-200 disabled:cursor-not-allowed border border-gray-200 focus:border-[rgba(154,225,68,0.8)] focus:ring-2 focus:ring-[rgba(154,225,68,0.2)]"
 						disabled={!selectedCarMake || modelLineLoading}
 						value={selectedModelLine ?? ""}
-						onChange={(e) => setSelectedModelLine(Number(e.target.value))}
+						onChange={(e) => setSelectedModelLine(e.target.value ? Number(e.target.value) : null)}
 					>
-						<option value="" className="text-gray-500">
-							{modelLineLoading ? "Loading..." : "Select Model"}
-						</option>
-						{modelLineData?.data?.map((model: ModelLine, idx: number) => (
-							<option key={idx} value={model.id} className="text-gray-800">
+						<option value="">{modelLineLoading ? "Loading..." : "Select Model"}</option>
+						{modelLineData?.data?.map((model: ModelLine) => (
+							<option key={model.id} value={model.id}>
 								{model.name}
 							</option>
 						))}
@@ -525,13 +481,11 @@ const BuyParts = () => {
 						className="custom-select bg-white focus:outline-none text-gray-700 font-medium text-sm w-full pl-9 pr-8 py-2.5 disabled:text-gray-400 appearance-none cursor-pointer hover:bg-gray-50 rounded-lg transition-all duration-200 disabled:cursor-not-allowed border border-gray-200 focus:border-[rgba(154,225,68,0.8)] focus:ring-2 focus:ring-[rgba(154,225,68,0.2)]"
 						disabled={!selectedModelLine || productionYearsLoading}
 						value={selectedProductionYear ?? ""}
-						onChange={(e) => setSelectedProductionYear(e.target.value)}
+						onChange={(e) => setSelectedProductionYear(e.target.value || null)}
 					>
-						<option value="" className="text-gray-500">
-							{productionYearsLoading ? "Loading..." : "Select Year"}
-						</option>
-						{productionYearsData?.data?.map((year: string, idx: number) => (
-							<option key={idx} value={year} className="text-gray-800">
+						<option value="">{productionYearsLoading ? "Loading..." : "Select Year"}</option>
+						{productionYearsData?.data?.map((year: string) => (
+							<option key={year} value={year}>
 								{year}
 							</option>
 						))}
@@ -551,15 +505,17 @@ const BuyParts = () => {
 						className="custom-select bg-white focus:outline-none text-gray-700 font-medium text-sm w-full pl-9 pr-8 py-2.5 disabled:text-gray-400 appearance-none cursor-pointer hover:bg-gray-50 rounded-lg transition-all duration-200 disabled:cursor-not-allowed border border-gray-200 focus:border-[rgba(154,225,68,0.8)] focus:ring-2 focus:ring-[rgba(154,225,68,0.2)]"
 						disabled={!selectedProductionYear || modificationsLoading}
 						value={selectedModification ?? ""}
-						onChange={(e) => setSelectedModification(e.target.value)}
+						onChange={(e) => setSelectedModification(e.target.value || null)}
 					>
-						<option value="" className="text-gray-500">
-							{modificationsLoading ? "Loading..." : "Select Modification"}
-						</option>
-						{modificationsData?.data?.map((modification: string, idx: number) => (
-							<option key={idx} value={modification} className="text-gray-800">
-								{modification}
-							</option>
+						<option value="">{modificationsLoading ? "Loading..." : "Select Modification"}</option>
+						{modificationsData?.data?.map((model: any) => (
+							<optgroup key={model.id} label={model.name}>
+								{model.modifications.map((mod: any) => (
+									<option key={mod.id} value={mod.name}>
+										{mod.name}
+									</option>
+								))}
+							</optgroup>
 						))}
 					</select>
 					{modificationsLoading && (
@@ -570,7 +526,7 @@ const BuyParts = () => {
 				</div>
 
 				<button
-					className="flex items-center justify-center border border-[rgba(99,176,3,0.85)]   text-gray-800 font-semibold px-5 py-2.5 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
+					className="flex items-center justify-center border border-[rgba(99,176,3,0.85)] text-gray-800 font-semibold px-5 py-2.5 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98]"
 					onClick={handleSearch}
 					disabled={filteredVehiclesLoading}
 				>
@@ -594,21 +550,18 @@ const BuyParts = () => {
 			</div>
 
 			<div className="flex items-center justify-between bg-gradient-to-r from-[#D7F3B4] to-[#c5e89a] rounded-full px-4 py-3 w-full max-w-md shadow-lg hover:shadow-xl transition-all duration-300 border border-green-200">
-				{" "}
 				<div className="flex items-center flex-1 min-w-0">
-					{" "}
 					<span className="font-semibold text-gray-800 text-xs md:text-sm whitespace-nowrap mr-3">
-						{" "}
-						Search By Number Plate{" "}
-					</span>{" "}
-					<div className="h-4 w-px bg-gray-500 mr-3"></div>{" "}
-					<span className="text-lg mr-2 flex-shrink-0">🔍</span>{" "}
+						Search By Number Plate
+					</span>
+					<div className="h-4 w-px bg-gray-500 mr-3"></div>
+					<span className="text-lg mr-2 flex-shrink-0">🔍</span>
 					<input
 						type="text"
 						placeholder="IND: MH19 AD 7755"
 						className="bg-transparent outline-none text-gray-700 placeholder-gray-400 text-xs md:text-sm flex-1 min-w-0 font-medium focus:placeholder-gray-400 transition-colors duration-200"
-					/>{" "}
-				</div>{" "}
+					/>
+				</div>
 			</div>
 
 			<div className="mt-6 md:mt-8 w-full">

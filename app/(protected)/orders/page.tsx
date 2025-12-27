@@ -54,7 +54,7 @@ export default function ManageOrders() {
 	const router = useRouter();
 
 	// Fetch orders
-	const { data, isLoading, isError } = useGetOrdersQuery({});
+	const { data, isLoading, isError } = useGetOrdersQuery();
 	const orders: Order[] = data ? data.data : [];
 
 	// Helper function to get status colors

@@ -26,9 +26,8 @@ const FilterSection: React.FC = () => {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
-	const { data: filterOptionsResponse, isLoading: optionsLoading } = useGetFilterOptionsQuery({
-		undefined,
-	});
+	const { data: filterOptionsResponse, isLoading: optionsLoading } = useGetFilterOptionsQuery();
+
 	const filterOptions = filterOptionsResponse?.data;
 
 	// For category and subcategory dropdowns

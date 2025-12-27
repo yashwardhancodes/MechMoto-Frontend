@@ -5,7 +5,7 @@ import {
 	useUpdatePartMutation,
 	useGetPartQuery,
 	useRemoveCompatibilityMutation,
-	useAddCompatibilityMutation,
+	useAddCompatibilityBulkMutation, // ← Added bulk mutation
 } from "@/lib/redux/api/partApi";
 import { useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
@@ -23,15 +23,22 @@ import VehicleSelectorModal from "@/components/SearchModels/VehicleSelectorModal
 
 interface Vehicle {
 	id: number;
-	modification?: {
+	modification: {
+		model_line: any;
+		id: number;
 		name: string;
-		model_line: {
+		models: {
+			id: number;
 			name: string;
-			car_make: { name: string };
-		};
+			model_line: {
+				id: number;
+				name: string;
+				car_make: { id: number; name: string };
+			};
+		}[];
 	};
-	engine_type?: { name: string };
-	production_year?: number | string;
+	engine_type?: { id: number; name: string } | null;
+	production_year: number;
 }
 
 interface FormData {
@@ -61,9 +68,9 @@ const UpdatePart: React.FC = () => {
 	} = useGetPartQuery(partId);
 
 	const [updatePart, { isLoading: isUpdating }] = useUpdatePartMutation();
-	const [addCompatibility] = useAddCompatibilityMutation();
 	const [removeCompatibility, { isLoading: isRemovingCompatibility }] =
 		useRemoveCompatibilityMutation();
+	const [addCompatibilityBulk] = useAddCompatibilityBulkMutation(); // ← Bulk mutation
 
 	const token = useSelector((state: RootState) => state.auth.token);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -105,19 +112,15 @@ const UpdatePart: React.FC = () => {
 	const [fetchSubcategoriesByCategory, { data: filteredSubcategories }] =
 		useLazyGetSubcategoriesByCategoryIdQuery();
 
-
 	const { data: partBrandRes } = useGetAllPartBrandsQuery({ page: 1, limit: 999999 });
 
-	const subcategories = selectedCategoryId
-		? filteredSubcategories?.data
-		: [];
+	const subcategories = selectedCategoryId ? filteredSubcategories?.data : [];
 
 	useEffect(() => {
 		if (selectedCategoryId) {
 			fetchSubcategoriesByCategory(selectedCategoryId);
 		}
 	}, [selectedCategoryId, fetchSubcategoriesByCategory]);
-
 
 	const partBrands = partBrandRes?.data?.brands || [];
 
@@ -126,18 +129,18 @@ const UpdatePart: React.FC = () => {
 		if (partRes?.data) {
 			const p = partRes.data;
 			setFormData({
-				vehicleId: p.vehicleId?.toString() || "",
-				subcategoryId: p.subcategoryId?.toString() || "",
+				vehicleId: p.vehicle?.toString() || "",
+				subcategoryId: p.subcategory?.toString() || "",
 				partNumber: p.part_number || "",
 				description: p.description || "",
 				quantity: p.quantity?.toString() || "1",
 				imageUrls: p.image_urls || [],
 				price: p.price?.toString() || "",
 				remarks: p.remarks || "",
-				availabilityStatus: p.availabilityStatus || "Unavailable",
+				availabilityStatus: p.availability_status || "Unavailable",
 				origin: p.origin || "OEM",
-				partBrandId: p.part_brandId?.toString() || "",
-				discountId: p.discountId?.toString() || "",
+				partBrandId: p.part_brand?.toString() || "",
+				discountId: p.discount?.toString() || "",
 			});
 
 			if (p.subcategory) {
@@ -179,7 +182,7 @@ const UpdatePart: React.FC = () => {
 		setFormData((prev) => ({ ...prev, [name]: value.toString() }));
 	};
 
-	// Changed to accept Vehicle[]
+	// Single vehicle selection (for primary vehicle)
 	const handleVehicleSelect = (vehicles: Vehicle[]) => {
 		if (vehicles.length > 0) {
 			const vehicle = vehicles[0];
@@ -208,13 +211,11 @@ const UpdatePart: React.FC = () => {
 	const removeImage = (index: number) => {
 		const existingCount = formData.imageUrls.length;
 		if (index < existingCount) {
-			// Remove from existing URLs
 			setFormData((prev) => ({
 				...prev,
 				imageUrls: prev.imageUrls.filter((_, i) => i !== index),
 			}));
 		} else {
-			// Remove from new files
 			setNewFiles((prev) => prev.filter((_, i) => i !== index - existingCount));
 		}
 	};
@@ -226,37 +227,56 @@ const UpdatePart: React.FC = () => {
 			let finalImageUrls = [...formData.imageUrls];
 			if (newFiles.length > 0) {
 				const uploaded = await Promise.all(
-					newFiles.map((f) => uploadImageToBackend(f, token)),
+					newFiles.map((file) => uploadImageToBackend(file, token!))
 				);
 				finalImageUrls = [...finalImageUrls, ...uploaded];
 			}
 
-			const parsed = createPartSchema.parse({
-				...formData,
-				vehicleId: formData.vehicleId ? parseInt(formData.vehicleId) : undefined,
-				subcategoryId: formData.subcategoryId
-					? parseInt(formData.subcategoryId)
-					: undefined,
-				partBrandId: formData.partBrandId ? parseInt(formData.partBrandId) : undefined,
-				discountId: formData.discountId ? parseInt(formData.discountId) : undefined,
-				quantity: parseInt(formData.quantity) || 1,
-				price: parseFloat(formData.price) || undefined,
+			const payload: any = {
+				partNumber: formData.partNumber.trim() || undefined,
+				description: formData.description.trim() || undefined,
+				quantity: formData.quantity ? parseInt(formData.quantity) : undefined,
+				price: formData.price ? parseFloat(formData.price) : undefined,
+				remarks: formData.remarks.trim() || undefined,
+				availabilityStatus: formData.availabilityStatus,
+				origin: formData.origin,
 				imageUrls: finalImageUrls,
-			});
+			};
 
-			await updatePart({ id: parseInt(partId), ...parsed }).unwrap();
+			if (formData.vehicleId && !isNaN(parseInt(formData.vehicleId))) {
+				payload.vehicleId = parseInt(formData.vehicleId);
+			}
+
+			if (formData.subcategoryId && !isNaN(parseInt(formData.subcategoryId))) {
+				payload.subcategoryId = parseInt(formData.subcategoryId);
+			}
+
+			if (formData.partBrandId && !isNaN(parseInt(formData.partBrandId))) {
+				payload.partBrandId = parseInt(formData.partBrandId);
+			}
+
+			if (formData.discountId && !isNaN(parseInt(formData.discountId))) {
+				payload.discountId = parseInt(formData.discountId);
+			}
+
+			createPartSchema.parse(payload);
+
+			await updatePart({ id: partId, ...payload }).unwrap();
+
 			toast.success("Part updated successfully!");
 			window.location.href = "/vendor/manage-parts";
 		} catch (err: any) {
 			if (err instanceof z.ZodError) {
-				const errMap = err.errors.reduce((acc, e) => {
-					acc[e.path[0] as string] = e.message;
-					return acc;
-				}, {} as Record<string, string>);
-				setErrors(errMap);
-				toast.error("Please fix the validation errors");
+				const formattedErrors: Record<string, string> = {};
+				err.errors.forEach((e) => {
+					const field = e.path[0] as string;
+					formattedErrors[field] = e.message;
+				});
+				setErrors(formattedErrors);
+				toast.error("Please fix the errors below");
 			} else {
-				toast.error(err?.data?.message || "Update failed");
+				const message = err?.data?.message || "Failed to update part";
+				toast.error(message);
 			}
 		}
 	};
@@ -269,7 +289,6 @@ const UpdatePart: React.FC = () => {
 		partRes?.data?.compatibility
 			?.map((c: any) => c.vehicle?.id)
 			.filter(Boolean) || [];
-
 
 	return (
 		<div className="overflow-y-auto bg-white py-8 px-4">
@@ -355,14 +374,14 @@ const UpdatePart: React.FC = () => {
 						<span className={selectedVehicle ? "text-gray-700" : "text-gray-400"}>
 							{selectedVehicle
 								? `${selectedVehicle.modification?.model_line?.car_make?.name ||
-								""
-								} ${selectedVehicle.modification?.model_line?.name || ""} ${selectedVehicle.modification?.name
-									? `(${selectedVehicle.modification.name})`
-									: ""
-								} ${selectedVehicle.engine_type?.name
-									? `- ${selectedVehicle.engine_type.name}`
-									: ""
-								} [${selectedVehicle.production_year}]`
+										""
+								  } ${selectedVehicle.modification?.model_line?.name || ""} ${selectedVehicle.modification?.name
+										? `(${selectedVehicle.modification.name})`
+										: ""
+								  } ${selectedVehicle.engine_type?.name
+										? `- ${selectedVehicle.engine_type.name}`
+										: ""
+								  } [${selectedVehicle.production_year}]`
 								: "Click to select vehicle"}
 						</span>
 						<ChevronDown className="w-5 h-5 text-[#9AE144]" />
@@ -380,13 +399,13 @@ const UpdatePart: React.FC = () => {
 						onChange={(e) => {
 							const id = e.target.value;
 							setSelectedCategoryId(id);
-							setFormData((prev) => ({ ...prev, subcategoryId: "" })); // reset subcategory
+							setFormData((prev) => ({ ...prev, subcategoryId: "" }));
 							if (id) fetchSubcategoriesByCategory(id);
 						}}
 						className="px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144]"
 					>
 						<option value="">Select Category</option>
-						{categoryRes?.data?.categories?.map((cat: any) => (
+						{categoryRes?.data?.categories?.map((cat) => (
 							<option key={cat.id} value={cat.id}>
 								{cat.name}
 							</option>
@@ -403,8 +422,7 @@ const UpdatePart: React.FC = () => {
 						<option value="">
 							{!selectedCategoryId ? "Select Category First" : "Select Subcategory"}
 						</option>
-
-						{subcategories?.map((s: any) => (
+						{subcategories?.map((s) => (
 							<option key={s.id} value={s.id}>
 								{s.name}
 							</option>
@@ -492,7 +510,7 @@ const UpdatePart: React.FC = () => {
 								className={`h-44 w-44 border-2 border-dashed rounded-lg flex items-center justify-center text-center cursor-pointer transition-all ${isDragging
 									? "border-[#9AE144] bg-[#9AE144]/10"
 									: "border-[#808080]"
-									}`}
+								}`}
 								onDrop={handleDrop}
 								onDragOver={handleDragOver}
 								onDragLeave={handleDragLeave}
@@ -539,7 +557,6 @@ const UpdatePart: React.FC = () => {
 					>
 						{isAddingCompatibility ? "Adding..." : "Add Compatible Vehicle"}
 					</button>
-
 				</div>
 
 				{partRes?.data?.compatibility && partRes.data.compatibility.length > 0 ? (
@@ -568,8 +585,7 @@ const UpdatePart: React.FC = () => {
 												partId: parseInt(partId),
 												vehicleId: v.id,
 											}).unwrap();
-
-											refetch(); // 🔥 Refresh UI immediately
+											refetch();
 										}}
 										disabled={isRemovingCompatibility}
 										className="text-red-600 hover:text-red-700 font-medium text-sm"
@@ -588,13 +604,11 @@ const UpdatePart: React.FC = () => {
 			</div>
 
 			{/* Modals */}
-			{/* Modals */}
 			<VehicleSelectorModal
 				isOpen={isVehicleModalOpen}
 				onClose={() => setIsVehicleModalOpen(false)}
 				onSelect={handleVehicleSelect}
 				mode="single"
-			// Note: Only the first selected vehicle will be used as primary
 			/>
 			<VehicleSelectorModal
 				isOpen={isCompatibilityModalOpen}
@@ -602,36 +616,31 @@ const UpdatePart: React.FC = () => {
 				onSelect={async (vehicles: Vehicle[]) => {
 					if (vehicles.length === 0) return;
 
-
 					setIsAddingCompatibility(true);
 
-					// Filter out already compatible vehicles
-					const newVehicles = vehicles.filter(
-						(v) => !existingCompatibilityIds.includes(v.id)
-					);
+					const newVehicleIds = vehicles
+						.map((v) => v.id)
+						.filter((id) => !existingCompatibilityIds.includes(id));
 
-					let addedCount = 0;
+					if (newVehicleIds.length === 0) {
+						toast.success("Selected vehicles are already compatible");
+						setIsCompatibilityModalOpen(false);
+						setIsAddingCompatibility(false);
+						return;
+					}
 
 					try {
-						for (const vehicle of newVehicles) {
-							await addCompatibility({
-								partId: parseInt(partId),
-								vehicleId: vehicle.id,
-							}).unwrap();
-							addedCount++;
-						}
+						// SINGLE BULK CALL
+						await addCompatibilityBulk({
+							partId: parseInt(partId),
+							vehicleIds: newVehicleIds,
+						}).unwrap();
 
-						if (addedCount > 0) {
-							toast.success(`${addedCount} vehicle(s) added to compatibility`);
-							refetch();
-							setIsCompatibilityModalOpen(false);
-						} else {
-							toast("Selected vehicles are already compatible");
-							setIsCompatibilityModalOpen(false);
-						}
+						toast.success(`${newVehicleIds.length} vehicle(s) added to compatibility`);
+						refetch();
+						setIsCompatibilityModalOpen(false);
 					} catch (err: any) {
-						toast.error("Failed to add some vehicles",err?.data?.message);
-						// Do not close modal on error so user can retry
+						toast.error(err?.data?.message || "Failed to add compatibility");
 					} finally {
 						setIsAddingCompatibility(false);
 					}

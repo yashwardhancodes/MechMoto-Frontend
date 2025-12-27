@@ -1,12 +1,12 @@
-// modification.schema.ts
+// src/lib/schema/modificationSchema.ts
 import { z } from "zod";
 
 export const createModificationSchema = z.object({
-	model_lineId: z.number().int().positive("Model line ID is required"),
-	name: z.string().min(1, "Name is required"),
+	name: z.string().min(1, "Modification name is required").trim(),
+	modelIds: z.array(z.number().int().positive()).min(1, "At least one generation must be selected"),
 });
 
 export const updateModificationSchema = z.object({
-	model_lineId: z.number().int().positive().optional(),
-	name: z.string().min(1).optional(),
+	name: z.string().min(1).trim().optional(),
+	modelIds: z.array(z.number().int().positive()).min(1, "At least one generation must be selected").optional(),
 });

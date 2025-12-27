@@ -46,7 +46,7 @@ export default function ManageWishlist() {
 	const router = useRouter();
 
 	// Fetch wishlist items
-	const { data, isLoading, isError } = useGetWishlistsQuery({});
+	const { data, isLoading, isError } = useGetWishlistsQuery();
 	const wishlists = data ? data.data : [];
 
 	// Helper function to get availability status colors

@@ -1,400 +1,461 @@
+// src/lib/redux/api/partApi.ts
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { RootState } from "../store";
+import type { RootState } from "../store";
 
 // --------------------
 // TYPE DEFINITIONS
 // --------------------
-interface Shipment {
-  id: string;
-  orderId: string;
-  status: string;
+interface Part {
+	category: any;
+	reviews: boolean;
+	wishlists: boolean;
+	order_items: boolean;
+	id: number;
+	part_number: string;
+	description: string;
+	price: number;
+	quantity: number;
+	image_urls: string[];
+	availability_status: string;
+	origin: string;
+	remarks?: string;
+	created_at: string;
+	updated_at: string;
+	vehicle?: any;
+	subcategory?: any;
+	part_brand?: any;
+	discount?: any;
+	vendor?: any;
+	compatibility?: any[];
+	part_positions?: any[];
 }
 
-interface UpdateShipmentData {
-  status?: string;
+interface PartListResponse {
+	data: {
+		parts: Part[];
+		total: number;
+		page: number;
+		limit: number;
+	};
 }
 
-interface ShipmentResponse {
-  id: string;
-  status: string;
+interface VendorPartsResponse {
+	data: {
+		data: Part[];
+		meta: {
+			page: number;
+			limit: number;
+			total: number;
+			totalPages: number;
+		};
+	};
 }
 
 interface PartResponse {
-  data: {
-    parts: any[];
-    total: number;
-    page: number;
-    limit: number;
-  };
+	success?: boolean;
+	data: Part;
+	message?: string;
 }
 
+
 interface CouponResponse {
-  data: {
-    coupons: any[];
-    total: number;
-    page: number;
-    limit: number;
-  };
+	data: {
+		coupons: any[];
+		total: number;
+		page: number;
+		limit: number;
+	};
+}
+
+interface UpdateShipmentData {
+	[key: string]: any;
 }
 
 // --------------------
 // API
 // --------------------
 export const partApi = createApi({
-  reducerPath: "partApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth?.token;
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      headers.set("Content-Type", "application/json");
-      return headers;
-    },
-  }),
-  tagTypes: ["Part", "Cart", "Wishlist", "Address", "Order", "Coupon"],
+	reducerPath: "partApi",
+	baseQuery: fetchBaseQuery({
+		baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
+		prepareHeaders: (headers, { getState }) => {
+			const token = (getState() as RootState).auth?.token;
+			if (token) {
+				headers.set("Authorization", `Bearer ${token}`);
+			}
+			headers.set("Content-Type", "application/json");
+			return headers;
+		},
+	}),
+	tagTypes: ["Part", "Cart", "Wishlist", "Address", "Order", "Coupon"],
 
-  endpoints: (builder) => ({
-    // --------------------
-    // PARTS
-    // --------------------
-    getAllParts: builder.query<
-      PartResponse,
-      { page?: number; limit?: number }
-    >({
-      query: ({ page = 1, limit = 10 }) => ({
-        url: "/parts",
-        params: { page, limit },
-      }),
-      providesTags: ["Part"],
-    }),
+	endpoints: (builder) => ({
+		// --------------------
+		// PARTS
+		// --------------------
+		getAllParts: builder.query<PartListResponse, { page?: number; limit?: number }>({
+			query: ({ page = 1, limit = 10 }) => ({
+				url: "/parts",
+				params: { page, limit },
+			}),
+			providesTags: (result) =>
+				result?.data?.parts
+					? [
+							...result.data.parts.map(({ id }) => ({ type: "Part" as const, id })),
+							{ type: "Part", id: "LIST" },
+					  ]
+					: [{ type: "Part", id: "LIST" }],
+		}),
 
-    // ✅ FIXED: PAGINATED VENDOR PARTS
-    getAllPartsByVendor: builder.query<
-      any,
-      { page: number; limit: number }
-    >({
-      query: ({ page, limit }) => ({
-        url: "/parts/vendor",
-        params: { page, limit },
-      }),
+		getAllPartsByVendor: builder.query<VendorPartsResponse, { page: number; limit: number }>({
+			query: ({ page, limit }) => ({
+				url: "/parts/vendor",
+				params: { page, limit },
+			}),
+			serializeQueryArgs: ({ endpointName }) => endpointName,
+			forceRefetch({ currentArg, previousArg }) {
+				return (
+					currentArg?.page !== previousArg?.page ||
+					currentArg?.limit !== previousArg?.limit
+				);
+			},
+			providesTags: (result) =>
+				result?.data?.data
+					? [
+							...result.data.data.map(({ id }) => ({ type: "Part" as const, id })),
+							{ type: "Part", id: "LIST" },
+					  ]
+					: [{ type: "Part", id: "LIST" }],
+		}),
 
-      // 🔑 ensure pagination refetch works correctly
-      serializeQueryArgs: ({ endpointName }) => endpointName,
+		getPartsByFilters: builder.query<any, {
+			subcategoryId?: number;
+			vehicleId?: number;
+			make?: string | string[];
+			model?: string | string[];
+			year?: string | string[];
+			engine?: string | string[];
+			brand?: string | string[];
+			category?: string | string[];
+		}>({
+			query: (filters) => ({
+				url: "/parts/filter",
+				params: {
+					...filters,
+					make: filters.make ? (Array.isArray(filters.make) ? filters.make.join(",") : filters.make) : undefined,
+					model: filters.model ? (Array.isArray(filters.model) ? filters.model.join(",") : filters.model) : undefined,
+					year: filters.year ? (Array.isArray(filters.year) ? filters.year.join(",") : filters.year) : undefined,
+					engine: filters.engine ? (Array.isArray(filters.engine) ? filters.engine.join(",") : filters.engine) : undefined,
+					brand: filters.brand ? (Array.isArray(filters.brand) ? filters.brand.join(",") : filters.brand) : undefined,
+					category: filters.category ? (Array.isArray(filters.category) ? filters.category.join(",") : filters.category) : undefined,
+				},
+			}),
+			providesTags: (result) =>
+				result && Array.isArray(result)
+					? [
+							...result.map(({ id }) => ({ type: "Part" as const, id })),
+							{ type: "Part", id: "LIST" },
+					  ]
+					: [{ type: "Part", id: "LIST" }],
+		}),
 
-      forceRefetch({ currentArg, previousArg }) {
-        return (
-          currentArg?.page !== previousArg?.page ||
-          currentArg?.limit !== previousArg?.limit
-        );
-      },
+		getFilterOptions: builder.query<any, void>({
+			query: () => "/parts/filter-options",
+		}),
 
-      providesTags: ["Part"],
-    }),
+		createPart: builder.mutation<PartResponse, any>({
+			query: (partData) => ({
+				url: "/parts",
+				method: "POST",
+				body: partData,
+			}),
+			invalidatesTags: [{ type: "Part", id: "LIST" }],
+		}),
 
-    getPartsByFilters: builder.query({
-      query: ({
-        subcategoryId,
-        vehicleId,
-        make,
-        model,
-        year,
-        engine,
-        brand,
-        category,
-      }) => ({
-        url: "/parts/filter",
-        params: {
-          subcategoryId,
-          vehicleId,
-          ...(make && { make: Array.isArray(make) ? make : [make] }),
-          ...(model && { model: Array.isArray(model) ? model : [model] }),
-          ...(year && { year: Array.isArray(year) ? year : [year] }),
-          ...(engine && { engine: Array.isArray(engine) ? engine : [engine] }),
-          ...(brand && { brand: Array.isArray(brand) ? brand : [brand] }),
-          ...(category && {
-            category: Array.isArray(category) ? category : [category],
-          }),
-        },
-      }),
-      providesTags: ["Part"],
-    }),
+		getPart: builder.query<PartResponse, string>({
+			query: (id) => `/parts/${id}`,
+			providesTags: (result, error, id) => [{ type: "Part", id }],
+		}),
 
-    getFilterOptions: builder.query({
-      query: () => "/parts/filter-options",
-    }),
+		updatePart: builder.mutation<PartResponse, { id: string; data: any }>({
+			query: ({ id, data }) => ({
+				url: `/parts/${id}`,
+				method: "PUT",
+				body: data,
+			}),
+			invalidatesTags: (result, error, { id }) => [
+				{ type: "Part", id },
+				{ type: "Part", id: "LIST" },
+			],
+		}),
 
-    createPart: builder.mutation({
-      query: (partData) => ({
-        url: "/parts",
-        method: "POST",
-        body: partData,
-      }),
-      invalidatesTags: ["Part"],
-    }),
+		deletePart: builder.mutation<void, string>({
+			query: (id) => ({
+				url: `/parts/${id}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: (result, error, id) => [
+				{ type: "Part", id },
+				{ type: "Part", id: "LIST" },
+			],
+		}),
 
-    getPart: builder.query({
-      query: (id) => `/parts/${id}`,
-      providesTags: ["Part"],
-    }),
+		// --------------------
+		// CART
+		// --------------------
+		getCartItems: builder.query<any, void>({
+			query: () => "/carts",
+			providesTags: ["Cart"],
+		}),
 
-    updatePart: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/parts/${id}`,
-        method: "PUT",
-        body: data,
-      }),
-      invalidatesTags: ["Part"],
-    }),
+		addToCart: builder.mutation<any, any>({
+			query: (data) => ({
+				url: "/carts",
+				method: "POST",
+				body: data,
+			}),
+			invalidatesTags: ["Cart"],
+		}),
 
-    deletePart: builder.mutation({
-      query: (id) => ({
-        url: `/parts/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Part"],
-    }),
+		updateCartItem: builder.mutation<any, { id: string; quantity: number }>({
+			query: ({ id, quantity }) => ({
+				url: `/carts/${id}`,
+				method: "PUT",
+				body: { quantity },
+			}),
+			invalidatesTags: ["Cart"],
+		}),
 
-    // --------------------
-    // CART
-    // --------------------
-    getCartItems: builder.query({
-      query: () => "/carts",
-      providesTags: ["Cart"],
-    }),
+		removeFromCart: builder.mutation<void, string>({
+			query: (id) => ({
+				url: `/carts/${id}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: ["Cart"],
+		}),
 
-    addToCart: builder.mutation({
-      query: (data) => ({
-        url: "/carts",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Cart"],
-    }),
+		// --------------------
+		// WISHLIST
+		// --------------------
+		addToWishlist: builder.mutation<any, any>({
+			query: (data) => ({
+				url: "wishlist/toggle",
+				method: "POST",
+				body: data,
+			}),
+			invalidatesTags: ["Wishlist"],
+		}),
 
-    updateCartItem: builder.mutation({
-      query: ({ id, quantity }) => ({
-        url: `/carts/${id}`,
-        method: "PUT",
-        body: { quantity },
-      }),
-      invalidatesTags: ["Cart"],
-    }),
+		getWishlists: builder.query<any, void>({
+			query: () => "/wishlist",
+			providesTags: ["Wishlist"],
+		}),
 
-    removeFromCart: builder.mutation({
-      query: (id) => ({
-        url: `/carts/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Cart"],
-    }),
+		// --------------------
+		// ADDRESS
+		// --------------------
+		getAddresses: builder.query<any, void>({
+			query: () => "/addresses",
+			providesTags: ["Address"],
+		}),
 
-    // --------------------
-    // WISHLIST
-    // --------------------
-    addToWishlist: builder.mutation({
-      query: (data) => ({
-        url: "wishlist/toggle",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Wishlist"],
-    }),
+		createAddress: builder.mutation<any, any>({
+			query: (data) => ({
+				url: "/addresses",
+				method: "POST",
+				body: data,
+			}),
+			invalidatesTags: ["Address"],
+		}),
 
-    getWishlists: builder.query({
-      query: () => "/wishlist",
-      providesTags: ["Wishlist"],
-    }),
+		updateAddress: builder.mutation<any, { id: string; data: any }>({
+			query: ({ id, data }) => ({
+				url: `/addresses/${id}`,
+				method: "PUT",
+				body: data,
+			}),
+			invalidatesTags: ["Address"],
+		}),
 
-    // --------------------
-    // ADDRESS
-    // --------------------
-    getAddresses: builder.query({
-      query: () => "/addresses",
-      providesTags: ["Address"],
-    }),
+		deleteAddress: builder.mutation<void, string>({
+			query: (id) => ({
+				url: `/addresses/${id}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: ["Address"],
+		}),
 
-    createAddress: builder.mutation({
-      query: (data) => ({
-        url: "/addresses",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Address"],
-    }),
+		// --------------------
+		// ORDERS
+		// --------------------
+		createOrder: builder.mutation<any, any>({
+			query: (data) => ({
+				url: "/orders",
+				method: "POST",
+				body: data,
+			}),
+			invalidatesTags: ["Order", "Cart"],
+		}),
 
-    updateAddress: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/addresses/${id}`,
-        method: "PUT",
-        body: data,
-      }),
-      invalidatesTags: ["Address"],
-    }),
+		getOrder: builder.query<any, string>({
+			query: (id) => `/orders/${id}`,
+			providesTags: ["Order"],
+		}),
 
-    deleteAddress: builder.mutation({
-      query: (id) => ({
-        url: `/addresses/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Address"],
-    }),
+		getOrders: builder.query<any, void>({
+			query: () => "/orders",
+			providesTags: ["Order"],
+		}),
 
-    // --------------------
-    // ORDERS
-    // --------------------
-    createOrder: builder.mutation({
-      query: (data) => ({
-        url: "/orders",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Order", "Cart"],
-    }),
+		updateOrderStatus: builder.mutation<any, { id: string; status: string }>({
+			query: ({ id, status }) => ({
+				url: `/orders/${id}/status`,
+				method: "PATCH",
+				body: { status },
+			}),
+			invalidatesTags: ["Order"],
+		}),
 
-    getOrder: builder.query({
-      query: (id) => `/orders/${id}`,
-      providesTags: ["Order"],
-    }),
+		// --------------------
+		// SHIPMENTS
+		// --------------------
+		getShipmentsByOrder: builder.query<any, string>({
+			query: (orderId) => `/shipments/order/${orderId}`,
+		}),
 
-    getOrders: builder.query({
-      query: () => "/orders",
-      providesTags: ["Order"],
-    }),
+		updateShipment: builder.mutation<any, { id: string; data: UpdateShipmentData }>({
+			query: ({ id, data }) => ({
+				url: `/shipments/${id}`,
+				method: "PATCH",
+				body: data,
+			}),
+		}),
 
-    updateOrderStatus: builder.mutation({
-      query: ({ id, status }) => ({
-        url: `/orders/${id}/status`,
-        method: "PATCH",
-        body: { status },
-      }),
-      invalidatesTags: ["Order"],
-    }),
+		// --------------------
+		// COUPONS
+		// --------------------
+		getCoupons: builder.query<CouponResponse, { page?: number; limit?: number }>({
+			query: ({ page = 1, limit = 10 }) => ({
+				url: "/coupons",
+				params: { page, limit },
+			}),
+			providesTags: (result) =>
+				result?.data?.coupons
+					? [
+							...result.data.coupons.map(({ id }) => ({ type: "Coupon" as const, id })),
+							{ type: "Coupon", id: "LIST" },
+					  ]
+					: [{ type: "Coupon", id: "LIST" }],
+		}),
 
-    // --------------------
-    // SHIPMENTS
-    // --------------------
-    getShipmentsByOrder: builder.query<Shipment[], string>({
-      query: (orderId) => `/shipments/order/${orderId}`,
-    }),
+		getCoupon: builder.query<any, string>({
+			query: (id) => `/coupons/${id}`,
+			providesTags: (result, error, id) => [{ type: "Coupon", id }],
+		}),
 
-    updateShipment: builder.mutation<
-      ShipmentResponse,
-      { id: string; data: UpdateShipmentData }
-    >({
-      query: ({ id, data }) => ({
-        url: `/shipments/${id}`,
-        method: "PATCH",
-        body: data,
-      }),
-    }),
+		createCoupon: builder.mutation<any, any>({
+			query: (data) => ({
+				url: "/coupons",
+				method: "POST",
+				body: data,
+			}),
+			invalidatesTags: [{ type: "Coupon", id: "LIST" }],
+		}),
 
-    // --------------------
-    // COUPONS
-    // --------------------
-    getCoupons: builder.query<
-      CouponResponse,
-      { page?: number; limit?: number }
-    >({
-      query: ({ page = 1, limit = 10 }) => ({
-        url: "/coupons",
-        params: { page, limit },
-      }),
-      providesTags: ["Coupon"],
-    }),
+		updateCoupon: builder.mutation<any, { id: string; data: any }>({
+			query: ({ id, data }) => ({
+				url: `/coupons/${id}`,
+				method: "PUT",
+				body: data,
+			}),
+			invalidatesTags: (result, error, { id }) => [
+				{ type: "Coupon", id },
+				{ type: "Coupon", id: "LIST" },
+			],
+		}),
 
-    getCoupon: builder.query({
-      query: (id) => `/coupons/${id}`,
-      providesTags: ["Coupon"],
-    }),
+		deleteCoupon: builder.mutation<void, string>({
+			query: (id) => ({
+				url: `/coupons/${id}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: (result, error, id) => [
+				{ type: "Coupon", id },
+				{ type: "Coupon", id: "LIST" },
+			],
+		}),
 
-    createCoupon: builder.mutation({
-      query: (data) => ({
-        url: "/coupons",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Coupon"],
-    }),
+		// --------------------
+		// COMPATIBILITY
+		// --------------------
+		addCompatibility: builder.mutation<any, { partId: number; vehicleId: number }>({
+			query: ({ partId, vehicleId }) => ({
+				url: `/parts/${partId}/compatibility`,
+				method: "POST",
+				body: { vehicleId },
+			}),
+			invalidatesTags: (result, error, { partId }) => [
+				{ type: "Part", id: partId },
+				{ type: "Part", id: "LIST" },
+			],
+		}),
 
-    updateCoupon: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/coupons/${id}`,
-        method: "PUT",
-        body: data,
-      }),
-      invalidatesTags: ["Coupon"],
-    }),
+    addCompatibilityBulk: builder.mutation<any, { partId: number; vehicleIds: number[] }>({
+	query: ({ partId, vehicleIds }) => ({
+		url: `/parts/${partId}/compatibility/bulk`,
+		method: "POST",
+		body: { vehicleIds },
+	}),
+	invalidatesTags: (result, error, { partId }) => [
+		{ type: "Part", id: partId },
+		{ type: "Part", id: "LIST" },
+	],
+}),
 
-    deleteCoupon: builder.mutation({
-      query: (id) => ({
-        url: `/coupons/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Coupon"],
-    }),
-
-    // --------------------
-    // COMPATIBILITY
-    // --------------------
-    addCompatibility: builder.mutation({
-      query: ({ partId, vehicleId }) => ({
-        url: `/parts/${partId}/compatibility`,
-        method: "POST",
-        body: { vehicleId },
-      }),
-      invalidatesTags: (result, error, { partId }) => [
-        { type: "Part", id: partId },
-      ],
-    }),
-	
-
-    removeCompatibility: builder.mutation({
-      query: ({ partId, vehicleId }) => ({
-        url: `/parts/${partId}/compatibility/${vehicleId}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: (result, error, { partId }) => [
-        { type: "Part", id: partId },
-      ],
-    }),
-  }),
+		removeCompatibility: builder.mutation<any, { partId: number; vehicleId: number }>({
+			query: ({ partId, vehicleId }) => ({
+				url: `/parts/${partId}/compatibility/${vehicleId}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: (result, error, { partId }) => [
+				{ type: "Part", id: partId },
+				{ type: "Part", id: "LIST" },
+			],
+		}),
+	}),
 });
 
-// --------------------
-// EXPORT HOOKS
-// --------------------
 export const {
-  useGetAllPartsQuery,
-  useGetAllPartsByVendorQuery,
-  useGetPartsByFiltersQuery,
-  useGetFilterOptionsQuery,
-  useCreatePartMutation,
-  useGetPartQuery,
-  useUpdatePartMutation,
-  useDeletePartMutation,
-  useGetCartItemsQuery,
-  useAddToCartMutation,
-  useAddToWishlistMutation,
-  useGetWishlistsQuery,
-  useUpdateCartItemMutation,
-  useRemoveFromCartMutation,
-  useGetAddressesQuery,
-  useCreateAddressMutation,
-  useUpdateAddressMutation,
-  useDeleteAddressMutation,
-  useCreateOrderMutation,
-  useGetOrderQuery,
-  useGetOrdersQuery,
-  useUpdateOrderStatusMutation,
-  useGetShipmentsByOrderQuery,
-  useUpdateShipmentMutation,
-  useGetCouponsQuery,
-  useGetCouponQuery,
-  useCreateCouponMutation,
-  useUpdateCouponMutation,
-  useDeleteCouponMutation,
-  useAddCompatibilityMutation,
-  useRemoveCompatibilityMutation,
+	useGetAllPartsQuery,
+	useGetAllPartsByVendorQuery,
+	useGetPartsByFiltersQuery,
+	useGetFilterOptionsQuery,
+	useCreatePartMutation,
+	useGetPartQuery,
+	useUpdatePartMutation,
+	useDeletePartMutation,
+	useGetCartItemsQuery,
+	useAddToCartMutation,
+	useAddToWishlistMutation,
+	useGetWishlistsQuery,
+	useUpdateCartItemMutation,
+	useRemoveFromCartMutation,
+	useGetAddressesQuery,
+	useCreateAddressMutation,
+	useUpdateAddressMutation,
+	useDeleteAddressMutation,
+	useCreateOrderMutation,
+	useGetOrderQuery,
+	useGetOrdersQuery,
+	useUpdateOrderStatusMutation,
+	useGetShipmentsByOrderQuery,
+	useUpdateShipmentMutation,
+	useGetCouponsQuery,
+	useGetCouponQuery,
+	useCreateCouponMutation,
+	useUpdateCouponMutation,
+	useDeleteCouponMutation,
+	useAddCompatibilityMutation,
+	useRemoveCompatibilityMutation,
+  useAddCompatibilityBulkMutation,
 } = partApi;

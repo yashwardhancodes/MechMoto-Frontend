@@ -1,31 +1,33 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { z } from "zod";
-import { toast } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useRouter, useParams } from "next/navigation";
 import { useGetVehicleQuery, useUpdateVehicleMutation } from "@/lib/redux/api/vehicleApi";
 import { useGetAllCarMakesQuery } from "@/lib/redux/api/caeMakeApi";
 import { useGetAllEngineTypesQuery } from "@/lib/redux/api/engineTypeApi";
-import { useGetAllModificationsQuery } from "@/lib/redux/api/modificationApi";
 import { useGetModelLinesQuery } from "@/lib/redux/api/modelLineApi";
+import { useGetAllModificationsQuery } from "@/lib/redux/api/modificationApi";
+import { useLazyGetGenerationsByModelLineQuery } from "@/lib/redux/api/modelApi";
 import { vehicleSchema } from "@/lib/schema/vehicleSchema";
 
 interface FormData {
 	carMakeId: number | null;
 	modelLineId: number | null;
-	productionYear: string;
+	generationId: number | null;
 	modificationId: number | null;
+	productionYear: string;
 	engineTypeId: number | null;
 }
 
 const UpdateVehicle: React.FC = () => {
 	const router = useRouter();
-	const { vehicleId } = useParams(); // ✅ vehicle ID from route like /admin/vehicles/[id]/edit
+	const { vehicleId } = useParams() as { vehicleId: string };
 
 	const {
-		data: vehicleData,
+		data: vehicleResponse,
 		isLoading: vehicleLoading,
 		error: vehicleError,
 	} = useGetVehicleQuery(vehicleId);
@@ -34,106 +36,146 @@ const UpdateVehicle: React.FC = () => {
 	const [formData, setFormData] = useState<FormData>({
 		carMakeId: null,
 		modelLineId: null,
-		productionYear: "",
+		generationId: null,
 		modificationId: null,
+		productionYear: "",
 		engineTypeId: null,
 	});
-	const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+const [, setErrors] = useState<Record<string, string>>({});
 
 	// Fetch options
 	const { data: carMakesResponse, isLoading: carMakesLoading } = useGetAllCarMakesQuery({
 		page: 1,
 		limit: 999999,
 	});
+
 	const { data: engineTypesResponse } = useGetAllEngineTypesQuery({
 		page: 1,
 		limit: 999999,
 	});
-	const { data: modificationsResponse } = useGetAllModificationsQuery({ page: 1, limit: 999999 });
-	const { data: modelLineData } = useGetModelLinesQuery(
+
+	const { data: modificationsResponse } = useGetAllModificationsQuery({
+		page: 1,
+		limit: 999999,
+	});
+
+	const { data: modelLinesResponse, isFetching: modelLinesLoading } = useGetModelLinesQuery(
 		formData.carMakeId ? { car_make: formData.carMakeId } : {},
 		{ skip: !formData.carMakeId },
 	);
 
-	// Dropdown states
-	const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
-	const [modelLineDropdown, setModelLineDropdown] = useState(false);
-	const [modificationDropdown, setModificationDropdown] = useState(false);
-	const [engineDropdownOpen, setEngineDropdownOpen] = useState(false);
+	// Lazy query for generations
+	const [triggerGenerations, { data: generationsData, isFetching: generationsLoading }] =
+		useLazyGetGenerationsByModelLineQuery();
 
-	// Derived data
-	const carMakes = carMakesResponse?.data?.carMakes ?? [];
-	const modelLines = modelLineData?.data ?? [];
-	const modifications = formData.modelLineId
-		? modificationsResponse?.data?.modifications?.filter(
-				(m: any) => m.model_lineId === formData.modelLineId,
-		  ) ?? []
+	// Dropdown open states
+	const [makeOpen, setMakeOpen] = useState(false);
+	const [modelLineOpen, setModelLineOpen] = useState(false);
+	const [generationOpen, setGenerationOpen] = useState(false);
+	const [modificationOpen, setModificationOpen] = useState(false);
+	const [engineOpen, setEngineOpen] = useState(false);
+
+	// Extracted data
+	const carMakes = carMakesResponse?.data?.carMakes || [];
+	const modelLines = modelLinesResponse?.data || [];
+	const generations = generationsData || [];
+	const allModifications = modificationsResponse?.data?.modifications || [];
+
+	// FIXED: Filter	 modifications linked to selected generation
+	const modifications = formData.generationId
+		? allModifications.filter((mod: any) =>
+				mod.models?.some((model: any) => model.id === formData.generationId)
+		  )
 		: [];
-	const engineTypes = engineTypesResponse?.data?.engineTypes ?? [];
+
+	const engineTypes = engineTypesResponse?.data?.engineTypes || [];
 
 	// Prefill form when vehicle data loads
 	useEffect(() => {
-		if (vehicleData?.data) {
-			const v = vehicleData.data;
-			setFormData({
-				carMakeId: v?.modification?.model_line?.car_make?.id ?? null,
-				modelLineId: v?.modification?.model_line?.id ?? null,
-				productionYear: v?.production_year?.toString() ?? "",
-				modificationId: v?.modification?.id ?? null,
-				engineTypeId: v?.engine_type?.id ?? null,
-			});
+		if (vehicleResponse?.data) {
+			const v = vehicleResponse.data;
+			const firstModel = v.modification.models[0]; // First linked generation
+
+			if (firstModel) {
+				setFormData({
+					carMakeId: firstModel.model_line.car_make.id,
+					modelLineId: firstModel.model_line.id,
+					generationId: firstModel.id,
+					modificationId: v.modification.id,
+					productionYear: v.production_year.toString(),
+					engineTypeId: v.engine_type?.id || null,
+				});
+			}
 		}
-	}, [vehicleData]);
+	}, [vehicleResponse]);
 
-	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, value } = e.target;
-		setFormData((prev) => ({ ...prev, [name]: value }));
-		if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+	// Load generations when model line changes
+	useEffect(() => {
+		if (formData.modelLineId) {
+			triggerGenerations(formData.modelLineId);
+		}
+	}, [formData.modelLineId, triggerGenerations]);
+
+	// Reset modification when generation changes
+	useEffect(() => {
+		setFormData((prev) => ({ ...prev, modificationId: null }));
+	}, [formData.generationId]);
+
+	const handleSelect = (field: keyof FormData, value: number | null) => {
+		setFormData((prev) => ({
+			...prev,
+			[field]: value,
+			// Reset downstream
+			...(field === "carMakeId" && { modelLineId: null, generationId: null, modificationId: null }),
+			...(field === "modelLineId" && { generationId: null, modificationId: null }),
+			...(field === "generationId" && { modificationId: null }),
+		}));
 	};
 
-	const handleSelectChange = (field: keyof FormData, value: string | number | null) => {
-		setFormData((prev) => ({ ...prev, [field]: value }));
-		if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+	const handleYearChange = (value: string) => {
+		const numValue = value.replace(/\D/g, "").slice(0, 4);
+		setFormData((prev) => ({ ...prev, productionYear: numValue }));
 	};
+
+	const isFormValid = () =>
+		formData.carMakeId !== null &&
+		formData.modelLineId !== null &&
+		formData.generationId !== null &&
+		formData.modificationId !== null &&
+		formData.productionYear.length === 4;
 
 	const handleSubmit = async () => {
 		try {
 			setErrors({});
+
 			const payload = {
-				carMakeId: formData.carMakeId,
-				modificationId: formData.modificationId,
+				modificationId: formData.modificationId!,
 				productionYear: Number(formData.productionYear),
-				engineTypeId: formData.engineTypeId,
+				engineTypeId: formData.engineTypeId ?? undefined,
 			};
 
-			const parsedData = vehicleSchema.parse(payload);
-			const result = await updateVehicle({ id: vehicleId, ...parsedData }).unwrap();
+			vehicleSchema.parse(payload);
+			await updateVehicle({ id: vehicleId, ...payload }).unwrap();
 
-			if (result?.success) {
-				toast.success("Vehicle updated successfully!");
-				router.push("/admin/manage-vehicles?refresh=true");
-			} else {
-				toast.error("Vehicle update failed!");
-			}
-		} catch (err: unknown) {
+			toast.success("Vehicle updated successfully!");
+			router.push("/admin/manage-vehicles");
+		} catch (err: any) {
 			if (err instanceof z.ZodError) {
-				const formattedErrors: { [key: string]: string } = {};
+				const formatted: Record<string, string> = {};
 				err.errors.forEach((e) => {
-					const key = e.path[0] as string;
-					formattedErrors[key] = e.message;
+					formatted[e.path[0] as string] = e.message;
 				});
-				setErrors(formattedErrors);
-				Object.values(formattedErrors).forEach((error) => toast.error(error));
+				setErrors(formatted);
+				Object.values(formatted).forEach((msg) => toast.error(msg));
 			} else {
-				toast.error("Error updating vehicle!");
-				console.error(err);
+				toast.error(err?.data?.message || "Failed to update vehicle");
 			}
 		}
 	};
 
-	if (vehicleLoading) return <div className="p-8 text-center">Loading vehicle data...</div>;
-	if (vehicleError)
-		return <div className="p-8 text-red-500 text-center">Failed to load vehicle data</div>;
+	if (vehicleLoading) return <div className="p-8 text-center">Loading vehicle...</div>;
+	if (vehicleError) return <div className="p-8 text-red-500 text-center">Failed to load vehicle</div>;
 
 	return (
 		<div className="h-[calc(100vh-170px)] overflow-y-auto bg-white shadow-sm py-16 px-4">
@@ -141,70 +183,70 @@ const UpdateVehicle: React.FC = () => {
 				<h2 className="text-2xl font-semibold mb-8">Update Vehicle</h2>
 
 				<div className="space-y-9">
-					{/* --- Car Make & Model Line --- */}
+					{/* Car Make & Model Line */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						{/* Car Make */}
 						<div className="relative">
 							<button
 								type="button"
-								onClick={() => setBrandDropdownOpen(!brandDropdownOpen)}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
+								onClick={() => setMakeOpen(!makeOpen)}
+								className="w-full px-4 py-3 border border-gray-400 rounded-lg flex justify-between items-center disabled:opacity-60"
 								disabled={carMakesLoading}
 							>
-								<span>
-									{formData.carMakeId
-										? carMakes.find((c) => c.id === formData.carMakeId)?.name
+								<span className={formData.carMakeId ? "text-gray-900" : "text-gray-500"}>
+									{carMakesLoading
+										? "Loading..."
+										: formData.carMakeId
+										? carMakes.find((m) => m.id === formData.carMakeId)?.name
 										: "Select Car Make"}
 								</span>
-								<ChevronDown
-									className={`w-5 h-5 ${brandDropdownOpen ? "rotate-180" : ""}`}
-								/>
+								<ChevronDown className={`w-5 h-5 text-[#9AE144] transition-transform ${makeOpen ? "rotate-180" : ""}`} />
 							</button>
-							{brandDropdownOpen && (
-								<div className="absolute top-full left-0 right-0 bg-white border rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-									{carMakes.map((brand) => (
+							{makeOpen && carMakes.length > 0 && (
+								<div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+									{carMakes.map((make) => (
 										<button
-											key={brand.id}
+											key={make.id}
+											type="button"
 											onClick={() => {
-												handleSelectChange("carMakeId", brand.id);
-												setBrandDropdownOpen(false);
+												handleSelect("carMakeId", make.id);
+												setMakeOpen(false);
 											}}
-											className="w-full px-4 py-2 text-left hover:bg-gray-50"
+											className="w-full px-4 py-2 text-left hover:bg-gray-100"
 										>
-											{brand.name}
+											{make.name}
 										</button>
 									))}
 								</div>
 							)}
 						</div>
 
-						{/* Model Line */}
 						<div className="relative">
 							<button
 								type="button"
-								onClick={() => setModelLineDropdown(!modelLineDropdown)}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
+								onClick={() => setModelLineOpen(!modelLineOpen)}
+								className="w-full px-4 py-3 border border-gray-400 rounded-lg flex justify-between items-center disabled:opacity-60"
+								disabled={!formData.carMakeId || modelLinesLoading}
 							>
-								<span>
-									{formData.modelLineId
-										? modelLines.find((m) => m.id === formData.modelLineId)
-												?.name
+								<span className={formData.modelLineId ? "text-gray-900" : "text-gray-500"}>
+									{modelLinesLoading
+										? "Loading..."
+										: formData.modelLineId
+										? modelLines.find((m) => m.id === formData.modelLineId)?.name
 										: "Select Model Line"}
 								</span>
-								<ChevronDown
-									className={`w-5 h-5 ${modelLineDropdown ? "rotate-180" : ""}`}
-								/>
+								<ChevronDown className={`w-5 h-5 text-[#9AE144] transition-transform ${modelLineOpen ? "rotate-180" : ""}`} />
 							</button>
-							{modelLineDropdown && (
-								<div className="absolute top-full left-0 right-0 bg-white border rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+							{modelLineOpen && modelLines.length > 0 && (
+								<div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
 									{modelLines.map((line) => (
 										<button
 											key={line.id}
+											type="button"
 											onClick={() => {
-												handleSelectChange("modelLineId", line.id);
-												setModelLineDropdown(false);
+												handleSelect("modelLineId", line.id);
+												setModelLineOpen(false);
 											}}
-											className="w-full px-4 py-2 text-left hover:bg-gray-50"
+											className="w-full px-4 py-2 text-left hover:bg-gray-100"
 										>
 											{line.name}
 										</button>
@@ -214,38 +256,68 @@ const UpdateVehicle: React.FC = () => {
 						</div>
 					</div>
 
-					{/* --- Modification & Engine --- */}
+					{/* Generation & Modification */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						{/* Modification */}
 						<div className="relative">
 							<button
 								type="button"
-								onClick={() => setModificationDropdown(!modificationDropdown)}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
+								onClick={() => setGenerationOpen(!generationOpen)}
+								className="w-full px-4 py-3 border border-gray-400 rounded-lg flex justify-between items-center disabled:opacity-60"
+								disabled={!formData.modelLineId || generationsLoading}
 							>
-								<span>
-									{formData.modificationId
-										? modifications.find(
-												(m) => m.id === formData.modificationId,
-										  )?.name
-										: "Select Modification"}
+								<span className={formData.generationId ? "text-gray-900" : "text-gray-500"}>
+									{generationsLoading
+										? "Loading generations..."
+										: formData.generationId
+										? generations.find((g) => g.id === formData.generationId)?.name
+										: "Select Generation"}
 								</span>
-								<ChevronDown
-									className={`w-5 h-5 ${
-										modificationDropdown ? "rotate-180" : ""
-									}`}
-								/>
+								<ChevronDown className={`w-5 h-5 text-[#9AE144] transition-transform ${generationOpen ? "rotate-180" : ""}`} />
 							</button>
-							{modificationDropdown && (
-								<div className="absolute top-full left-0 right-0 bg-white border rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-									{modifications.map((mod) => (
+							{generationOpen && generations.length > 0 && (
+								<div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+									{generations.map((gen) => (
+										<button
+											key={gen.id}
+											type="button"
+											onClick={() => {
+												handleSelect("generationId", gen.id);
+												setGenerationOpen(false);
+											}}
+											className="w-full px-4 py-2 text-left hover:bg-gray-100"
+										>
+											{gen.name}
+										</button>
+									))}
+								</div>
+							)}
+						</div>
+
+						<div className="relative">
+							<button
+								type="button"
+								onClick={() => setModificationOpen(!modificationOpen)}
+								className="w-full px-4 py-3 border border-gray-400 rounded-lg flex justify-between items-center disabled:opacity-60"
+								disabled={modifications.length === 0}
+							>
+								<span className={formData.modificationId ? "text-gray-900" : "text-gray-500"}>
+									{formData.modificationId
+										? modifications.find((m) => m.id === formData.modificationId)?.name
+										: "Select Variant"}
+								</span>
+								<ChevronDown className={`w-5 h-5 text-[#9AE144] transition-transform ${modificationOpen ? "rotate-180" : ""}`} />
+							</button>
+							{modificationOpen && modifications.length > 0 && (
+								<div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+									{modifications.map((mod: any) => (
 										<button
 											key={mod.id}
+											type="button"
 											onClick={() => {
-												handleSelectChange("modificationId", mod.id);
-												setModificationDropdown(false);
+												handleSelect("modificationId", mod.id);
+												setModificationOpen(false);
 											}}
-											className="w-full px-4 py-2 text-left hover:bg-gray-50"
+											className="w-full px-4 py-2 text-left hover:bg-gray-100 pl-8"
 										>
 											{mod.name}
 										</button>
@@ -253,34 +325,55 @@ const UpdateVehicle: React.FC = () => {
 								</div>
 							)}
 						</div>
+					</div>
 
-						{/* Engine Type */}
+					{/* Year & Engine Type */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div>
+							<input
+								type="text"
+								placeholder="Production Year (e.g. 2020)"
+								value={formData.productionYear}
+								onChange={(e) => handleYearChange(e.target.value)}
+								className="w-full px-4 py-3 border border-gray-400 rounded-lg"
+								maxLength={4}
+							/>
+						</div>
+
 						<div className="relative">
 							<button
 								type="button"
-								onClick={() => setEngineDropdownOpen(!engineDropdownOpen)}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
+								onClick={() => setEngineOpen(!engineOpen)}
+								className="w-full px-4 py-3 border border-gray-400 rounded-lg flex justify-between items-center"
 							>
-								<span>
+								<span className={formData.engineTypeId ? "text-gray-900" : "text-gray-500"}>
 									{formData.engineTypeId
-										? engineTypes.find((e) => e.id === formData.engineTypeId)
-												?.name
-										: "Select Engine Type"}
+										? engineTypes.find((e) => e.id === formData.engineTypeId)?.name
+										: "Select Engine Type (Optional)"}
 								</span>
-								<ChevronDown
-									className={`w-5 h-5 ${engineDropdownOpen ? "rotate-180" : ""}`}
-								/>
+								<ChevronDown className={`w-5 h-5 text-[#9AE144] transition-transform ${engineOpen ? "rotate-180" : ""}`} />
 							</button>
-							{engineDropdownOpen && (
-								<div className="absolute top-full left-0 right-0 bg-white border rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+							{engineOpen && engineTypes.length > 0 && (
+								<div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+									<button
+										type="button"
+										onClick={() => {
+											handleSelect("engineTypeId", null);
+											setEngineOpen(false);
+										}}
+										className="w-full px-4 py-2 text-left hover:bg-gray-100 text-gray-500"
+									>
+										None
+									</button>
 									{engineTypes.map((engine) => (
 										<button
 											key={engine.id}
+											type="button"
 											onClick={() => {
-												handleSelectChange("engineTypeId", engine.id);
-												setEngineDropdownOpen(false);
+												handleSelect("engineTypeId", engine.id);
+												setEngineOpen(false);
 											}}
-											className="w-full px-4 py-2 text-left hover:bg-gray-50"
+											className="w-full px-4 py-2 text-left hover:bg-gray-100"
 										>
 											{engine.name}
 										</button>
@@ -290,25 +383,12 @@ const UpdateVehicle: React.FC = () => {
 						</div>
 					</div>
 
-					{/* --- Production Year --- */}
-					<div>
-						<input
-							type="text"
-							name="productionYear"
-							placeholder="Production Year"
-							value={formData.productionYear}
-							onChange={handleInputChange}
-							className="w-full px-4 py-3 border border-[#808080] rounded-lg"
-						/>
-					</div>
-
-					{/* --- Submit --- */}
-					<div className="flex justify-end pt-3">
+					{/* Submit */}
+					<div className="flex justify-end pt-6">
 						<button
-							type="button"
 							onClick={handleSubmit}
-							disabled={updating}
-							className="px-8 py-3 bg-[#9AE144] text-black font-medium rounded-lg disabled:opacity-50"
+							disabled={!isFormValid() || updating}
+							className="px-10 py-3 bg-[#9AE144] hover:bg-[#8cd136] text-black font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition"
 						>
 							{updating ? "Updating..." : "Update Vehicle"}
 						</button>
