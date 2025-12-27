@@ -76,7 +76,7 @@ const UpdateCoupon: React.FC = () => {
 		}
 	}, [coupon]);
 
-	
+
 
 
 	const handleInputChange = (
@@ -124,7 +124,11 @@ const UpdateCoupon: React.FC = () => {
 			});
 			console.log("✅ Valid Data:", parsedData);
 
-			const result = await updateCoupon({ id: parseInt(couponId), ...parsedData }).unwrap();
+			const result = await updateCoupon({
+				id: couponId,
+				data: parsedData,
+			}).unwrap();
+
 			console.log("✅ API Response:", result);
 
 			if (result?.success) {

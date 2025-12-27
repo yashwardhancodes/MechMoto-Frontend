@@ -3,434 +3,387 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { z } from "zod";
-import { toast } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useCreateVehicleMutation } from "@/lib/redux/api/vehicleApi";
 import { useGetAllCarMakesQuery } from "@/lib/redux/api/caeMakeApi";
 import { useGetAllEngineTypesQuery } from "@/lib/redux/api/engineTypeApi";
 import { vehicleSchema } from "@/lib/schema/vehicleSchema";
 import { useRouter } from "next/navigation";
-import { useGetAllModificationsQuery } from "@/lib/redux/api/modificationApi";
 import { useGetModelLinesQuery } from "@/lib/redux/api/modelLineApi";
+import { useGetAllModificationsQuery } from "@/lib/redux/api/modificationApi";
+import { useLazyGetGenerationsByModelLineQuery } from "@/lib/redux/api/modelApi";
 
 interface FormData {
 	carMakeId: number | null;
 	modelLineId: number | null;
-	productionYear: string;
+	generationId: number | null;
 	modificationId: number | null;
+	productionYear: string;
 	engineTypeId: number | null;
 }
 
 const AddVehicle: React.FC = () => {
-  const router = useRouter();
-  const [formData, setFormData] = useState<FormData>({
+	const router = useRouter();
+	const [formData, setFormData] = useState<FormData>({
 		carMakeId: null,
-    modelLineId: null,
-		productionYear: "",
+		modelLineId: null,
+		generationId: null,
 		modificationId: null,
+		productionYear: "",
 		engineTypeId: null,
-  });
+	});
 
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [addVehicle, { isLoading }] = useCreateVehicleMutation();
-  const { data: carMakesResponse, isLoading: carMakesLoading, error: carMakesError } = useGetAllCarMakesQuery({page: 1, limit: 9999999});
-  const {
-		data: modificationsResponse,
-		isLoading: modificationsLoading,
-		error: modificationsError,
-  } = useGetAllModificationsQuery({page: 1, limit: 999999});
-  const { data: modelLineData } = useGetModelLinesQuery(
-      formData.carMakeId ? { car_make: formData.carMakeId } : {},
-      { skip: !formData.carMakeId },
-    );
-  const { data: engineTypesResponse, isLoading: engineTypesLoading, error: engineTypesError } = useGetAllEngineTypesQuery({page: 1, limit: 999999});
+	const [errors, setErrors] = useState<Record<string, string>>({});
+	const [addVehicle, { isLoading }] = useCreateVehicleMutation();
 
-  const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
-  const [modelLineDropdown, setModelLineDropdown] = useState(false);
-  const [modificationDropdown, setModificationDropdown] = useState(false);
-  const [engineDropdownOpen, setEngineDropdownOpen] = useState(false);
+	const { data: carMakesResponse, isLoading: carMakesLoading } = useGetAllCarMakesQuery({
+		page: 1,
+		limit: 999999,
+	});
 
-  // ✅ Wrap in useMemo to fix dependency warnings
-  const carMakes = carMakesResponse?.data?.carMakes;
-  const modelLines = modelLineData?.data;
-  const modifications = formData.modelLineId ? modificationsResponse?.data?.modifications?.filter(modi => modi.model_lineId === formData.modelLineId) : null;
-  console.log("modifications response", modificationsResponse);
-  console.log("model line", modelLineData);
-  const engineTypes = engineTypesResponse?.data?.engineTypes;
+	const { data: engineTypesResponse, isLoading: engineTypesLoading } = useGetAllEngineTypesQuery({
+		page: 1,
+		limit: 999999,
+	});
 
-  useEffect(() => {
-    console.log("carMakesResponse:", carMakesResponse);
-    console.log("engineTypesResponse:", engineTypesResponse);
-    console.log("carMakes:", carMakes);
-    console.log("engineTypes:", engineTypes);
-    console.log("formData:", formData);
-  }, [carMakesResponse, engineTypesResponse, carMakes, engineTypes, formData]);
+	const { data: modelLinesResponse, isFetching: modelLinesLoading } = useGetModelLinesQuery(
+		formData.carMakeId ? { car_make: formData.carMakeId } : {},
+		{ skip: !formData.carMakeId },
+	);
 
-  useEffect(() => {
-    if (carMakesError) {
-      toast.error("Failed to load car makes. Please try again.");
-    }
-    if (engineTypesError) {
-      toast.error("Failed to load engine types. Please try again.");
-    }
-    if (modificationsError) {
-      toast.error("Failed to load modifications. Please try again.");
-    }
-  }, [carMakesError, engineTypesError, modificationsError]);
+	const { data: modificationsResponse } = useGetAllModificationsQuery({
+		page: 1,
+		limit: 999999,
+	});
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value ?? "",
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
+	// Lazy query for generations
+	const [triggerGenerations, { data: generationsData, isFetching: generationsLoading }] =
+		useLazyGetGenerationsByModelLineQuery();
 
-  const handleSelectChange = (field: keyof FormData, value: string | number | null) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-  };
+	// Dropdown open states
+	const [makeOpen, setMakeOpen] = useState(false);
+	const [modelLineOpen, setModelLineOpen] = useState(false);
+	const [generationOpen, setGenerationOpen] = useState(false);
+	const [modificationOpen, setModificationOpen] = useState(false);
+	const [engineOpen, setEngineOpen] = useState(false);
 
-  const isFormValid = () => {
-    return (
-      formData.carMakeId !== null &&
-      formData.modificationId !== null &&
-      // formData.modelLine.trim() !== "" &&
-      !isNaN(Number(formData.productionYear)) &&
-      Number(formData.productionYear) > 0
-    );
-  };
+	// Extracted data
+	const carMakes = carMakesResponse?.data?.carMakes || [];
+	const modelLines = modelLinesResponse?.data || [];
+	const generations = generationsData || [];
+	const allModifications = modificationsResponse?.data?.modifications || [];
 
-  const handleSubmit = async () => {
-    try {
-      setErrors({});
+	// FIXED: Filter modifications that are linked to the selected generation
+	const modifications = formData.generationId
+		? allModifications.filter((mod: any) =>
+				mod.models?.some((model: any) => model.id === formData.generationId)
+		  )
+		: [];
 
-      const payload = {
-			carMakeId: formData.carMakeId,
-			// modelLine: formData.modelLine ?? "",
-			productionYear: Number(formData.productionYear) || 0,
-			modificationId: formData.modificationId,
-			engineTypeId: formData.engineTypeId,
-		};
+	const engineTypes = engineTypesResponse?.data?.engineTypes || [];
 
-      console.log("Submitting payload:", payload);
+	// Load generations when model line selected
+	useEffect(() => {
+		if (formData.modelLineId) {
+			triggerGenerations(formData.modelLineId, true);
+		} else {
+			setFormData((prev) => ({
+				...prev,
+				generationId: null,
+				modificationId: null,
+			}));
+		}
+	}, [formData.modelLineId, triggerGenerations]);
 
-      const parsedData = vehicleSchema.parse(payload);
-      console.log("✅ Valid Data:", parsedData);
+	// Reset modification when generation changes
+	useEffect(() => {
+		setFormData((prev) => ({ ...prev, modificationId: null }));
+	}, [formData.generationId]);
 
-      const result = await addVehicle(parsedData).unwrap();
-      console.log("✅ API Response:", result);
+	const handleSelect = (field: keyof FormData, value: number | null) => {
+		setFormData((prev) => ({
+			...prev,
+			[field]: value,
+			// Reset downstream fields
+			...(field === "carMakeId" && { modelLineId: null, generationId: null, modificationId: null }),
+			...(field === "modelLineId" && { generationId: null, modificationId: null }),
+			...(field === "generationId" && { modificationId: null }),
+		}));
+		setErrors((prev) => ({ ...prev, [field]: "" }));
+	};
 
-      if (result?.success) {
-        toast.success("Vehicle added successfully!");
-        router.push("/admin/manage-vehicles?refresh=true");
-      } else {
-        toast.error("Vehicle addition failed. Please try again.");
-      }
-    } catch (err: unknown) {
-      if (err instanceof z.ZodError) {
-        const formattedErrors: { [key: string]: string } = {};
-        err.errors.forEach((e) => {
-          const key = e.path[0] as string;
-          formattedErrors[key] = e.message;
-        });
-        setErrors(formattedErrors);
-        Object.values(formattedErrors).forEach((error) => toast.error(error));
-      } else {
-        console.error("❌ Error:", err);
-        toast.error((err as { data?: { message?: string } })?.data?.message || "Something went wrong!");
-      }
-    }
-  };
+	const handleYearChange = (value: string) => {
+		const numValue = value.replace(/\D/g, "").slice(0, 4);
+		setFormData((prev) => ({ ...prev, productionYear: numValue }));
+		if (errors.productionYear) {
+			setErrors((prev) => ({ ...prev, productionYear: "" }));
+		}
+	};
 
-  return (
+	const isFormValid = () =>
+		formData.carMakeId !== null &&
+		formData.modelLineId !== null &&
+		formData.generationId !== null &&
+		formData.modificationId !== null &&
+		formData.productionYear.length === 4 &&
+		!isNaN(Number(formData.productionYear));
+
+	const handleSubmit = async () => {
+		try {
+			setErrors({});
+
+			const payload = {
+				modificationId: formData.modificationId!,
+				productionYear: Number(formData.productionYear),
+				engineTypeId: formData.engineTypeId ?? undefined,
+			};
+
+			vehicleSchema.parse(payload);
+			await addVehicle(payload).unwrap();
+
+			toast.success("Vehicle added successfully!");
+			router.push("/admin/manage-vehicles");
+		} catch (err: any) {
+			if (err instanceof z.ZodError) {
+				const formatted: Record<string, string> = {};
+				err.errors.forEach((e) => {
+					const field = e.path[0] as string;
+					formatted[field] = e.message;
+				});
+				setErrors(formatted);
+				Object.values(formatted).forEach((msg) => toast.error(msg));
+			} else {
+				toast.error(err?.data?.message || "Failed to add vehicle");
+			}
+		}
+	};
+
+	return (
 		<div className="h-[calc(100vh-170px)] overflow-y-auto bg-white shadow-sm py-16 px-4">
 			<div className="max-w-5xl mx-auto">
 				<div className="space-y-9">
-					{/* Brand & Model */}
+					{/* Car Make & Model Line */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						{/* Car Make Dropdown */}
+						{/* Car Make */}
 						<div className="relative">
 							<button
 								type="button"
-								onClick={() => setBrandDropdownOpen(!brandDropdownOpen)}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
-								disabled={carMakesLoading || !!carMakesError}
+								onClick={() => setMakeOpen(!makeOpen)}
+								className="w-full px-4 py-3 border border-gray-400 rounded-lg flex justify-between items-center disabled:opacity-60"
+								disabled={carMakesLoading}
 							>
-								<span
-									className={
-										formData.carMakeId && carMakes?.length > 0
-											? "text-gray-700"
-											: "text-gray-400"
-									}
-								>
+								<span className={formData.carMakeId ? "text-gray-900" : "text-gray-500"}>
 									{carMakesLoading
-										? "Loading..."
-										: carMakesError
-										? "Error loading makes"
+										? "Loading makes..."
 										: formData.carMakeId
-										? carMakes.find((b) => b.id === formData.carMakeId)?.name ||
-										  "Select Car Make"
+										? carMakes.find((m) => m.id === formData.carMakeId)?.name
 										: "Select Car Make"}
 								</span>
-								<ChevronDown
-									className={`w-5 h-5 text-[#9AE144] ${
-										brandDropdownOpen ? "rotate-180" : ""
-									}`}
-								/>
+								<ChevronDown className={`w-5 h-5 text-[#9AE144] transition-transform ${makeOpen ? "rotate-180" : ""}`} />
 							</button>
-							{brandDropdownOpen &&
-								!carMakesLoading &&
-								!carMakesError &&
-								carMakes?.length > 0 && (
-									<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-										{carMakes.map((brand) => (
-											<button
-												key={brand.id}
-												type="button"
-												onClick={() => {
-													handleSelectChange("carMakeId", brand.id);
-													setBrandDropdownOpen(false);
-												}}
-												className="w-full px-4 py-2 text-left hover:bg-gray-50"
-											>
-												{brand.name}
-											</button>
-										))}
-									</div>
-								)}
-							{errors.carMakeId && (
-								<p className="text-red-500 text-sm mt-1">{errors.carMakeId}</p>
-							)}
-						</div>
-						<div className="relative">
-							<button
-								type="button"
-								onClick={() => setModelLineDropdown(!modelLineDropdown)}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
-								disabled={!modelLines}
-							>
-								<span
-									className={
-										formData.modelLineId && modelLines?.length > 0
-											? "text-gray-700"
-											: "text-gray-400"
-									}
-								>
-									{formData.modelLineId
-										? modelLines.find((b) => b.id === formData.modelLineId)
-												?.name || "Select Car Make"
-										: "Select Model Line"}
-								</span>
-								<ChevronDown
-									className={`w-5 h-5 text-[#9AE144] ${
-										brandDropdownOpen ? "rotate-180" : ""
-									}`}
-								/>
-							</button>
-							{modelLineDropdown && modelLines?.length > 0 && (
-								<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-									{modelLines.map((brand) => (
+							{makeOpen && carMakes.length > 0 && (
+								<div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+									{carMakes.map((make) => (
 										<button
-											key={brand.id}
+											key={make.id}
 											type="button"
 											onClick={() => {
-												handleSelectChange("modelLineId", brand.id);
-												setModelLineDropdown(false);
+												handleSelect("carMakeId", make.id);
+												setMakeOpen(false);
 											}}
-											className="w-full px-4 py-2 text-left hover:bg-gray-50"
+											className="w-full px-4 py-2 text-left hover:bg-gray-100"
 										>
-											{brand.name}
+											{make.name}
 										</button>
 									))}
 								</div>
 							)}
-							{/* {errors.carMakeId && <p className="text-red-500 text-sm mt-1">{errors.carMakeId}</p>} */}
 						</div>
+
+						{/* Model Line */}
 						<div className="relative">
 							<button
 								type="button"
-								onClick={() => setModificationDropdown(!brandDropdownOpen)}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
-								disabled={modificationsLoading || !!modificationsError}
+								onClick={() => setModelLineOpen(!modelLineOpen)}
+								className="w-full px-4 py-3 border border-gray-400 rounded-lg flex justify-between items-center disabled:opacity-60"
+								disabled={!formData.carMakeId || modelLinesLoading}
 							>
-								<span
-									className={
-										formData.modificationId && modifications?.length > 0
-											? "text-gray-700"
-											: "text-gray-400"
-									}
-								>
-									{modificationsLoading
-										? "Loading..."
-										: modificationsError
-										? "Error loading makes"
-										: formData.modificationId
-										? modifications.find((b) => b.id === formData.modificationId)?.name ||
-										  "Select Modification"
-										: "Select Modification"}
+								<span className={formData.modelLineId ? "text-gray-900" : "text-gray-500"}>
+									{modelLinesLoading
+										? "Loading models..."
+										: formData.modelLineId
+										? modelLines.find((m) => m.id === formData.modelLineId)?.name
+										: "Select Model Line"}
 								</span>
-								<ChevronDown
-									className={`w-5 h-5 text-[#9AE144] ${
-										modificationDropdown ? "rotate-180" : ""
-									}`}
-								/>
+								<ChevronDown className={`w-5 h-5 text-[#9AE144] transition-transform ${modelLineOpen ? "rotate-180" : ""}`} />
 							</button>
-							{modificationDropdown &&
-								!modificationsLoading &&
-								!modificationsError &&
-								modifications?.length > 0 && (
-									<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-										{modifications?.map((brand) => (
-											<button
-												key={brand.id}
-												type="button"
-												onClick={() => {
-													handleSelectChange("modificationId", brand.id);
-													setModificationDropdown(false);
-												}}
-												className="w-full px-4 py-2 text-left hover:bg-gray-50"
-											>
-												{brand.name}
-											</button>
-										))}
-									</div>
-								)}
-							{errors.modificationId && (
-								<p className="text-red-500 text-sm mt-1">{errors.modificationId}</p>
+							{modelLineOpen && modelLines.length > 0 && (
+								<div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+									{modelLines.map((line) => (
+										<button
+											key={line.id}
+											type="button"
+											onClick={() => {
+												handleSelect("modelLineId", line.id);
+												setModelLineOpen(false);
+											}}
+											className="w-full px-4 py-2 text-left hover:bg-gray-100"
+										>
+											{line.name}
+										</button>
+									))}
+								</div>
 							)}
 						</div>
-						{/* Model Input */}
-						{/* <div>
-              <input
-                type="text"
-                name="modelLine"
-                placeholder="Model Line"
-                value={formData.modelLine ?? ""}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-[#808080] rounded-lg"
-              />
-              {errors.modelLine && <p className="text-red-500 text-sm mt-1">{errors.modelLine}</p>}
-            </div> */}
 					</div>
 
-					{/* Year & Engine */}
+					{/* Generation & Modification */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						{/* Year */}
+						{/* Generation */}
+						<div className="relative">
+							<button
+								type="button"
+								onClick={() => setGenerationOpen(!generationOpen)}
+								className="w-full px-4 py-3 border border-gray-400 rounded-lg flex justify-between items-center disabled:opacity-60"
+								disabled={!formData.modelLineId || generationsLoading}
+							>
+								<span className={formData.generationId ? "text-gray-900" : "text-gray-500"}>
+									{generationsLoading
+										? "Loading generations..."
+										: formData.generationId
+										? generations.find((g) => g.id === formData.generationId)?.name
+										: "Select Generation"}
+								</span>
+								<ChevronDown className={`w-5 h-5 text-[#9AE144] transition-transform ${generationOpen ? "rotate-180" : ""}`} />
+							</button>
+							{generationOpen && generations.length > 0 && (
+								<div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+									{generations.map((gen) => (
+										<button
+											key={gen.id}
+											type="button"
+											onClick={() => {
+												handleSelect("generationId", gen.id);
+												setGenerationOpen(false);
+											}}
+											className="w-full px-4 py-2 text-left hover:bg-gray-100"
+										>
+											{gen.name}
+										</button>
+									))}
+								</div>
+							)}
+						</div>
+
+						{/* Modification */}
+						<div className="relative">
+							<button
+								type="button"
+								onClick={() => setModificationOpen(!modificationOpen)}
+								className="w-full px-4 py-3 border border-gray-400 rounded-lg flex justify-between items-center disabled:opacity-60"
+								disabled={modifications.length === 0}
+							>
+								<span className={formData.modificationId ? "text-gray-900" : "text-gray-500"}>
+									{formData.modificationId
+										? modifications.find((m) => m.id === formData.modificationId)?.name
+										: "Select Variant"}
+								</span>
+								<ChevronDown className={`w-5 h-5 text-[#9AE144] transition-transform ${modificationOpen ? "rotate-180" : ""}`} />
+							</button>
+							{modificationOpen && modifications.length > 0 && (
+								<div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+									{modifications.map((mod: any) => (
+										<button
+											key={mod.id}
+											type="button"
+											onClick={() => {
+												handleSelect("modificationId", mod.id);
+												setModificationOpen(false);
+											}}
+											className="w-full px-4 py-2 text-left hover:bg-gray-100 pl-8"
+										>
+											{mod.name}
+										</button>
+									))}
+								</div>
+							)}
+						</div>
+					</div>
+
+					{/* Year & Engine Type */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div>
 							<input
 								type="text"
-								name="productionYear"
-								placeholder="Year"
-								value={formData.productionYear ?? ""}
-								onChange={handleInputChange}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg"
+								placeholder="Year (e.g. 2020)"
+								value={formData.productionYear}
+								onChange={(e) => handleYearChange(e.target.value)}
+								className="w-full px-4 py-3 border border-gray-400 rounded-lg"
+								maxLength={4}
 							/>
-							{errors.productionYear && (
-								<p className="text-red-500 text-sm mt-1">{errors.productionYear}</p>
-							)}
+							{errors.productionYear && <p className="text-red-500 text-sm mt-1">{errors.productionYear}</p>}
 						</div>
 
-						{/* Engine Type Dropdown */}
 						<div className="relative">
 							<button
 								type="button"
-								onClick={() => setEngineDropdownOpen(!engineDropdownOpen)}
-								className="w-full px-4 py-3 border border-[#808080] rounded-lg flex justify-between items-center"
-								disabled={engineTypesLoading || !!engineTypesError}
+								onClick={() => setEngineOpen(!engineOpen)}
+								className="w-full px-4 py-3 border border-gray-400 rounded-lg flex justify-between items-center disabled:opacity-60"
+								disabled={engineTypesLoading}
 							>
-								<span
-									className={
-										formData.engineTypeId && engineTypes?.length > 0
-											? "text-gray-700"
-											: "text-gray-400"
-									}
-								>
+								<span className={formData.engineTypeId ? "text-gray-900" : "text-gray-500"}>
 									{engineTypesLoading
-										? "Loading..."
-										: engineTypesError
-										? "Error loading engines"
+										? "Loading engines..."
 										: formData.engineTypeId
-										? engineTypes.find((e) => e.id === formData.engineTypeId)
-												?.name || "Select Engine Type"
-										: "Select Engine Type"}
+										? engineTypes.find((e) => e.id === formData.engineTypeId)?.name
+										: "Select Engine Type (Optional)"}
 								</span>
-								<ChevronDown
-									className={`w-5 h-5 text-[#9AE144] ${
-										engineDropdownOpen ? "rotate-180" : ""
-									}`}
-								/>
+								<ChevronDown className={`w-5 h-5 text-[#9AE144] transition-transform ${engineOpen ? "rotate-180" : ""}`} />
 							</button>
-							{engineDropdownOpen &&
-								!engineTypesLoading &&
-								!engineTypesError &&
-								engineTypes?.length > 0 && (
-									<div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-										{engineTypes.map((engine) => (
-											<button
-												key={engine.id}
-												type="button"
-												onClick={() => {
-													handleSelectChange("engineTypeId", engine.id);
-													setEngineDropdownOpen(false);
-												}}
-												className="w-full px-4 py-2 text-left hover:bg-gray-50"
-											>
-												{engine.name}
-											</button>
-										))}
-									</div>
-								)}
-							{errors.engineTypeId && (
-								<p className="text-red-500 text-sm mt-1">{errors.engineTypeId}</p>
+							{engineOpen && engineTypes.length > 0 && (
+								<div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+									<button
+										type="button"
+										onClick={() => {
+											handleSelect("engineTypeId", null);
+											setEngineOpen(false);
+										}}
+										className="w-full px-4 py-2 text-left hover:bg-gray-100 text-gray-500"
+									>
+										None
+									</button>
+									{engineTypes.map((engine) => (
+										<button
+											key={engine.id}
+											type="button"
+											onClick={() => {
+												handleSelect("engineTypeId", engine.id);
+												setEngineOpen(false);
+											}}
+											className="w-full px-4 py-2 text-left hover:bg-gray-100"
+										>
+											{engine.name}
+										</button>
+									))}
+								</div>
 							)}
 						</div>
 					</div>
 
-					{/* Modification */}
-					{/* <div>
-						<input
-							type="text"
-							name="modification"
-							placeholder="Modification"
-							value={formData.modificationId ?? ""}
-							onChange={handleInputChange}
-							className="w-full px-4 py-3 border border-[#808080] rounded-lg"
-						/>
-						{errors.modification && (
-							<p className="text-red-500 text-sm mt-1">{errors.modification}</p>
-						)}
-					</div> */}
-
-					{/* Submit Button */}
-					<div className="flex justify-end pt-3">
+					{/* Submit */}
+					<div className="flex justify-end pt-6">
 						<button
-							type="button"
 							onClick={handleSubmit}
-							disabled={
-								isLoading ||
-								carMakesLoading ||
-								engineTypesLoading ||
-								!!carMakesError ||
-								!!engineTypesError ||
-								!isFormValid()
-							}
-							className="px-8 py-3 bg-[#9AE144] text-black font-medium rounded-lg disabled:opacity-50"
+							disabled={!isFormValid() || isLoading}
+							className="px-10 py-3 bg-[#9AE144] hover:bg-[#8cd136] text-black font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition"
 						>
-							{isLoading ? "Adding..." : "Add Vehicle"}
+							{isLoading ? "Adding Vehicle..." : "Add Vehicle"}
 						</button>
 					</div>
 				</div>
 			</div>
 		</div>
-  );
+	);
 };
 
 export default AddVehicle;

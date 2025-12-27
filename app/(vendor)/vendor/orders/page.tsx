@@ -15,7 +15,7 @@ export default function ManageOrders() {
 	const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
 	// Fetch orders
-	const { data, isLoading, isError } = useGetOrdersQuery({});
+	const { data, isLoading, isError } = useGetOrdersQuery();
 	const orders = Array.isArray(data) ? data : data?.data ?? [];
 
 	// State for status update dropdown

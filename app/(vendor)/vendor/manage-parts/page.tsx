@@ -2,13 +2,13 @@
 
 import { Pencil, Eye, Trash2 } from "lucide-react";
 import {
-  useDeletePartMutation,
-  useGetAllPartsByVendorQuery,
+	useDeletePartMutation,
+	useGetAllPartsByVendorQuery,
 } from "@/lib/redux/api/partApi";
 import { useRouter } from "next/navigation";
 import DataTable, {
-  TableColumn,
-  TableAction,
+	TableColumn,
+	TableAction,
 } from "@/components/SuperDashboard/Table";
 import { toast } from "react-hot-toast";
 import useAuth from "@/hooks/useAuth";
@@ -17,162 +17,161 @@ import Image from "next/image";
 import { useState } from "react";
 
 export default function ManageParts() {
-  const { user } = useAuth();
-  const router = useRouter();
+	const { user } = useAuth();
+	const router = useRouter();
 
-  // -----------------------------
-  // PAGINATION STATE
-  // -----------------------------
-  const [page, setPage] = useState(1);
-  const limit = 10;
+	const [page, setPage] = useState(1);
+	const limit = 10;
 
-  const [deletePart] = useDeletePartMutation();
+	const [deletePart] = useDeletePartMutation();
 
-  // -----------------------------
-  // SAFE SKIP LOGIC (FIX)
-  // -----------------------------
-  const shouldSkip =
-    !user || !user.role || user.role.name !== ROLES.VENDOR;
+	// Skip query if not vendor
+	const shouldSkip = !user || user.role?.name !== ROLES.VENDOR;
 
-  // -----------------------------
-  // API CALL
-  // -----------------------------
-  const { data, isLoading, isError } = useGetAllPartsByVendorQuery(
-    { page, limit },
-    { skip: shouldSkip }
-  );
+	const { data, isLoading, isError } = useGetAllPartsByVendorQuery(
+		{ page, limit },
+		{ skip: shouldSkip }
+	);
 
-  // -----------------------------
-  // DEBUG LOGS (REMOVE AFTER FIX)
-  // -----------------------------
-  console.log("🧑 USER:", user);
-  console.log("👤 ROLE:", user?.role?.name);
-  console.log("⛔ SHOULD SKIP API:", shouldSkip);
-  console.log("📦 RAW API DATA:", data);
+	// -----------------------------
+	// DATA EXTRACTION (VERIFIED)
+	// -----------------------------
+	// Backend response: { success: true, data: { data: [...], meta: {...} } }
+	const parts = data?.data?.data ?? []; // ← Correct path
+	const meta = data?.data?.meta;
 
-  /**
-   * ✅ CORRECT DATA EXTRACTION
-   * Based on actual API response:
-   * data -> { success, data: { data: [], meta: {} } }
-   */
-  const parts = Array.isArray(data?.data?.data) ? data.data.data : [];
-  const meta = data?.data?.meta;
+	const total = meta?.total ?? 0;
+	const totalPages = meta?.totalPages ?? 1;
 
-  console.log("📄 PARTS ARRAY:", parts);
-  console.log("📊 META:", meta);
+	// -----------------------------
+	// COLUMNS
+	// -----------------------------
+	const columns: TableColumn[] = [
+		{
+			key: "part_number",
+			header: "Part Number",
+			render: (row: any) => (
+				<div className="flex items-center gap-3">
+					<Image
+						src={row.image_urls?.[0] || "/placeholder-part.jpg"}
+						alt={row.part_number}
+						width={48}
+						height={48}
+						className="size-12 rounded object-cover bg-gray-100"
+					/>
+					<div className="flex flex-col">
+						<span className="font-semibold text-gray-900">{row.part_number}</span>
+						<span className="text-sm text-gray-600 truncate max-w-xs">
+							{row.description}
+						</span>
+					</div>
+				</div>
+			),
+		},
+		{
+			key: "vehicle",
+			header: "Vehicle Fitment",
+			render: (row: any) => {
+				const v = row.vehicle;
+				if (!v) return <span className="text-gray-500">General Part</span>;
 
-  const total = meta?.total ?? 0;
-  const totalPages = meta?.totalPages ?? 0;
+				const genNames = v.modification?.models
+					?.map((m: any) => m.name)
+					.join(", ") || "N/A";
 
-  // -----------------------------
-  // TABLE COLUMNS
-  // -----------------------------
-  const columns: TableColumn[] = [
-    {
-      key: "part_number",
-      header: "Part Number",
-      render: (row) => (
-        <div className="flex items-center gap-2">
-          <Image
-            src={row.image_urls?.[0] || "/placeholder.png"}
-            alt={row.part_number}
-            width={40}
-            height={40}
-            className="size-10 rounded-full object-cover"
-          />
-          <div className="flex flex-col">
-            <span className="font-semibold">{row.part_number}</span>
-            <span className="text-xs">{row.description}</span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "vehicle.model_line",
-      header: "Vehicle Model",
-      render: (row) =>
-        `${row.vehicle?.modification?.model_line?.name || "N/A"} ${
-          row.vehicle?.modification?.name || ""
-        } (${row.vehicle?.production_year || "N/A"})`,
-    },
-    {
-      key: "subcategory.name",
-      header: "Subcategory",
-      render: (row) => row.subcategory?.name || "N/A",
-    },
-    {
-      key: "part_brand.name",
-      header: "Brand",
-      render: (row) => row.part_brand?.name || "N/A",
-    },
-  ];
+				return (
+					<div className="text-sm">
+						<span className="font-medium">
+							{v.modification?.models?.[0]?.model_line?.car_make?.name || "N/A"}{" "}
+							{v.modification?.models?.[0]?.model_line?.name || "N/A"}
+						</span>
+						<br />
+						<span className="text-gray-600">
+							{genNames} ({v.production_year})
+						</span>
+						<br />
+						<span className="text-gray-500">{v.modification?.name}</span>
+					</div>
+				);
+			},
+		},
+		{
+			key: "subcategory",
+			header: "Subcategory",
+			render: (row: any) => row.subcategory?.name || "N/A",
+		},
+		{
+			key: "brand",
+			header: "Brand",
+			render: (row: any) => row.part_brand?.name || "N/A",
+		},
+		{
+			key: "price",
+			header: "Price",
+			render: (row: any) => `₹${row.price?.toLocaleString("en-IN") || "N/A"}`,
+		},
+	];
 
-  // -----------------------------
-  // TABLE ACTIONS
-  // -----------------------------
-  const actions: TableAction[] = [
-    {
-      icon: Pencil,
-      onClick: (part) =>
-        router.push(`/vendor/manage-parts/edit/${part.id}`),
-      tooltip: "Edit part",
-    },
-    {
-      icon: Eye,
-      onClick: (part) =>
-        router.push(`/vendor/manage-parts/view/${part.id}`),
-      tooltip: "View part",
-    },
-    {
-      icon: Trash2,
-      onClick: async (part) => {
-        try {
-          await deletePart(part.id).unwrap();
-          toast.success("Part deleted successfully!");
-          setPage(1); // reset page after delete
-        } catch {
-          toast.error("Failed to delete part");
-        }
-      },
-      tooltip: "Delete part",
-    },
-  ];
+	// -----------------------------
+	// ACTIONS
+	// -----------------------------
+	const actions: TableAction[] = [
+		{
+			icon: Pencil,
+			onClick: (part: any) =>
+				router.push(`/vendor/manage-parts/edit/${part.id}`),
+			tooltip: "Edit part",
+		},
+		{
+			icon: Eye,
+			onClick: (part: any) =>
+				router.push(`/vendor/manage-parts/view/${part.id}`),
+			tooltip: "View part",
+		},
+		{
+			icon: Trash2,
+			onClick: async (part: any) => {
+				if (confirm(`Delete part "${part.part_number}"?`)) {
+					try {
+						await deletePart(part.id).unwrap();
+						toast.success("Part deleted successfully");
+						// Reset to page 1 if current page becomes empty
+						if (parts.length === 1 && page > 1) {
+							setPage(page - 1);
+						}
+					} catch {
+						toast.error("Failed to delete part");
+					}
+				}
+			},
+			tooltip: "Delete part",
+		},
+	];
 
-  // -----------------------------
-  // RENDER
-  // -----------------------------
-  return (
-    <DataTable
-      title="Listed Parts"
-      data={parts} // ✅ ALWAYS ARRAY
-      columns={columns}
-      actions={actions}
-      isLoading={isLoading}
-      isError={isError}
-      addButtonText="Add Part"
-      addButtonPath="/vendor/manage-parts/addParts"
-      emptyMessage="No parts found."
-      errorMessage="Failed to load parts."
-      loadingMessage="Loading parts..."
-      avatarConfig={{
-        enabled: true,
-        nameKey: "part_number",
-        subtitleKey: "description",
-        getAvatarUrl: (item) =>
-          item.image_urls?.[0] || "/placeholder.png",
-        getAvatarAlt: (item) => item.part_number,
-      }}
-      pagination={
-        totalPages > 0
-          ? {
-              currentPage: page,
-              totalPages,
-              totalItems: total,
-              pageSize: limit,
-              onPageChange: setPage,
-            }
-          : undefined
-      }
-    />
-  );
+	return (
+		<DataTable
+			title="My Listed Parts"
+			data={parts}
+			columns={columns}
+			actions={actions}
+			isLoading={isLoading || shouldSkip}
+			isError={isError}
+			addButtonText="Add New Part"
+			addButtonPath="/vendor/manage-parts/addParts"
+			emptyMessage="No parts listed yet."
+			errorMessage="Failed to load your parts."
+			loadingMessage="Loading your parts..."
+			pagination={
+				totalPages > 1
+					? {
+							currentPage: page,
+							totalPages,
+							totalItems: total,
+							pageSize: limit,
+							onPageChange: setPage,
+					  }
+					: undefined
+			}
+		/>
+	);
 }

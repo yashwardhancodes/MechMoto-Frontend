@@ -21,7 +21,8 @@ const USERROLES = {
 		"read:mechanics",
 		"read:vehicle",
 		"read:car_make",
-		"read:model-line",
+		"read:model_line",        // ← renamed for consistency
+		"read:model",             // ← NEW: Manage Generations
 		"read:engine_type",
 		"read:financials",
 		"read:analytics",
@@ -30,10 +31,12 @@ const USERROLES = {
 		"read:plan-add",
 		"read:plan-edit",
 		"read:shipments",
-		"read:shipments",
 		"read:service_center",
 		"read:expert_help",
 		"read:role",
+		// You can also add write/delete if needed
+		"write:model",
+		"delete:model",
 	],
 
 	Vendor: [
@@ -61,16 +64,17 @@ export function createPermissions(permissions: Permission[]): string[] {
 
 export function hasPermission({ user, permission }: { user: User; permission: UserPermission }) {
 	const role = user?.role?.name;
+
 	if (
 		role === ROLES.VENDOR ||
-		role == ROLES.MECHANIC ||
+		role === ROLES.MECHANIC ||
 		role === ROLES.SERVICE_CENTER ||
-		role == ROLES.USER
+		role === ROLES.USER
 	) {
 		return (USERROLES[role] as readonly UserPermission[]).includes(permission);
 	}
+
+	// For SuperAdmin or custom roles
 	const customPermissions = createPermissions(user.role.permissions);
-	console.log("custom permissions", customPermissions);
-	console.log("result: ", permission, customPermissions.includes(permission));
 	return customPermissions.includes(permission);
 }

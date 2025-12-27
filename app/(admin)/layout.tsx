@@ -52,6 +52,7 @@ export default function AdminDashboardLayout({ children }: DashboardLayoutProps)
 			"manage-vehicles": "Manage Vehicles",
 			"manage-car-make": "Manage Car Make",
 			"manage-model-line": "Manage Model Line",
+			"manage-model": "Manage Model",
 			"manage-engine-type": "Manage Engine Type",
 			"manage-categories": "Manage Categories",
 			"manage-subcategories": "Manage Subcategories",

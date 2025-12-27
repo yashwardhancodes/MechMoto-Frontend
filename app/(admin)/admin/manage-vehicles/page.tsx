@@ -22,23 +22,29 @@ interface VehicleFilters {
 	sortBy: "newest" | "oldest" | "";
 }
 
-// Define a type for the API response
 interface ApiVehicle {
 	id: number;
-	model_line?: string;
-	production_year?: number | string;
-	modification?: {
+	production_year: number;
+	modification: {
+		id: number;
 		name: string;
-		model_line: {
+		models: {
+			id: number;
 			name: string;
-			car_make: {
+			model_line: {
+				id: number;
 				name: string;
+				car_make: {
+					id: number;
+					name: string;
+				};
 			};
-		};
+		}[];
 	};
 	engine_type: {
+		id: number;
 		name: string;
-	}
+	} | null;
 }
 
 interface OptionType {
@@ -93,19 +99,19 @@ export default function ManageVehicle() {
 	);
 
 	const { data, isLoading, isError } = useGetAllVehiclesQuery(queryParams);
-	console.log("Vehicle data:", data);
 	const [deleteVehicle] = useDeleteVehicleMutation();
 
 	const router = useRouter();
 
-	// Safely extract and transform vehicles for table
+	// Transform API data to table format
 	const vehicles = (data?.data?.vehicles ?? []).map((vehicle: ApiVehicle) => ({
 		id: vehicle.id,
-		brand: vehicle?.modification?.model_line?.car_make?.name ?? "N/A",
-		model: vehicle?.modification?.model_line?.name ?? "N/A",
-		year: vehicle.production_year ?? "N/A",
-		variant: vehicle.modification.name ?? "N/A",
-		engine_type: vehicle?.engine_type?.name ?? "N/A",
+		brand: vehicle.modification.models[0]?.model_line.car_make.name || "N/A",
+		model: vehicle.modification.models[0]?.model_line.name || "N/A",
+		year: vehicle.production_year,
+		variant: vehicle.modification.name,
+		generation: vehicle.modification.models.map(m => m.name).join(", ") || "N/A",
+		engine_type: vehicle.engine_type?.name ?? "N/A",
 		raw: vehicle,
 	}));
 
@@ -117,15 +123,14 @@ export default function ManageVehicle() {
 		selected: SingleValue<OptionType> | null,
 	) => {
 		const value = selected ? selected.value : "";
+
 		if (key === "make") {
 			const selectedMake = carMakesResponse?.data?.carMakes.find((m) => m.name === value);
 			if (value === "") {
 				setSelectedMakeId(null);
 				setSelectedModelLineId(null);
 				setFilters((prev) => ({ ...prev, make: "", modelLine: "", modification: "" }));
-				return;
-			}
-			if (selectedMake) {
+			} else if (selectedMake) {
 				setSelectedMakeId(selectedMake.id);
 				setSelectedModelLineId(null);
 				setFilters((prev) => ({ ...prev, make: value, modelLine: "", modification: "" }));
@@ -135,14 +140,11 @@ export default function ManageVehicle() {
 		}
 
 		if (key === "modelLine") {
-			const selectedModel = modelLinesResponse?.data?.find((m) => m.name === value);
+			const selectedModel = modelLinesResponse?.data?.find((m: any) => m.name === value);
 			if (value === "") {
 				setSelectedModelLineId(null);
 				setFilters((prev) => ({ ...prev, modelLine: "", modification: "" }));
-				setPage(1);
-				return;
-			}
-			if (selectedModel) {
+			} else if (selectedModel) {
 				setSelectedModelLineId(selectedModel.id);
 				setFilters((prev) => ({ ...prev, modelLine: value, modification: "" }));
 			}
@@ -151,11 +153,6 @@ export default function ManageVehicle() {
 		}
 
 		if (key === "modification") {
-			if (value === "") {
-				setFilters((prev) => ({ ...prev, modification: "" }));
-				setPage(1);
-				return;
-			}
 			setFilters((prev) => ({ ...prev, modification: value }));
 			setPage(1);
 			return;
@@ -181,37 +178,42 @@ export default function ManageVehicle() {
 	};
 
 	const carMakes = carMakesResponse?.data?.carMakes || [];
-	const makeOptions: OptionType[] = carMakes.map((make) => ({
+	const makeOptions: OptionType[] = [{ value: "", label: "All" }, ...carMakes.map((make: any) => ({
 		value: make.name,
 		label: make.name,
-	}));
+	}))];
 
 	const modelLines = modelLinesResponse?.data || [];
-	const modelLineOptions: OptionType[] = modelLines.map((model) => ({
+	const modelLineOptions: OptionType[] = [{ value: "", label: "All" }, ...modelLines.map((model: any) => ({
 		value: model.name,
 		label: model.name,
-	}));
+	}))];
 
+	// FIXED: Filter modifications that are linked to any generation of the selected model line
 	const availableModifications = selectedModelLineId
-		? modificationsResponse?.data?.modifications?.filter(
-				(modi) => modi.model_lineId === selectedModelLineId,
-		  ) || []
+		? (modificationsResponse?.data?.modifications || []).filter((mod: any) =>
+				mod.models?.some((model: any) => model.model_lineId === selectedModelLineId)
+		  )
 		: [];
-	const modificationOptions: OptionType[] = availableModifications.map((modi) => ({
-		value: modi.name,
-		label: modi.name,
-	}));
+
+	const modificationOptions: OptionType[] = [
+		{ value: "", label: "All" },
+		...availableModifications.map((modi: any) => ({
+			value: modi.name,
+			label: modi.name,
+		})),
+	];
 
 	const engineTypes = engineTypesResponse?.data?.engineTypes || [];
-	const engineTypeOptions: OptionType[] = engineTypes.map((engine) => ({
+	const engineTypeOptions: OptionType[] = [{ value: "", label: "All" }, ...engineTypes.map((engine: any) => ({
 		value: engine.name,
 		label: engine.name,
-	}));
+	}))];
 
-	const yearOptions: OptionType[] = years.map((year) => ({
+	const yearOptions: OptionType[] = [{ value: "", label: "From/To" }, ...years.map((year) => ({
 		value: year.toString(),
 		label: year.toString(),
-	}));
+	}))];
 
 	const sortByOptions: OptionType[] = [
 		{ value: "", label: "Default (Newest)" },
@@ -219,38 +221,36 @@ export default function ManageVehicle() {
 		{ value: "oldest", label: "Oldest" },
 	];
 
-	// Define table columns
 	const columns: TableColumn[] = [
 		{
 			key: "brand",
 			header: "Car Make",
 			render: (value) => (
-				<div className="flex row items-center gap-2 ">
-					<div className="size-10 rounded-full p-2 flex items-center text-white justify-center bg-blue-400">
+				<div className="flex items-center gap-2">
+					<div className="size-10 rounded-full p-2 flex items-center justify-center text-white bg-blue-400">
 						{value.brand
 							?.split(" ")
 							.map((word: string) => word.charAt(0).toUpperCase())
 							.join("")}
 					</div>
-					<div className="flex flex-col ">
-						<span className="font-semibold   ">{value.brand}</span>
-						<span className=" text-xs">{value.model}</span>
+					<div className="flex flex-col">
+						<span className="font-semibold">{value.brand}</span>
+						<span className="text-xs text-gray-600">{value.model}</span>
 					</div>
 				</div>
 			),
 		},
 		{ key: "model", header: "Model Line" },
 		{ key: "year", header: "Year" },
-		{ key: "variant", header: "Modification" },
+		{ key: "variant", header: "Variant" },
+		{ key: "generation", header: "Generation" },
 		{ key: "engine_type", header: "Engine Type" },
 	];
 
-	// Define table actions
 	const actions: TableAction[] = [
 		{
 			icon: Pencil,
 			onClick: (vehicle) => {
-				console.log("Edit vehicle:", vehicle.raw);
 				router.push(`/admin/manage-vehicles/edit/${vehicle.id}`);
 			},
 			tooltip: "Edit vehicle",
@@ -265,10 +265,12 @@ export default function ManageVehicle() {
 		{
 			icon: Trash2,
 			onClick: async (vehicle) => {
-				try {
-					await deleteVehicle(vehicle.id).unwrap();
-				} catch (error) {
-					console.error("Delete failed", error);
+				if (confirm("Are you sure you want to delete this vehicle?")) {
+					try {
+						await deleteVehicle(vehicle.id).unwrap();
+					} catch (error) {
+						console.error("Delete failed", error);
+					}
 				}
 			},
 			tooltip: "Delete Vehicle",
@@ -296,7 +298,7 @@ export default function ManageVehicle() {
 					subtitleKey: "model",
 				}}
 				pagination={
-					totalPages > 0
+					totalPages > 1
 						? {
 								currentPage: page,
 								totalPages,
@@ -307,6 +309,7 @@ export default function ManageVehicle() {
 						: undefined
 				}
 			/>
+
 			{showFilters && (
 				<div className="fixed inset-0 bg-black/50 z-50 flex justify-end">
 					<div className="bg-white w-80 p-6 overflow-y-auto">
@@ -327,84 +330,41 @@ export default function ManageVehicle() {
 						<div className="mb-4">
 							<label className="block text-sm font-medium mb-2">Car Make</label>
 							<Select
-								value={
-									makeOptions.find((opt) => opt.value === filters.make) || null
-								}
+								value={makeOptions.find((opt) => opt.value === filters.make) || null}
 								onChange={(selected) => handleSelectChange("make", selected)}
-								options={[{ value: "", label: "All" }, ...makeOptions]}
+								options={makeOptions}
 								isSearchable={true}
 								placeholder="All"
 								classNamePrefix="react-select"
-								styles={{
-									control: (provided) => ({
-										...provided,
-										border: "1px solid #d1d5db",
-										borderRadius: "0.5rem",
-										minHeight: "2.5rem",
-									}),
-								}}
-								isDisabled={false}
 							/>
 						</div>
 
-						{/* Model Line (Dependent) */}
+						{/* Model Line */}
 						{selectedMakeId && (
 							<div className="mb-4">
 								<label className="block text-sm font-medium mb-2">Model Line</label>
 								<Select
-									value={
-										modelLineOptions.find(
-											(opt) => opt.value === filters.modelLine,
-										) || null
-									}
-									onChange={(selected) =>
-										handleSelectChange("modelLine", selected)
-									}
-									options={[{ value: "", label: "All" }, ...modelLineOptions]}
+									value={modelLineOptions.find((opt) => opt.value === filters.modelLine) || null}
+									onChange={(selected) => handleSelectChange("modelLine", selected)}
+									options={modelLineOptions}
 									isSearchable={true}
 									placeholder="All"
 									classNamePrefix="react-select"
-									styles={{
-										control: (provided) => ({
-											...provided,
-											border: "1px solid #d1d5db",
-											borderRadius: "0.5rem",
-											minHeight: "2.5rem",
-										}),
-									}}
-									isDisabled={!selectedMakeId}
 								/>
 							</div>
 						)}
 
-						{/* Modification (Dependent) */}
+						{/* Modification */}
 						{selectedModelLineId && (
 							<div className="mb-4">
-								<label className="block text-sm font-medium mb-2">
-									Modification/Variant
-								</label>
+								<label className="block text-sm font-medium mb-2">Modification</label>
 								<Select
-									value={
-										modificationOptions.find(
-											(opt) => opt.value === filters.modification,
-										) || null
-									}
-									onChange={(selected) =>
-										handleSelectChange("modification", selected)
-									}
-									options={[{ value: "", label: "All" }, ...modificationOptions]}
+									value={modificationOptions.find((opt) => opt.value === filters.modification) || null}
+									onChange={(selected) => handleSelectChange("modification", selected)}
+									options={modificationOptions}
 									isSearchable={true}
 									placeholder="All"
 									classNamePrefix="react-select"
-									styles={{
-										control: (provided) => ({
-											...provided,
-											border: "1px solid #d1d5db",
-											borderRadius: "0.5rem",
-											minHeight: "2.5rem",
-										}),
-									}}
-									isDisabled={!selectedModelLineId}
 								/>
 							</div>
 						)}
@@ -413,78 +373,32 @@ export default function ManageVehicle() {
 						<div className="mb-4">
 							<label className="block text-sm font-medium mb-2">Engine Type</label>
 							<Select
-								value={
-									engineTypeOptions.find(
-										(opt) => opt.value === filters.engineType,
-									) || null
-								}
+								value={engineTypeOptions.find((opt) => opt.value === filters.engineType) || null}
 								onChange={(selected) => handleSelectChange("engineType", selected)}
-								options={[{ value: "", label: "All" }, ...engineTypeOptions]}
+								options={engineTypeOptions}
 								isSearchable={true}
 								placeholder="All"
 								classNamePrefix="react-select"
-								styles={{
-									control: (provided) => ({
-										...provided,
-										border: "1px solid #d1d5db",
-										borderRadius: "0.5rem",
-										minHeight: "2.5rem",
-									}),
-								}}
 							/>
 						</div>
 
-						{/* Production Year Range */}
+						{/* Year Range */}
 						<div className="mb-4">
-							<label className="block text-sm font-medium mb-2">
-								Production Year
-							</label>
+							<label className="block text-sm font-medium mb-2">Production Year</label>
 							<div className="flex gap-2">
 								<Select
-									value={
-										yearOptions.find(
-											(opt) =>
-												opt.value === filters.productionYearFrom.toString(),
-										) || null
-									}
-									onChange={(selected) =>
-										handleSelectChange("productionYearFrom", selected)
-									}
-									options={[{ value: "", label: "From" }, ...yearOptions]}
-									isSearchable={true}
+									value={yearOptions.find((opt) => opt.value === filters.productionYearFrom.toString()) || null}
+									onChange={(selected) => handleSelectChange("productionYearFrom", selected)}
+									options={yearOptions}
 									placeholder="From"
 									classNamePrefix="react-select"
-									styles={{
-										control: (provided) => ({
-											...provided,
-											border: "1px solid #d1d5db",
-											borderRadius: "0.5rem",
-											minHeight: "2.5rem",
-										}),
-									}}
 								/>
 								<Select
-									value={
-										yearOptions.find(
-											(opt) =>
-												opt.value === filters.productionYearTo.toString(),
-										) || null
-									}
-									onChange={(selected) =>
-										handleSelectChange("productionYearTo", selected)
-									}
-									options={[{ value: "", label: "To" }, ...yearOptions]}
-									isSearchable={true}
+									value={yearOptions.find((opt) => opt.value === filters.productionYearTo.toString()) || null}
+									onChange={(selected) => handleSelectChange("productionYearTo", selected)}
+									options={yearOptions}
 									placeholder="To"
 									classNamePrefix="react-select"
-									styles={{
-										control: (provided) => ({
-											...provided,
-											border: "1px solid #d1d5db",
-											borderRadius: "0.5rem",
-											minHeight: "2.5rem",
-										}),
-									}}
 								/>
 							</div>
 						</div>
@@ -493,27 +407,14 @@ export default function ManageVehicle() {
 						<div className="mb-6">
 							<label className="block text-sm font-medium mb-2">Sort By</label>
 							<Select
-								value={
-									sortByOptions.find((opt) => opt.value === filters.sortBy) ||
-									null
-								}
+								value={sortByOptions.find((opt) => opt.value === filters.sortBy) || null}
 								onChange={(selected) => handleSelectChange("sortBy", selected)}
 								options={sortByOptions}
-								isSearchable={false}
-								placeholder="Default (Newest)"
+								placeholder="Default"
 								classNamePrefix="react-select"
-								styles={{
-									control: (provided) => ({
-										...provided,
-										border: "1px solid #d1d5db",
-										borderRadius: "0.5rem",
-										minHeight: "2.5rem",
-									}),
-								}}
 							/>
 						</div>
 
-						{/* Actions */}
 						<div className="flex gap-2 pt-4 border-t">
 							<button
 								onClick={clearFilters}

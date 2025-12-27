@@ -1,7 +1,7 @@
-// Updated: src/components/ProductListing/PartCategorySearchModal.tsx
+// src/components/ProductListing/PartCategorySearchModal.tsx
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { IoMdClose } from "react-icons/io";
 import { FiFilter } from "react-icons/fi";
 import Image from "next/image";
@@ -13,25 +13,26 @@ import { useDispatch } from "react-redux";
 import { setBreadcrumbs } from "@/lib/redux/slices/breadcrumbSlice";
 import Breadcrumb from "../ProductListing/Breadcrumb";
 
-// Define interfaces for data structures
-interface CarMake {
-	id: number;
-	name: string;
-}
-
 interface Vehicle {
 	id: number;
-	car_make: CarMake;
-	model_line: string;
+	production_year: number | string;
 	modification: {
+		id: number;
 		name: string;
-		model_line: {
+		models: {
+			id: number;
 			name: string;
-			car_make: {
+			model_line: {
+				id: number;
 				name: string;
-			}
-		}
+				car_make: {
+					id: number;
+					name: string;
+				};
+			};
+		}[];
 	};
+	engine_type?: { id: number; name: string } | null;
 }
 
 interface Category {
@@ -60,8 +61,8 @@ interface PartCategorySearchModalProps {
 	setSelectedCategory: React.Dispatch<React.SetStateAction<PartCategory | null>>;
 	selectedSubCategory: PartCategory | null;
 	setSelectedSubCategory: React.Dispatch<React.SetStateAction<PartCategory | null>>;
-	triggerGetSubcategories: any; // RTK lazy query trigger
-	subcategoriesData: any; // RTK data
+	triggerGetSubcategories: any;
+	subcategoriesData: any;
 	isLoadingSubcategories: boolean;
 }
 
@@ -80,22 +81,20 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({
 	const router = useRouter();
 	const dispatch = useDispatch();
 
-	// Categories
-	const { data: categoriesData, isLoading: isLoadingCategories } = useGetAllCategoriesQuery({page: 1, limit: 999999});
+	const { data: categoriesData, isLoading: isLoadingCategories } = useGetAllCategoriesQuery({
+		page: 1,
+		limit: 999999,
+	});
+
 	const categories: PartCategory[] =
-		categoriesData?.data.categories.map((category: Category) => ({
+		categoriesData?.data?.categories?.map((category: Category) => ({
 			id: category.id,
 			name: category.name,
 			img_src: category.img_src,
 		})) || [];
 
-	useEffect(() => {
-		console.log("vehicles", vehicles);
-	}, [vehicles]);
-
-	// Subcategories
 	const subcategories: PartCategory[] =
-		subcategoriesData?.data.map((sub: Subcategory) => ({
+		subcategoriesData?.data?.map((sub: Subcategory) => ({
 			id: sub.id,
 			name: sub.name,
 			img_src: sub.img_src,
@@ -116,16 +115,25 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({
 	}
 
 	const vehicleId = vehicles.length > 0 ? vehicles[0].id : null;
-	const vehicleName =
-		vehicles.length > 0
-			? `${vehicles[0]?.modification?.model_line?.name} ${vehicles[0].model_line} ${
-					vehicles[0].modification || ""
-			  }`
-			: "";
+
+	// SAFE ACCESS: Handle many-to-many models array
+	const firstModel = vehicles.length > 0 ? vehicles[0].modification.models[0] : null;
+
+	const carMakeName = firstModel?.model_line.car_make.name || "";
+	const modelLineName = firstModel?.model_line.name || "";
+	const generationNames = vehicles.length > 0
+		? vehicles[0].modification.models.map((m: any) => m.name).join(" • ")
+		: "";
+	const modificationName = vehicles.length > 0 ? vehicles[0].modification.name : "";
+
+	// Build clean vehicle display name
+	const vehicleName = vehicles.length > 0
+		? `${carMakeName} ${modelLineName}${productionYear ? ` (${productionYear})` : ""} ${modificationName}${generationNames && generationNames !== "All Generations" ? ` - ${generationNames}` : ""}`.trim()
+		: "";
 
 	return (
 		<div className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.2)] flex items-center justify-center p-4">
-			<div className="bg-white w-full max-w-3xl rounded-lg p-6 px-8 relative max-h-[90vh]">
+			<div className="bg-white w-full max-w-3xl rounded-lg p-6 px-8 relative max-h-[90vh] overflow-y-auto">
 				{/* Close Button */}
 				<button
 					onClick={onClose}
@@ -137,7 +145,7 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({
 				{/* Search */}
 				<div className="flex items-center mt-4 space-x-4">
 					<h1 className="text-2xl font-bold text-black">Search</h1>
-					<div className="relative flex-2 w-full">
+					<div className="relative flex-1 w-full">
 						<input
 							type="text"
 							placeholder="Type Your Query"
@@ -155,13 +163,18 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({
 
 				{/* Filters */}
 				<div className="mt-6 flex items-center flex-wrap">
-					<span className="bg-[rgba(154,225,68,0.3)] text-green-800 font-medium px-3 py-1 rounded-full text-sm flex items-center mr-4 mb-2">
-						{vehicleName}
-						<IoMdClose className="ml-2 cursor-pointer" />
-					</span>
+					{vehicles.length > 0 && (
+						<span className="bg-[rgba(154,225,68,0.3)] text-green-800 font-medium px-3 py-1 rounded-full text-sm flex items-center mr-4 mb-2">
+							{vehicleName}
+							<IoMdClose
+								className="ml-2 cursor-pointer"
+								onClick={onClose}
+							/>
+						</span>
+					)}
 
 					<div className="ml-auto text-sm flex items-center gap-1 text-gray-700">
-						Selected filter (1)
+						Selected filter ({vehicles.length > 0 ? 1 : 0})
 						<FiFilter className="ml-1" />
 					</div>
 				</div>
@@ -213,14 +226,25 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({
 				{selectedCategory && (
 					<div className="grid grid-cols-2 mt-3 sm:grid-cols-4 gap-4 max-h-[250px] overflow-y-auto scrollbar-black">
 						{isLoadingSubcategories ? (
-							<p>Loading subcategories...</p>
+							<p className="text-gray-500 col-span-full text-center">Loading subcategories...</p>
 						) : subcategories.length === 0 ? (
-							<p className="text-gray-500">No subcategories found</p>
+							<p className="text-gray-500 col-span-full text-center">No subcategories found</p>
 						) : (
 							subcategories.map((item, index) => {
-								const subcatHref = vehicleId
-									? `/products?sub_category_id=${item.id}&vehicle_id=${vehicleId}&category_id=${selectedCategory.id}&make=${vehicles[0]?.modification?.model_line?.car_make?.name}&model=${vehicles[0]?.modification?.model_line?.name}&year=${productionYear}`
-									: `/products?sub_category_id=${item.id}&category_id=${selectedCategory.id}`;
+								const baseParams = new URLSearchParams();
+								baseParams.append("sub_category_id", item.id);
+								baseParams.append("category_id", selectedCategory.id);
+
+								if (vehicleId) {
+									baseParams.append("vehicle_id", vehicleId.toString());
+									if (carMakeName) baseParams.append("make", carMakeName);
+									if (modelLineName) baseParams.append("model", modelLineName);
+									if (productionYear) baseParams.append("year", productionYear);
+									// Removed generation & modification — clean URL
+								}
+
+								const subcatHref = `/products?${baseParams.toString()}`;
+
 								return (
 									<Link
 										key={item.id || index}
@@ -244,10 +268,10 @@ const PartCategorySearchModal: React.FC<PartCategorySearchModalProps> = ({
 											router.push(subcatHref);
 										}}
 										className={`
-                      flex flex-col items-center justify-center p-4 h-28 rounded-md cursor-pointer
-                      ${selectedSubCategory?.id === item.id ? "bg-[#E8F9DB]" : "bg-gray-100"}
-                      hover:bg-[#E8F9DB] transition
-                    `}
+				flex flex-col items-center justify-center p-4 h-28 rounded-md cursor-pointer
+				${selectedSubCategory?.id === item.id ? "bg-[#E8F9DB]" : "bg-gray-100"}
+				hover:bg-[#E8F9DB] transition
+			`}
 									>
 										<Image
 											src={item.img_src}

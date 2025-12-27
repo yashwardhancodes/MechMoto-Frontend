@@ -46,7 +46,7 @@ type FormErrors = {
 
 export default function VendorShipments() {
   const router = useRouter();
-  const { data: ordersData, isLoading, isError } = useGetOrdersQuery({});
+  const { data: ordersData, isLoading, isError } = useGetOrdersQuery();
   const [updateShipment, { isLoading: isUpdating }] = useUpdateShipmentMutation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedShipment] = useState<Shipment | null>(null);

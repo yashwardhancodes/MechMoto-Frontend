@@ -10,17 +10,17 @@ import { setBreadcrumbs } from "@/lib/redux/slices/breadcrumbSlice";
 import Image from "next/image";
 
 export default function VendorPartDetails() {
-	const { id } = useParams();
+	const { id } = useParams() as { id: string };
 	const dispatch = useDispatch();
 	const [currentIndex, setCurrentIndex] = useState(0);
+
 	const { data: response, isLoading, error } = useGetPartQuery(id);
 	const part = response?.data;
 
-	const images = part?.image_urls?.length
+	// Images with fallback
+	const images = part?.image_urls?.length > 0
 		? part.image_urls
-		: [
-				"https://png.pngtree.com/png-clipart/20240927/original/pngtree-car-engine-against-transparent-background-png-image_16100504.png",
-		  ];
+		: ["https://png.pngtree.com/png-clipart/20240927/original/pngtree-car-engine-against-transparent-background-png-image_16100504.png"];
 
 	const prevSlide = () => {
 		setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
@@ -30,6 +30,7 @@ export default function VendorPartDetails() {
 		setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
 	};
 
+	// Breadcrumbs
 	useEffect(() => {
 		if (part) {
 			const breadcrumbs = [
@@ -69,9 +70,14 @@ export default function VendorPartDetails() {
 	}
 
 	const stockStatus = part.quantity > 0 ? "In Stock" : "Out of Stock";
-	const stockColor =
-		part.quantity > 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200";
+	const stockColor = part.quantity > 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200";
 	const stockTextColor = part.quantity > 0 ? "text-green-700" : "text-red-700";
+
+	// Safe access to order_items
+	const orderItems = Array.isArray(part.order_items) ? part.order_items : [];
+	const totalOrders = orderItems.length;
+	const unitsSold = orderItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+	const revenue = orderItems.reduce((sum, item) => sum + (item.subtotal || 0), 0);
 
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -162,15 +168,13 @@ export default function VendorPartDetails() {
 						<div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
 							<p className="text-slate-600 text-sm font-medium mb-2">Price</p>
 							<p className="text-4xl font-bold text-slate-900">
-								₹{part.price.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+								₹{Number(part.price).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
 							</p>
 							<p className="text-xs text-slate-500 mt-2">Includes all taxes</p>
 						</div>
 
 						{/* Stock Status Card */}
-						<div
-							className={`rounded-xl shadow-md p-6 border-l-4 ${stockColor} bg-white`}
-						>
+						<div className={`rounded-xl shadow-md p-6 border-l-4 ${stockColor} bg-white`}>
 							<p className="text-slate-600 text-sm font-medium mb-2">Stock Status</p>
 							<div className="flex items-center justify-between">
 								<div>
@@ -205,7 +209,7 @@ export default function VendorPartDetails() {
 						</div>
 
 						{/* Rating Card */}
-						{part.reviews && part.reviews.length > 0 && (
+						{Array.isArray(part.reviews) && part.reviews.length > 0 && (
 							<div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-amber-500">
 								<p className="text-slate-600 text-sm font-medium mb-3">
 									Customer Rating
@@ -230,7 +234,7 @@ export default function VendorPartDetails() {
 						)}
 
 						{/* Wishlist Card */}
-						{part.wishlists && part.wishlists.length > 0 && (
+						{Array.isArray(part.wishlists) && part.wishlists.length > 0 && (
 							<div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-rose-500">
 								<p className="text-slate-600 text-sm font-medium mb-2">
 									Added to Wishlist
@@ -297,18 +301,19 @@ export default function VendorPartDetails() {
 						<div className="space-y-3">
 							<div>
 								<p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-									Model Line
+									Car Make & Model Line
 								</p>
 								<p className="text-sm font-medium text-slate-900 mt-1">
-									{part.vehicle?.model_line || "N/A"}
+									{part.vehicle?.modification?.models?.[0]?.model_line?.car_make?.name || "N/A"} •{" "}
+									{part.vehicle?.modification?.models?.[0]?.model_line?.name || "N/A"}
 								</p>
 							</div>
 							<div>
 								<p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-									Production Year
+									Generations
 								</p>
 								<p className="text-sm font-medium text-slate-900 mt-1">
-									{part.vehicle?.production_year || "N/A"}
+									{part.vehicle?.modification?.models?.map((m: any) => m.name).join(", ") || "N/A"}
 								</p>
 							</div>
 							<div>
@@ -316,7 +321,23 @@ export default function VendorPartDetails() {
 									Modification
 								</p>
 								<p className="text-sm font-medium text-slate-900 mt-1">
-									{part.vehicle?.modification || "N/A"}
+									{part.vehicle?.modification?.name || "N/A"}
+								</p>
+							</div>
+							<div>
+								<p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+									Year
+								</p>
+								<p className="text-sm font-medium text-slate-900 mt-1">
+									{part.vehicle?.production_year || "N/A"}
+								</p>
+							</div>
+							<div>
+								<p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+									Engine
+								</p>
+								<p className="text-sm font-medium text-slate-900 mt-1">
+									{part.vehicle?.engine_type?.name || "N/A"}
 								</p>
 							</div>
 						</div>
@@ -342,7 +363,9 @@ export default function VendorPartDetails() {
 									Location
 								</p>
 								<p className="text-sm font-medium text-slate-900 mt-1">
-									{part.vendor?.city}, {part.vendor?.state}
+									{part.vendor?.city && part.vendor?.state
+										? `${part.vendor.city}, ${part.vendor.state}`
+										: "N/A"}
 								</p>
 							</div>
 							<div>
@@ -366,7 +389,7 @@ export default function VendorPartDetails() {
 				)}
 
 				{/* Sales Performance */}
-				{part.order_items && part.order_items.length > 0 && (
+				{orderItems.length > 0 && (
 					<div className="bg-white rounded-xl shadow-md p-6">
 						<h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
 							<TrendingUp className="w-5 h-5 text-blue-500" />
@@ -378,7 +401,7 @@ export default function VendorPartDetails() {
 									Total Orders
 								</p>
 								<p className="text-3xl font-bold text-blue-900">
-									{part.order_items.length}
+									{totalOrders}
 								</p>
 							</div>
 							<div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-4">
@@ -386,7 +409,7 @@ export default function VendorPartDetails() {
 									Units Sold
 								</p>
 								<p className="text-3xl font-bold text-emerald-900">
-									{part.order_items.reduce((sum, item) => sum + item.quantity, 0)}
+									{unitsSold}
 								</p>
 							</div>
 							<div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
@@ -394,10 +417,7 @@ export default function VendorPartDetails() {
 									Revenue
 								</p>
 								<p className="text-3xl font-bold text-purple-900">
-									₹
-									{part.order_items
-										.reduce((sum, item) => sum + item.subtotal, 0)
-										.toLocaleString("en-IN")}
+									₹{revenue.toLocaleString("en-IN")}
 								</p>
 							</div>
 						</div>

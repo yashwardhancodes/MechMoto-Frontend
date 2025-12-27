@@ -72,7 +72,7 @@ const ProductsSection: React.FC = () => {
 	const vehicleId = searchParams.get("vehicle_id");
 	const makes = searchParams.getAll("make");
 	const models = searchParams.getAll("model");
-	const years = searchParams.getAll("year").map(Number);
+	const years = searchParams.getAll("year");
 	const engines = searchParams.getAll("engine");
 	const brands = searchParams.getAll("brand");
 	const categories = searchParams.getAll("category");

@@ -1,4 +1,4 @@
-// components/VehicleSelectorModal.tsx
+// components/SearchModels/VehicleSelectorModal.tsx
 "use client";
 
 import { useState, useMemo } from "react";
@@ -9,27 +9,32 @@ import Select from "react-select";
 import { useGetAllVehiclesQuery } from "@/lib/redux/api/vehicleApi";
 import { useGetAllCarMakesQuery } from "@/lib/redux/api/caeMakeApi";
 import { useGetAllEngineTypesQuery } from "@/lib/redux/api/engineTypeApi";
-import { useGetAllModificationsQuery } from "@/lib/redux/api/modificationApi";
 import { useGetModelLinesQuery } from "@/lib/redux/api/modelLineApi";
 
 interface Vehicle {
 	id: number;
-	modification?: {
+	modification: {
+		id: number;
 		name: string;
-		model_line: {
+		models: {
+			id: number;
 			name: string;
-			car_make: { name: string };
-		};
+			model_line: {
+				id: number;
+				name: string;
+				car_make: { id: number; name: string };
+			};
+		}[];
 	};
-	engine_type?: { name: string };
-	production_year?: number | string;
+	engine_type?: { id: number; name: string } | null;
+	production_year: number;
 }
 
 interface Props {
 	isOpen: boolean;
 	onClose: () => void;
 	onSelect: (vehicles: Vehicle[]) => void;
-	mode?: "single" | "multi"; // 👈 ADDED
+	mode?: "single" | "multi";
 }
 
 interface Option {
@@ -41,7 +46,7 @@ export default function VehicleSelectorModal({
 	isOpen,
 	onClose,
 	onSelect,
-	mode = "multi", // 👈 DEFAULT TO MULTI (backward-safe)
+	mode = "multi",
 }: Props) {
 	const [page, setPage] = useState(1);
 	const [selected, setSelected] = useState<Record<number, Vehicle>>({});
@@ -49,6 +54,7 @@ export default function VehicleSelectorModal({
 	const [filters, setFilters] = useState({
 		make: "",
 		modelLine: "",
+		generation: "",
 		modification: "",
 		engineType: "",
 		productionYearFrom: "",
@@ -56,14 +62,13 @@ export default function VehicleSelectorModal({
 	});
 
 	const [selectedMakeId, setSelectedMakeId] = useState<number | null>(null);
-	const [selectedModelLineId, setSelectedModelLineId] = useState<number | null>(null);
+const [, setSelectedModelLineId] = useState<number | null>(null);
 
 	const limit = 10;
 
 	/* ---------------- API CALLS ---------------- */
 	const { data: carMakesRes } = useGetAllCarMakesQuery({ page: 1, limit: 999999 });
 	const { data: engineTypesRes } = useGetAllEngineTypesQuery({ page: 1, limit: 999999 });
-	const { data: modificationsRes } = useGetAllModificationsQuery({ page: 1, limit: 999999 });
 
 	const { data: modelLinesRes } = useGetModelLinesQuery(
 		selectedMakeId ? { car_make: selectedMakeId } : {},
@@ -74,20 +79,24 @@ export default function VehicleSelectorModal({
 		() => ({
 			page,
 			limit,
-			...filters,
-			...(filters.productionYearFrom && {
-				productionYearFrom: Number(filters.productionYearFrom),
-			}),
-			...(filters.productionYearTo && {
-				productionYearTo: Number(filters.productionYearTo),
-			}),
+			make: filters.make || undefined,
+			modelLine: filters.modelLine || undefined,
+			generation: filters.generation || undefined,
+			modification: filters.modification || undefined,
+			engineType: filters.engineType || undefined,
+			productionYearFrom: filters.productionYearFrom ? Number(filters.productionYearFrom) : undefined,
+			productionYearTo: filters.productionYearTo ? Number(filters.productionYearTo) : undefined,
 		}),
 		[page, filters],
 	);
 
 	const { data, isLoading } = useGetAllVehiclesQuery(queryParams);
 
-	const vehicles = data?.data?.vehicles ?? [];
+	const vehicles = useMemo(
+	() => data?.data?.vehicles ?? [],
+	[data?.data?.vehicles],
+);
+
 	const total = data?.data?.total ?? 0;
 	const totalPages = Math.ceil(total / limit);
 
@@ -96,42 +105,66 @@ export default function VehicleSelectorModal({
 	const engineTypes = engineTypesRes?.data?.engineTypes || [];
 	const modelLines = modelLinesRes?.data || [];
 
-	const modifications = selectedModelLineId
-		? modificationsRes?.data?.modifications?.filter(
-			(m) => m.model_lineId === selectedModelLineId,
-		) || []
-		: [];
+	// Unique generations from current loaded vehicles
+	const generationOptions = useMemo(() => {
+		const gens = new Set<string>();
+		vehicles.forEach((v: Vehicle) => {
+			v.modification.models.forEach((m) => gens.add(m.name));
+		});
+		return [
+			{ value: "", label: "All Generations" },
+			...Array.from(gens)
+				.sort()
+				.map((name) => ({ value: name, label: name })),
+		];
+	}, [vehicles]);
 
-	const makeOptions: Option[] = carMakes.map((m) => ({ value: m.name, label: m.name }));
-	const modelLineOptions: Option[] = modelLines.map((m) => ({ value: m.name, label: m.name }));
-	const modificationOptions: Option[] = modifications.map((m) => ({
-		value: m.name,
-		label: m.name,
-	}));
-	const engineOptions: Option[] = engineTypes.map((e) => ({ value: e.name, label: e.name }));
+	const makeOptions: Option[] = [
+		{ value: "", label: "All Makes" },
+		...carMakes.map((m: any) => ({ value: m.name, label: m.name })),
+	];
+
+	const modelLineOptions: Option[] = [
+		{ value: "", label: "All Model Lines" },
+		...modelLines.map((m: any) => ({ value: m.name, label: m.name })),
+	];
+
+	const engineOptions: Option[] = [
+		{ value: "", label: "All Engines" },
+		...engineTypes.map((e: any) => ({ value: e.name, label: e.name })),
+	];
 
 	const years = useMemo(() => {
 		const arr: string[] = [];
 		for (let y = 1900; y <= new Date().getFullYear() + 1; y++) arr.push(y.toString());
 		return arr;
 	}, []);
-	const yearOptions: Option[] = years.map((y) => ({ value: y, label: y }));
+
+	const yearOptions: Option[] = [
+		{ value: "", label: "From/To" },
+		...years.map((y) => ({ value: y, label: y })),
+	];
 
 	/* ---------------- FILTER HANDLER ---------------- */
 	const handleFilterChange = (key: keyof typeof filters, value: string) => {
 		setFilters((prev) => ({ ...prev, [key]: value }));
 
 		if (key === "make") {
-			const make = carMakes.find((m) => m.name === value);
+			const make = carMakes.find((m: any) => m.name === value);
 			setSelectedMakeId(make?.id || null);
 			setSelectedModelLineId(null);
-			setFilters((prev) => ({ ...prev, modelLine: "", modification: "" }));
+			setFilters((prev) => ({
+				...prev,
+				modelLine: "",
+				generation: "",
+				modification: "",
+			}));
 		}
 
 		if (key === "modelLine") {
-			const mdl = modelLines.find((m) => m.name === value);
-			setSelectedModelLineId(mdl?.id || null);
-			setFilters((prev) => ({ ...prev, modification: "" }));
+			const line = modelLines.find((m: any) => m.name === value);
+			setSelectedModelLineId(line?.id || null);
+			setFilters((prev) => ({ ...prev, generation: "", modification: "" }));
 		}
 
 		setPage(1);
@@ -140,13 +173,11 @@ export default function VehicleSelectorModal({
 	/* ---------------- SELECTION LOGIC ---------------- */
 	const toggleVehicle = (vehicle: Vehicle) => {
 		if (mode === "single") {
-			// 🔥 Single selection: select one and auto-close
 			onSelect([vehicle]);
 			onClose();
 			return;
 		}
 
-		// 🔁 Multi selection: existing toggle behavior
 		setSelected((prev) => {
 			const copy = { ...prev };
 			if (copy[vehicle.id]) delete copy[vehicle.id];
@@ -197,8 +228,8 @@ export default function VehicleSelectorModal({
 								? "Select Vehicle"
 								: `Select Vehicles (${Object.keys(selected).length} selected)`}
 						</h2>
-						<button onClick={onClose}>
-							<X />
+						<button onClick={onClose} className="p-2 hover:bg-gray-100 rounded">
+							<X className="w-5 h-5" />
 						</button>
 					</div>
 
@@ -222,18 +253,13 @@ export default function VehicleSelectorModal({
 							/>
 						)}
 
-						{selectedModelLineId && (
-							<Select
-								options={[
-									{ value: "", label: "All Variants" },
-									...modificationOptions,
-								]}
-								onChange={(o) => handleFilterChange("modification", o?.value || "")}
-								placeholder="Variant"
-								menuPortalTarget={document.body}
-								styles={selectStyles}
-							/>
-						)}
+						<Select
+							options={generationOptions}
+							onChange={(o) => handleFilterChange("generation", o?.value || "")}
+							placeholder="Generation"
+							menuPortalTarget={document.body}
+							styles={selectStyles}
+						/>
 
 						<Select
 							options={[{ value: "", label: "All Engines" }, ...engineOptions]}
@@ -266,12 +292,13 @@ export default function VehicleSelectorModal({
 
 					{/* VEHICLE LIST */}
 					<div className="flex-1 overflow-y-auto p-6 space-y-3">
-						{mode === "multi" && (
-							<div className="flex items-center gap-2">
+						{mode === "multi" && vehicles.length > 0 && (
+							<div className="flex items-center gap-2 mb-4">
 								<input
 									type="checkbox"
-									checked={vehicles.length > 0 && vehicles.every((v) => selected[v.id])}
+									checked={vehicles.every((v) => selected[v.id])}
 									onChange={toggleSelectAll}
+									className="w-4 h-4 rounded border-gray-300"
 								/>
 								<span className="text-sm font-medium">Select all on this page</span>
 							</div>
@@ -283,39 +310,53 @@ export default function VehicleSelectorModal({
 							</div>
 						) : vehicles.length === 0 ? (
 							<div className="text-center py-12 text-gray-500">
-								No vehicles found
+								No vehicles found matching filters
 							</div>
 						) : (
-							vehicles.map((v) => {
+							vehicles.map((v: Vehicle) => {
 								const checked = !!selected[v.id];
+								const genNames = v.modification.models
+									.map((m) => m.name)
+									.join(" • ") || "N/A";
+
 								return (
 									<label
 										key={v.id}
 										onClick={mode === "single" ? () => toggleVehicle(v) : undefined}
-										className={`flex gap-3 p-4 border rounded-lg cursor-pointer ${mode === "single"
-												? "hover:bg-green-50"
+										className={`flex gap-4 p-4 border rounded-lg cursor-pointer transition-all ${
+											mode === "single"
+												? "hover:bg-green-50 hover:border-green-300"
 												: checked
-													? "bg-green-50 border-green-400"
-													: "hover:bg-gray-50"
-											}`}
+												? "bg-green-50 border-green-400"
+												: "hover:bg-gray-50"
+										}`}
 									>
-
 										{mode === "multi" && (
 											<input
 												type="checkbox"
 												checked={checked}
 												onChange={() => toggleVehicle(v)}
+												className="w-5 h-5 mt-1 text-[#9AE144] rounded focus:ring-[#9AE144]"
 											/>
 										)}
-										<div>
-											<div className="font-medium">
-												{v.modification?.model_line?.car_make?.name}{" "}
-												{v.modification?.model_line?.name}{" "}
-												{v.modification?.name &&
-													`(${v.modification.name})`}
+										<div className="flex-1">
+											<div className="font-semibold text-gray-900">
+												{v.modification.models[0]?.model_line.car_make.name}{" "}
+												{v.modification.models[0]?.model_line.name}
+											</div>
+											<div className="text-sm text-gray-600 mt-1">
+												<span className="font-medium">Generations:</span> {genNames}
 											</div>
 											<div className="text-sm text-gray-600">
-												{v.engine_type?.name} • {v.production_year}
+												<span className="font-medium">Variant:</span> {v.modification.name}
+											</div>
+											<div className="text-sm text-gray-600">
+												{v.engine_type?.name && (
+													<>
+														<span className="font-medium">Engine:</span> {v.engine_type.name} •{" "}
+													</>
+												)}
+												<span className="font-medium">Year:</span> {v.production_year}
 											</div>
 										</div>
 									</label>
@@ -326,15 +367,13 @@ export default function VehicleSelectorModal({
 
 					{/* PAGINATION + FOOTER */}
 					<div className="border-t p-4 flex items-center justify-between">
-						{/* Cancel button - left */}
 						<button
 							onClick={onClose}
-							className="px-6 py-2 border rounded hover:bg-gray-50"
+							className="px-6 py-2 border rounded hover:bg-gray-50 transition"
 						>
 							Cancel
 						</button>
 
-						{/* Pagination - center (only shown if >1 page) */}
 						{totalPages > 1 && (
 							<div className="flex items-center gap-4">
 								<button
@@ -344,7 +383,7 @@ export default function VehicleSelectorModal({
 								>
 									Prev
 								</button>
-								<span className="text-sm font-medium min-w-[100px] text-center">
+								<span className="text-sm font-medium">
 									Page {page} of {totalPages}
 								</span>
 								<button
@@ -357,7 +396,6 @@ export default function VehicleSelectorModal({
 							</div>
 						)}
 
-						{/* Add button - right (only in multi mode) */}
 						{mode === "multi" && (
 							<button
 								onClick={() => {
@@ -365,9 +403,9 @@ export default function VehicleSelectorModal({
 									onClose();
 								}}
 								disabled={Object.keys(selected).length === 0}
-								className="px-8 py-2 bg-[#9AE144] font-medium rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#8CD134]"
+								className="px-8 py-2 bg-[#9AE144] font-medium text-black rounded hover:bg-[#85d138] disabled:opacity-50 disabled:cursor-not-allowed transition"
 							>
-								Add Selected Vehicles
+								Add Selected ({Object.keys(selected).length})
 							</button>
 						)}
 					</div>

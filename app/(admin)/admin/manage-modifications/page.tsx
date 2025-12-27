@@ -1,65 +1,321 @@
 "use client";
-import { Pencil, Trash2 } from "lucide-react";
+
+import { Pencil, Trash2, Filter, X } from "lucide-react";
 import {
-	useGetAllModificationsQuery,
-	useDeleteModificationMutation,
+  useGetAllModificationsQuery,
+  useDeleteModificationMutation,
 } from "@/lib/redux/api/modificationApi";
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useGetAllCarMakesQuery } from "@/lib/redux/api/caeMakeApi";
+import { useGetModelLinesQuery } from "@/lib/redux/api/modelLineApi";
+import Select, { SingleValue } from "react-select";
+import toast from "react-hot-toast";
+
+interface Filters {
+  carMake: string;
+  modelLine: string;
+  generation: string;
+}
+
+interface OptionType {
+  value: string;
+  label: string;
+}
 
 export default function ManageModifications() {
-	const [page, setPage] = useState(1);
-	const limit = 10;
-	const { data, isLoading, isError } = useGetAllModificationsQuery({ page, limit });
-	const [deleteModification] = useDeleteModificationMutation();
-	const router = useRouter();
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-	const modifications = data?.data?.modifications ?? [];
-	const total = data?.data?.total ?? 0;
-	const totalPages = Math.ceil(total / limit);
+  const [filters, setFilters] = useState<Filters>({
+    carMake: "",
+    modelLine: "",
+    generation: "",
+  });
 
-	const columns: TableColumn[] = [
-		{ key: "name", header: "Modification" },
-		{
-			key: "model_line",
-			header: "Model Line",
-			render: (v: any) => v.model_line?.name ?? "N/A",
-		},
-	];
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedMakeId, setSelectedMakeId] = useState<number | null>(null);
 
-	const actions: TableAction[] = [
-		{
-			icon: Pencil,
-			onClick: (row: any) => router.push(`/admin/manage-modifications/edit/${row.id}`),
-			tooltip: "Edit Modification",
-		},
-		{
-			icon: Trash2,
-			onClick: async (row: any) => {
-				await deleteModification(row.id);
-			},
-			tooltip: "Delete Modification",
-		},
-	];
+  const router = useRouter();
 
-	return (
-		<DataTable
-			title="Listed Modifications"
-			data={modifications}
-			columns={columns}
-			actions={actions}
-			isLoading={isLoading}
-			isError={isError}
-			addButtonText="Add Modification"
-			addButtonPath="/admin/manage-modifications/add"
-			pagination={{
-				currentPage: page,
-				totalPages,
-				totalItems: total,
-				pageSize: limit,
-				onPageChange: setPage,
-			}}
-		/>
-	);
+  // Fetch car makes
+  const { data: carMakesResponse } = useGetAllCarMakesQuery({ page: 1, limit: 999999 });
+
+  // Fetch model lines when make selected
+  const { data: modelLinesResponse } = useGetModelLinesQuery(
+    selectedMakeId ? { car_make: selectedMakeId } : {},
+    { skip: !selectedMakeId }
+  );
+
+  // Fetch ALL modifications for client-side handling
+  const { data: allData, isLoading: allLoading, isError } = useGetAllModificationsQuery({
+    page: 1,
+    limit: 999999,
+  });
+
+  const [deleteModification] = useDeleteModificationMutation();
+
+  const allModifications = useMemo(() => allData?.data?.modifications ?? [], [allData]);
+
+  // Client-side filtering
+  const filteredModifications = useMemo(() => {
+    let result = allModifications;
+
+    if (filters.carMake) {
+      result = result.filter((mod: any) =>
+        mod.models?.some(
+          (m: any) =>
+            m.model_line?.car_make?.name?.toLowerCase() === filters.carMake.toLowerCase()
+        )
+      );
+    }
+
+    if (filters.modelLine) {
+      result = result.filter((mod: any) =>
+        mod.models?.some(
+          (m: any) => m.model_line?.name?.toLowerCase() === filters.modelLine.toLowerCase()
+        )
+      );
+    }
+
+    if (filters.generation) {
+      result = result.filter((mod: any) =>
+        mod.models?.some((m: any) =>
+          m.name?.toLowerCase().includes(filters.generation.toLowerCase())
+        )
+      );
+    }
+
+    return result;
+  }, [allModifications, filters]);
+
+  // Determine which data to display and paginate
+  const displayData = useMemo(() => {
+    const start = (page - 1) * limit;
+    return filteredModifications.slice(start, start + limit);
+  }, [filteredModifications, page, limit]);
+
+  // Total count and pages for current view (filtered or unfiltered)
+  const totalItems = filteredModifications.length;
+  const totalPages = Math.ceil(totalItems / limit);
+  const hasActiveFilters = filters.carMake || filters.modelLine || filters.generation;
+
+  const handleFilterChange = (
+    key: keyof Filters,
+    selected: SingleValue<OptionType> | null
+  ) => {
+    const value = selected ? selected.value : "";
+
+    if (key === "carMake") {
+      const selectedMake = carMakesResponse?.data?.carMakes.find(
+        (m: any) => m.name === value
+      );
+      setSelectedMakeId(selectedMake ? selectedMake.id : null);
+      setFilters({ carMake: value, modelLine: "", generation: "" });
+    } else {
+      setFilters((prev) => ({ ...prev, [key]: value }));
+    }
+
+    setPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({ carMake: "", modelLine: "", generation: "" });
+    setSelectedMakeId(null);
+    setPage(1);
+  };
+
+  const carMakes = carMakesResponse?.data?.carMakes || [];
+  const makeOptions: OptionType[] = [
+    { value: "", label: "All Makes" },
+    ...carMakes.map((make: any) => ({ value: make.name, label: make.name })),
+  ];
+
+  const modelLines = modelLinesResponse?.data || [];
+  const modelLineOptions: OptionType[] = [
+    { value: "", label: "All Model Lines" },
+    ...modelLines.map((line: any) => ({ value: line.name, label: line.name })),
+  ];
+
+  const generationOptions = useMemo(() => {
+    const gens = new Set<string>();
+    allModifications.forEach((mod: any) => {
+      mod.models?.forEach((m: any) => {
+        if (m.name) gens.add(m.name);
+      });
+    });
+    return [
+      { value: "", label: "All Generations" },
+      ...Array.from(gens).sort().map((name) => ({ value: name, label: name })),
+    ];
+  }, [allModifications]);
+
+  const columns: TableColumn[] = [
+    {
+      key: "name",
+      header: "Modification Name",
+      render: (row: any) => (
+        <span className="font-medium text-gray-900">{row.name}</span>
+      ),
+    },
+    {
+      key: "generations",
+      header: "Generations",
+      render: (row: any) => {
+        if (!row.models || row.models.length === 0)
+          return <span className="text-gray-500">No generations</span>;
+
+        return (
+          <div className="flex flex-col gap-1">
+            {row.models.map((model: any) => (
+              <div key={model.id} className="text-sm">
+                <span className="font-medium">{model.name}</span>
+                <span className="text-gray-500 ml-2">
+                  ({model.model_line?.car_make?.name} • {model.model_line?.name})
+                </span>
+              </div>
+            ))}
+          </div>
+        );
+      },
+    },
+  ];
+
+  const actions: TableAction[] = [
+    {
+      icon: Pencil,
+      onClick: (row: any) => router.push(`/admin/manage-modifications/edit/${row.id}`),
+      tooltip: "Edit Modification",
+    },
+    {
+      icon: Trash2,
+      onClick: async (row: any) => {
+        if (confirm(`Delete modification "${row.name}"? This may affect vehicles.`)) {
+          try {
+            await deleteModification(row.id).unwrap();
+            toast.success("Modification deleted");
+          } catch {
+            toast.error("Failed to delete modification");
+          }
+        }
+      },
+      tooltip: "Delete Modification",
+    },
+  ];
+
+  return (
+    <>
+      <DataTable
+        title="Listed Modifications"
+        data={displayData}
+        setShowFilters={setShowFilters}
+        columns={columns}
+        actions={actions}
+        isLoading={allLoading}
+        isError={isError}
+        addButtonText="Add Modification"
+        addButtonPath="/admin/manage-modifications/add"
+        emptyMessage={
+          hasActiveFilters
+            ? "No modifications match your filters."
+            : "No modifications found."
+        }
+        errorMessage="Failed to load modifications."
+        loadingMessage="Loading modifications..."
+        pagination={
+          totalPages > 1
+            ? {
+                currentPage: page,
+                totalPages: totalPages,
+                totalItems: totalItems,
+                pageSize: limit,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
+      />
+
+      {showFilters && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-end">
+          <div className="bg-white w-80 p-6 overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                Filters
+              </h3>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Car Make */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Car Make</label>
+              <Select
+                value={makeOptions.find((opt) => opt.value === filters.carMake) || null}
+                onChange={(selected) => handleFilterChange("carMake", selected)}
+                options={makeOptions}
+                isSearchable
+                placeholder="All Makes"
+                classNamePrefix="react-select"
+              />
+            </div>
+
+            {/* Model Line */}
+            {selectedMakeId && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">Model Line</label>
+                <Select
+                  value={
+                    modelLineOptions.find((opt) => opt.value === filters.modelLine) ||
+                    null
+                  }
+                  onChange={(selected) => handleFilterChange("modelLine", selected)}
+                  options={modelLineOptions}
+                  isSearchable
+                  placeholder="All Model Lines"
+                  classNamePrefix="react-select"
+                />
+              </div>
+            )}
+
+            {/* Generation */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Generation</label>
+              <Select
+                value={
+                  generationOptions.find((opt) => opt.value === filters.generation) ||
+                  null
+                }
+                onChange={(selected) => handleFilterChange("generation", selected)}
+                options={generationOptions}
+                isSearchable
+                placeholder="All Generations"
+                classNamePrefix="react-select"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-4 border-t">
+              <button
+                onClick={clearFilters}
+                className="flex-1 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded"
+              >
+                Clear All
+              </button>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="flex-1 py-2 text-sm bg-[#9AE144] text-white rounded"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
