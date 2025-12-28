@@ -70,12 +70,12 @@ const Navbar = () => {
 							<Link href="/dtc" className="hover:text-[#9AE144] transition">
 								DTC
 							</Link>
-							<Link href="/about" className="hover:text-[#9AE144] transition">
+							{/* <Link href="/about" className="hover:text-[#9AE144] transition">
 								About Us
 							</Link>
 							<Link href="/contact" className="hover:text-[#9AE144] transition">
 								Contact
-							</Link>
+							</Link> */}
 						</>
 					)}
 
@@ -266,12 +266,12 @@ const Navbar = () => {
 								<Link href="/dtc" onClick={() => setSidebarOpen(false)}>
 									DTC
 								</Link>
-								<Link href="/about" onClick={() => setSidebarOpen(false)}>
+								{/* <Link href="/about" onClick={() => setSidebarOpen(false)}>
 									About Us
 								</Link>
 								<Link href="/contact" onClick={() => setSidebarOpen(false)}>
 									Contact
-								</Link>
+								</Link> */}
 
 								{isLoggedIn && (
 									<>
