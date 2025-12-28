@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2, Filter, X } from "lucide-react";
+import { Pencil, Trash2, Filter, X, Search } from "lucide-react";
 import {
   useGetAllModificationsQuery,
   useDeleteModificationMutation,
@@ -34,6 +34,9 @@ export default function ManageModifications() {
     generation: "",
   });
 
+  // New: Search term state
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [showFilters, setShowFilters] = useState(false);
   const [selectedMakeId, setSelectedMakeId] = useState<number | null>(null);
 
@@ -58,9 +61,17 @@ export default function ManageModifications() {
 
   const allModifications = useMemo(() => allData?.data?.modifications ?? [], [allData]);
 
-  // Client-side filtering
+  // Client-side filtering (including search term)
   const filteredModifications = useMemo(() => {
     let result = allModifications;
+
+    // Search by modification name
+    if (searchTerm.trim()) {
+      const lowerSearch = searchTerm.toLowerCase();
+      result = result.filter((mod: any) =>
+        mod.name?.toLowerCase().includes(lowerSearch)
+      );
+    }
 
     if (filters.carMake) {
       result = result.filter((mod: any) =>
@@ -88,7 +99,7 @@ export default function ManageModifications() {
     }
 
     return result;
-  }, [allModifications, filters]);
+  }, [allModifications, filters, searchTerm]);
 
   // Determine which data to display and paginate
   const displayData = useMemo(() => {
@@ -96,10 +107,10 @@ export default function ManageModifications() {
     return filteredModifications.slice(start, start + limit);
   }, [filteredModifications, page, limit]);
 
-  // Total count and pages for current view (filtered or unfiltered)
+  // Total count and pages for current view
   const totalItems = filteredModifications.length;
   const totalPages = Math.ceil(totalItems / limit);
-  const hasActiveFilters = filters.carMake || filters.modelLine || filters.generation;
+  const hasActiveFilters = filters.carMake || filters.modelLine || filters.generation || searchTerm;
 
   const handleFilterChange = (
     key: keyof Filters,
@@ -123,6 +134,7 @@ export default function ManageModifications() {
   const clearFilters = () => {
     setFilters({ carMake: "", modelLine: "", generation: "" });
     setSelectedMakeId(null);
+    setSearchTerm(""); // Also clear search
     setPage(1);
   };
 
@@ -218,7 +230,7 @@ export default function ManageModifications() {
         addButtonPath="/admin/manage-modifications/add"
         emptyMessage={
           hasActiveFilters
-            ? "No modifications match your filters."
+            ? "No modifications match your search or filters."
             : "No modifications found."
         }
         errorMessage="Failed to load modifications."
@@ -234,8 +246,36 @@ export default function ManageModifications() {
               }
             : undefined
         }
+        // Custom header content with search bar
+      headerContent={
+  <div className="relative w-full">
+    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+    <input
+      type="text"
+      placeholder="Search modifications..."
+      value={searchTerm}
+      onChange={(e) => {
+        setSearchTerm(e.target.value);
+        setPage(1);
+      }}
+      className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9AE144] focus:border-transparent"
+    />
+    {searchTerm && (
+      <button
+        onClick={() => {
+          setSearchTerm("");
+          setPage(1);
+        }}
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+      >
+        <X className="w-5 h-5" />
+      </button>
+    )}
+  </div>
+}
       />
 
+      {/* Filters sidebar remains unchanged */}
       {showFilters && (
         <div className="fixed inset-0 bg-black/50 z-50 flex justify-end">
           <div className="bg-white w-80 p-6 overflow-y-auto">
