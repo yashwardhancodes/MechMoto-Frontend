@@ -1,7 +1,7 @@
 "use client";
 import React, { useCallback, useEffect, useState } from "react";
 import { FaSearch, FaSpinner, FaCar, FaCalendarAlt, FaCog } from "react-icons/fa";
-import CategoryGrid from "./CategoryGrid";
+// import CategoryGrid from "./CategoryGrid";
 import PartCategorySearchModal from "./SearchModels/PartCategorySearchModal";
 import { useGetAllCarMakesQuery } from "@/lib/redux/api/caeMakeApi";
 import {
@@ -564,9 +564,9 @@ const BuyParts = () => {
 				</div>
 			</div>
 
-			<div className="mt-6 md:mt-8 w-full">
+			{/* <div className="mt-6 md:mt-8 w-full">
 				<CategoryGrid />
-			</div>
+			</div> */}
 
 			{isModalOpen && (
 				<PartCategorySearchModal

@@ -212,51 +212,60 @@ export default function Testimonials() {
         </svg>
       </div>
 
-      {/* testimonial video */}
-      <div className="bg-white py-8 px-4 md:mx-auto md:px-auto">
-        {/* ✅ Mobile View - Custom Layout */}
-        <div className="max-w-2xl mx-auto grid grid-cols-6 gap-4 md:hidden">
-          {/* Row 1: Centered video (middle 3 columns) */}
-          <div></div>
-          <div className="col-span-3 rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video h-32">
-            <video className="w-full h-full object-cover" controls preload="metadata">
-              <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-          <div></div>
-
-          {/* Row 2: Left and Right videos */}
-          <div className="col-span-2 rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video h-20">
-            <video className="w-full h-full object-cover" controls preload="metadata">
-              <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-          <div></div>
-          <div className="col-span-2 rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video h-20">
-            <video className="w-full h-full object-cover" controls preload="metadata">
-              <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        </div>
-
-        {/* ✅ Tablet & Desktop View - Original Layout */}
-        <div className="hidden md:grid max-w-7xl mx-auto grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((_, index: number) => (
-            <div
-              key={index}
-              className="rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video flex items-center justify-center"
-            >
-              <video className="w-full h-full object-cover" controls preload="metadata">
-                <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          ))}
-        </div>
-      </div>
+      
     </>
   );
 }
+
+
+
+
+
+
+
+
+{/* testimonial video */}
+      // <div className="bg-white py-8 px-4 md:mx-auto md:px-auto">
+      //   {/* ✅ Mobile View - Custom Layout */}
+      //   <div className="max-w-2xl mx-auto grid grid-cols-6 gap-4 md:hidden">
+      //     {/* Row 1: Centered video (middle 3 columns) */}
+      //     <div></div>
+      //     <div className="col-span-3 rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video h-32">
+      //       <video className="w-full h-full object-cover" controls preload="metadata">
+      //         <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
+      //         Your browser does not support the video tag.
+      //       </video>
+      //     </div>
+      //     <div></div>
+
+      //     {/* Row 2: Left and Right videos */}
+      //     <div className="col-span-2 rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video h-20">
+      //       <video className="w-full h-full object-cover" controls preload="metadata">
+      //         <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
+      //         Your browser does not support the video tag.
+      //       </video>
+      //     </div>
+      //     <div></div>
+      //     <div className="col-span-2 rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video h-20">
+      //       <video className="w-full h-full object-cover" controls preload="metadata">
+      //         <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
+      //         Your browser does not support the video tag.
+      //       </video>
+      //     </div>
+      //   </div>
+
+      //   {/* ✅ Tablet & Desktop View - Original Layout */}
+      //   <div className="hidden md:grid max-w-7xl mx-auto grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-6">
+      //     {[1, 2, 3].map((_, index: number) => (
+      //       <div
+      //         key={index}
+      //         className="rounded-2xl overflow-hidden shadow-md bg-gray-200 aspect-video flex items-center justify-center"
+      //       >
+      //         <video className="w-full h-full object-cover" controls preload="metadata">
+      //           <source src="/assets/videos/testimonial1.mp4" type="video/mp4" />
+      //           Your browser does not support the video tag.
+      //         </video>
+      //       </div>
+      //     ))}
+      //   </div>
+      // </div>

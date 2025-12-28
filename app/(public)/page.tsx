@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Carousel from "@/components/Carousel";
 import BuyParts from "@/components/BuyParts";
 import Testimonials from "@/components/Testimonials";
-import TrendingProducts from "@/components/TrendingProducts";
+// import TrendingProducts from "@/components/TrendingProducts";
 import { Footer } from "@/components/Footer";
 import Service from "@/components/Service/Service";
 import TrustSection from "@/components/TrustSection";
@@ -77,7 +77,7 @@ export default function UsersPage() {
             <BuyParts />
             <TrustSection />
             <Testimonials />
-            <TrendingProducts />
+            {/* <TrendingProducts /> */}
             <Footer />
           </div>
         ) : !subId ? ( // only show if no plan
