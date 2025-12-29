@@ -178,7 +178,7 @@ const BuyParts = () => {
 		if (!hydrated) return;
 		if (selectedProductionYear && selectedModelLine) {
 			triggerGetModifications({
-				modelLine: selectedModelLine,
+				modelLine: selectedModelLine.toString(),
 				productionYear: Number(selectedProductionYear),
 			});
 		} else {
@@ -363,7 +363,7 @@ const BuyParts = () => {
 							onChange={(e) => setSelectedProductionYear(e.target.value || null)}
 						>
 							<option value="">{productionYearsLoading ? "Loading..." : "📅 Select Year"}</option>
-							{productionYearsData?.data?.map((year: string) => (
+							{productionYearsData?.data?.map((year) => (
 								<option key={year} value={year}>
 									{year}
 								</option>
@@ -484,7 +484,7 @@ const BuyParts = () => {
 						onChange={(e) => setSelectedProductionYear(e.target.value || null)}
 					>
 						<option value="">{productionYearsLoading ? "Loading..." : "Select Year"}</option>
-						{productionYearsData?.data?.map((year: string) => (
+						{productionYearsData?.data?.map((year) => (
 							<option key={year} value={year}>
 								{year}
 							</option>
@@ -564,9 +564,9 @@ const BuyParts = () => {
 				</div>
 			</div>
 
-			{/* <div className="mt-6 md:mt-8 w-full">
-				<CategoryGrid />
-			</div> */}
+			<div className="mt-6 md:mt-8 w-full">
+				{/* <CategoryGrid /> */}
+			</div>
 
 			{isModalOpen && (
 				<PartCategorySearchModal
