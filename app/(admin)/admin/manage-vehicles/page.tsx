@@ -5,7 +5,7 @@ import { useGetAllVehiclesQuery } from "@/lib/redux/api/vehicleApi";
 import { useDeleteVehicleMutation } from "@/lib/redux/api/vehicleApi";
 import { useRouter } from "next/navigation";
 import DataTable, { TableColumn, TableAction } from "@/components/SuperDashboard/Table";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useGetAllCarMakesQuery } from "@/lib/redux/api/caeMakeApi";
 import { useGetAllEngineTypesQuery } from "@/lib/redux/api/engineTypeApi";
 import { useGetAllModificationsQuery } from "@/lib/redux/api/modificationApi";
@@ -22,48 +22,48 @@ interface VehicleFilters {
 	sortBy: "newest" | "oldest" | "";
 }
 
-interface ApiVehicle {
-	id: number;
-	production_year: number;
-	modification: {
-		id: number;
-		name: string;
-		models: {
-			id: number;
-			name: string;
-			model_line: {
-				id: number;
-				name: string;
-				car_make: {
-					id: number;
-					name: string;
-				};
-			};
-		}[];
-	};
-	engine_type: {
-		id: number;
-		name: string;
-	} | null;
-}
-
 interface OptionType {
 	value: string;
 	label: string;
 }
 
+const STORAGE_KEY = "manageVehiclesFilters";
+
 export default function ManageVehicle() {
 	const [page, setPage] = useState(1);
 	const limit = 10;
-	const [filters, setFilters] = useState<VehicleFilters>({
-		make: "",
-		modelLine: "",
-		modification: "",
-		engineType: "",
-		productionYearFrom: "",
-		productionYearTo: "",
-		sortBy: "",
+
+	// Load saved filters from sessionStorage on mount
+	const [filters, setFilters] = useState<VehicleFilters>(() => {
+		if (typeof window !== "undefined") {
+			const saved = sessionStorage.getItem(STORAGE_KEY);
+			if (saved) {
+				try {
+					return JSON.parse(saved);
+				} catch {
+					return {
+						make: "",
+						modelLine: "",
+						modification: "",
+						engineType: "",
+						productionYearFrom: "",
+						productionYearTo: "",
+						sortBy: "",
+					};
+				}
+			}
+		}
+		return {
+			make: "",
+			modelLine: "",
+			modification: "",
+			engineType: "",
+			productionYearFrom: "",
+			productionYearTo: "",
+			sortBy: "",
+		};
 	});
+
 	const [showFilters, setShowFilters] = useState<boolean>(false);
 	const [selectedMakeId, setSelectedMakeId] = useState<number | null>(null);
 	const [selectedModelLineId, setSelectedModelLineId] = useState<number | null>(null);
@@ -103,17 +103,28 @@ export default function ManageVehicle() {
 
 	const router = useRouter();
 
-	// Transform API data to table format
-	const vehicles = (data?.data?.vehicles ?? []).map((vehicle: ApiVehicle) => ({
-		id: vehicle.id,
-		brand: vehicle.modification.models[0]?.model_line.car_make.name || "N/A",
-		model: vehicle.modification.models[0]?.model_line.name || "N/A",
-		year: vehicle.production_year,
-		variant: vehicle.modification.name,
-		generation: vehicle.modification.models.map(m => m.name).join(", ") || "N/A",
-		engine_type: vehicle.engine_type?.name ?? "N/A",
-		raw: vehicle,
-	}));
+	// Save filters to sessionStorage whenever they change
+	useEffect(() => {
+		sessionStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
+	}, [filters]);
+
+	// Hybrid mapping for vehicle display
+	const vehicles = (data?.data?.vehicles ?? []).map((vehicle: any) => {
+		const directModel = vehicle.model;
+		const fallbackModel = vehicle.modification?.models?.[0] || null;
+		const displayModel = directModel || fallbackModel;
+
+		return {
+			id: vehicle.id,
+			brand: displayModel?.model_line?.car_make?.name || "N/A",
+			model: displayModel?.model_line?.name || "N/A",
+			year: vehicle.production_year,
+			variant: vehicle.modification?.name || "N/A",
+			generation: directModel?.name || "N/A",
+			engine_type: vehicle.engine_type?.name ?? "N/A",
+			raw: vehicle,
+		};
+	});
 
 	const total = data?.data?.total ?? 0;
 	const totalPages = Math.ceil(total / limit);
@@ -163,7 +174,7 @@ export default function ManageVehicle() {
 	};
 
 	const clearFilters = () => {
-		setFilters({
+		const emptyFilters: VehicleFilters = {
 			make: "",
 			modelLine: "",
 			modification: "",
@@ -171,10 +182,12 @@ export default function ManageVehicle() {
 			productionYearFrom: "",
 			productionYearTo: "",
 			sortBy: "",
-		});
+		};
+		setFilters(emptyFilters);
 		setSelectedMakeId(null);
 		setSelectedModelLineId(null);
 		setPage(1);
+		sessionStorage.removeItem(STORAGE_KEY); // Clear saved filters
 	};
 
 	const carMakes = carMakesResponse?.data?.carMakes || [];
@@ -189,7 +202,6 @@ export default function ManageVehicle() {
 		label: model.name,
 	}))];
 
-	// FIXED: Filter modifications that are linked to any generation of the selected model line
 	const availableModifications = selectedModelLineId
 		? (modificationsResponse?.data?.modifications || []).filter((mod: any) =>
 				mod.models?.some((model: any) => model.model_lineId === selectedModelLineId)

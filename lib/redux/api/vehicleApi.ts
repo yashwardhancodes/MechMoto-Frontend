@@ -3,13 +3,68 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Define the type for the Redux state
 interface RootState {
 	auth: {
-		token?: string; // Token is optional, as it might not always be present
+		token?: string;
 	};
 }
-
+interface ProductionYearsResponse {
+	success: boolean;
+	data: number[];
+}
+	
+// Updated response shape to match the current backend
+// - Includes direct `model` (primary)
+// - Includes `modification.models` (fallback for old vehicles)
 interface VehicleResponse {
 	data: {
-		vehicles: any[];
+		vehicles: Array<{
+      car_make: any;
+      model_line: string;
+			id: number;
+			production_year: number;
+
+			// Direct relation (new vehicles)
+			model?: {
+				id: number;
+				name: string;
+				model_line: {
+					id: number;
+					name: string;
+					car_make: {
+						id: number;
+						name: string;
+					};
+				};
+			} | null;
+
+			// Modification with nested models (fallback for legacy data)
+			modification?: {
+				id: number;
+				name: string;
+				models?: Array<{
+					id: number;
+					name: string;
+					model_line: {
+						id: number;
+						name: string;
+						car_make: {
+							id: number;
+							name: string;
+						};
+					};
+				}>;
+			} | null;
+
+			engine_type?: {
+				id: number;
+				name: string;
+			} | null;
+
+			// Optional _count if you use it in list view
+			_count?: {
+				parts: number;
+				compatibility: number;
+			};
+		}>;
 		total: number;
 		page: number;
 		limit: number;
@@ -21,7 +76,7 @@ export const vehicleApi = createApi({
 	baseQuery: fetchBaseQuery({
 		baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
 		prepareHeaders: (headers, { getState }) => {
-			const state = getState() as RootState; // Specify the RootState type
+			const state = getState() as RootState;
 			const token = state.auth.token;
 			if (token) {
 				headers.set("Authorization", `Bearer ${token}`);
@@ -52,7 +107,8 @@ export const vehicleApi = createApi({
 			}),
 			providesTags: ["Vehicle"],
 		}),
-		createVehicle: builder.mutation({
+
+		createVehicle: builder.mutation<any, any>({
 			query: (vehicleData) => ({
 				url: "vehicles",
 				method: "POST",
@@ -60,11 +116,13 @@ export const vehicleApi = createApi({
 			}),
 			invalidatesTags: ["Vehicle"],
 		}),
-		getVehicle: builder.query({
+
+		getVehicle: builder.query<any, string>({
 			query: (id) => `vehicles/${id}`,
 			providesTags: ["Vehicle"],
 		}),
-		updateVehicle: builder.mutation({
+
+		updateVehicle: builder.mutation<any, { id: string; data: any }>({
 			query: ({ id, ...data }) => ({
 				url: `vehicles/${id}`,
 				method: "PUT",
@@ -72,23 +130,33 @@ export const vehicleApi = createApi({
 			}),
 			invalidatesTags: ["Vehicle"],
 		}),
-		deleteVehicle: builder.mutation({
+
+		deleteVehicle: builder.mutation<any, string>({
 			query: (id) => ({
 				url: `vehicles/${id}`,
 				method: "DELETE",
 			}),
 			invalidatesTags: ["Vehicle"],
 		}),
-		getProductionYears: builder.query({
-			query: (modelLine) => `vehicles/production-years?model-line=${modelLine}`,
-			providesTags: ["Vehicle"],
-		}),
-		getModifications: builder.query({
+
+		getProductionYears: builder.query<ProductionYearsResponse, number>({
+	query: (modelLine) => `vehicles/production-years?model-line=${modelLine}`,
+	providesTags: ["Vehicle"],
+}),
+
+
+		getModifications: builder.query<any, { modelLine: string; productionYear: number }>({
 			query: ({ modelLine, productionYear }) =>
 				`vehicles/modifications?model-line=${modelLine}&production-year=${productionYear}`,
 			providesTags: ["Vehicle"],
 		}),
-		getFilteredVehicles: builder.query({
+
+		getFilteredVehicles: builder.query<any, {
+			carMakeId?: number;
+			modelLine?: string;
+			productionYear?: number;
+			modification?: string;
+		}>({
 			query: ({ carMakeId, modelLine, productionYear, modification }) => {
 				const queryParams = new URLSearchParams();
 				if (carMakeId) queryParams.append("carMakeId", carMakeId.toString());
