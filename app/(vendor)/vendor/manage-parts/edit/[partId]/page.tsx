@@ -5,7 +5,7 @@ import {
 	useUpdatePartMutation,
 	useGetPartQuery,
 	useRemoveCompatibilityMutation,
-	useAddCompatibilityBulkMutation, // ← Added bulk mutation
+	useAddCompatibilityBulkMutation,
 } from "@/lib/redux/api/partApi";
 import { useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
@@ -70,7 +70,7 @@ const UpdatePart: React.FC = () => {
 	const [updatePart, { isLoading: isUpdating }] = useUpdatePartMutation();
 	const [removeCompatibility, { isLoading: isRemovingCompatibility }] =
 		useRemoveCompatibilityMutation();
-	const [addCompatibilityBulk] = useAddCompatibilityBulkMutation(); // ← Bulk mutation
+	const [addCompatibilityBulk] = useAddCompatibilityBulkMutation();
 
 	const token = useSelector((state: RootState) => state.auth.token);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,14 +80,11 @@ const UpdatePart: React.FC = () => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [errors, setErrors] = useState<Record<string, string>>({});
 
-	// New files to upload
 	const [newFiles, setNewFiles] = useState<File[]>([]);
-	// Existing + newly uploaded preview URLs
 	const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
 	const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
-	// Loading state for bulk compatibility add
 	const [isAddingCompatibility, setIsAddingCompatibility] = useState(false);
 
 	const [formData, setFormData] = useState<FormData>({
@@ -105,8 +102,8 @@ const UpdatePart: React.FC = () => {
 		discountId: "",
 	});
 
-	// Supporting data
 	const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+	const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
 
 	const { data: categoryRes } = useGetAllCategoriesQuery({ page: 1, limit: 999 });
 	const [fetchSubcategoriesByCategory, { data: filteredSubcategories }] =
@@ -124,7 +121,6 @@ const UpdatePart: React.FC = () => {
 
 	const partBrands = partBrandRes?.data?.brands || [];
 
-	// Load existing part data
 	useEffect(() => {
 		if (partRes?.data) {
 			const p = partRes.data;
@@ -139,19 +135,19 @@ const UpdatePart: React.FC = () => {
 				remarks: p.remarks || "",
 				availabilityStatus: p.availability_status || "Unavailable",
 				origin: p.origin || "OEM",
-				partBrandId: p.part_brand?.toString() || "",
+				partBrandId: p.part_brand?.id.toString() || "",
 				discountId: p.discount?.toString() || "",
 			});
 
 			if (p.subcategory) {
 				setSelectedCategoryId(p.subcategory.categoryId);
+				setSelectedSubCategoryId(p.subcategory.id.toString());
 			}
 
 			if (p.vehicle) setSelectedVehicle(p.vehicle);
 		}
 	}, [partRes]);
 
-	// Update preview URLs whenever existing images or new files change
 	useEffect(() => {
 		const existing = formData.imageUrls;
 		const newPreviews = newFiles.map((f) => URL.createObjectURL(f));
@@ -182,7 +178,6 @@ const UpdatePart: React.FC = () => {
 		setFormData((prev) => ({ ...prev, [name]: value.toString() }));
 	};
 
-	// Single vehicle selection (for primary vehicle)
 	const handleVehicleSelect = (vehicles: Vehicle[]) => {
 		if (vehicles.length > 0) {
 			const vehicle = vehicles[0];
@@ -232,16 +227,37 @@ const UpdatePart: React.FC = () => {
 				finalImageUrls = [...finalImageUrls, ...uploaded];
 			}
 
+			// FIXED PAYLOAD: Never send undefined, properly handle clearing fields
 			const payload: any = {
-				partNumber: formData.partNumber.trim() || undefined,
-				description: formData.description.trim() || undefined,
-				quantity: formData.quantity ? parseInt(formData.quantity) : undefined,
-				price: formData.price ? parseFloat(formData.price) : undefined,
-				remarks: formData.remarks.trim() || undefined,
+				imageUrls: finalImageUrls,
 				availabilityStatus: formData.availabilityStatus,
 				origin: formData.origin,
-				imageUrls: finalImageUrls,
 			};
+
+			// Optional fields - only include if meaningful or intentionally cleared
+			if (formData.partNumber.trim() !== "") {
+				payload.partNumber = formData.partNumber.trim();
+			}
+
+			if (formData.description.trim() !== "") {
+				payload.description = formData.description.trim();
+			} else if (formData.description.trim() === "" && partRes?.data?.description) {
+				payload.description = ""; // Explicitly clear
+			}
+
+			if (formData.quantity && !isNaN(parseInt(formData.quantity))) {
+				payload.quantity = parseInt(formData.quantity);
+			}
+
+			if (formData.price && !isNaN(parseFloat(formData.price))) {
+				payload.price = parseFloat(formData.price);
+			}
+
+			if (formData.remarks.trim() !== "") {
+				payload.remarks = formData.remarks.trim();
+			} else if (formData.remarks.trim() === "" && partRes?.data?.remarks) {
+				payload.remarks = ""; // Explicitly clear
+			}
 
 			if (formData.vehicleId && !isNaN(parseInt(formData.vehicleId))) {
 				payload.vehicleId = parseInt(formData.vehicleId);
@@ -284,7 +300,6 @@ const UpdatePart: React.FC = () => {
 	const availabilityOptions = ["Available", "Unavailable", "On Backorder"];
 	const originOptions = ["OEM", "Aftermarket", "Refurbished"];
 
-	// Extract existing compatible vehicle IDs
 	const existingCompatibilityIds =
 		partRes?.data?.compatibility
 			?.map((c: any) => c.vehicle?.id)
@@ -293,7 +308,6 @@ const UpdatePart: React.FC = () => {
 	return (
 		<div className="overflow-y-auto bg-white py-8 px-4">
 			<div className="max-w-5xl mx-auto space-y-9">
-				{/* Part Number, Quantity, Price */}
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 					<div>
 						<input
@@ -337,7 +351,6 @@ const UpdatePart: React.FC = () => {
 					</div>
 				</div>
 
-				{/* Description & Remarks */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div>
 						<textarea
@@ -364,7 +377,6 @@ const UpdatePart: React.FC = () => {
 					</div>
 				</div>
 
-				{/* Vehicle */}
 				<div>
 					<button
 						type="button"
@@ -373,15 +385,48 @@ const UpdatePart: React.FC = () => {
 					>
 						<span className={selectedVehicle ? "text-gray-700" : "text-gray-400"}>
 							{selectedVehicle
-								? `${selectedVehicle.modification?.model_line?.car_make?.name ||
-										""
-								  } ${selectedVehicle.modification?.model_line?.name || ""} ${selectedVehicle.modification?.name
-										? `(${selectedVehicle.modification.name})`
-										: ""
-								  } ${selectedVehicle.engine_type?.name
+								? (() => {
+									const models = selectedVehicle.modification.models ?? [];
+
+									const specificModel =
+										models.find(
+											(m: any) =>
+												m.name.toLowerCase().includes("gen") ||
+												m.name.toLowerCase().includes("1st") ||
+												!m.name.toLowerCase().includes("all")
+										) || models[0];
+
+									const make = specificModel?.model_line?.car_make?.name ?? "N/A";
+									const modelLine = specificModel?.model_line?.name ?? "N/A";
+									const generation =
+										specificModel?.name && !specificModel.name.toLowerCase().includes("all")
+											? specificModel.name
+											: "";
+
+									const rawVariant = selectedVehicle.modification.name ?? "";
+									const variant = rawVariant
+										? `(${rawVariant.replace(/\//g, " • ")})`
+										: "";
+
+									const engine = selectedVehicle.engine_type?.name
 										? `- ${selectedVehicle.engine_type.name}`
-										: ""
-								  } [${selectedVehicle.production_year}]`
+										: "";
+
+									const year = selectedVehicle.production_year
+										? `[${selectedVehicle.production_year}]`
+										: "";
+
+									const parts = [
+										make,
+										modelLine,
+										generation && generation !== modelLine ? generation : "",
+										variant,
+										engine,
+										year,
+									].filter(Boolean);
+
+									return parts.join(" ").trim() || "Selected Vehicle";
+								})()
 								: "Click to select vehicle"}
 						</span>
 						<ChevronDown className="w-5 h-5 text-[#9AE144]" />
@@ -391,9 +436,7 @@ const UpdatePart: React.FC = () => {
 					)}
 				</div>
 
-				{/* CATEGORY + SUBCATEGORY + BRAND */}
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-					{/* CATEGORY DROPDOWN */}
 					<select
 						value={selectedCategoryId}
 						onChange={(e) => {
@@ -412,10 +455,12 @@ const UpdatePart: React.FC = () => {
 						))}
 					</select>
 
-					{/* SUBCATEGORY DROPDOWN */}
 					<select
-						value={formData.subcategoryId}
-						onChange={(e) => handleSelectChange("subcategoryId", e.target.value)}
+						value={selectedSubCategoryId}
+						onChange={(e) => {
+							setSelectedSubCategoryId(e.target.value);
+							handleSelectChange("subcategoryId", e.target.value);
+						}}
 						className="px-4 py-3 border border-[#808080] rounded-lg focus:ring-2 focus:ring-[#9AE144]"
 						disabled={!selectedCategoryId}
 					>
@@ -429,7 +474,6 @@ const UpdatePart: React.FC = () => {
 						))}
 					</select>
 
-					{/* BRAND DROPDOWN */}
 					<select
 						value={formData.partBrandId}
 						onChange={(e) => handleSelectChange("partBrandId", e.target.value)}
@@ -444,7 +488,6 @@ const UpdatePart: React.FC = () => {
 					</select>
 				</div>
 
-				{/* Availability & Origin */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<select
 						value={formData.availabilityStatus}
@@ -471,7 +514,6 @@ const UpdatePart: React.FC = () => {
 					</select>
 				</div>
 
-				{/* Image Upload */}
 				<div className="flex justify-between items-start">
 					<div className="flex flex-wrap gap-4">
 						{previewUrls.length > 0 ? (
@@ -510,7 +552,7 @@ const UpdatePart: React.FC = () => {
 								className={`h-44 w-44 border-2 border-dashed rounded-lg flex items-center justify-center text-center cursor-pointer transition-all ${isDragging
 									? "border-[#9AE144] bg-[#9AE144]/10"
 									: "border-[#808080]"
-								}`}
+									}`}
 								onDrop={handleDrop}
 								onDragOver={handleDragOver}
 								onDragLeave={handleDragLeave}
@@ -546,7 +588,6 @@ const UpdatePart: React.FC = () => {
 				</div>
 			</div>
 
-			{/* Compatibility Section */}
 			<div className="max-w-5xl mx-auto mt-12 space-y-6">
 				<div className="flex items-center justify-between">
 					<h3 className="text-lg font-semibold">Compatible Vehicles</h3>
@@ -603,7 +644,6 @@ const UpdatePart: React.FC = () => {
 				)}
 			</div>
 
-			{/* Modals */}
 			<VehicleSelectorModal
 				isOpen={isVehicleModalOpen}
 				onClose={() => setIsVehicleModalOpen(false)}
@@ -630,7 +670,6 @@ const UpdatePart: React.FC = () => {
 					}
 
 					try {
-						// SINGLE BULK CALL
 						await addCompatibilityBulk({
 							partId: parseInt(partId),
 							vehicleIds: newVehicleIds,

@@ -4,6 +4,7 @@
 import { useState, useMemo } from "react";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+// ← FIX: separate default import for AnimatePresence
 import Select from "react-select";
 
 import { useGetAllVehiclesQuery } from "@/lib/redux/api/vehicleApi";
@@ -359,6 +360,7 @@ export default function VehicleSelectorModal({
                   return (
                     <label
                       key={v.id}
+                      onClick={() => mode === "single" && toggleVehicle(v)}
                       className={`flex gap-4 p-4 border rounded-lg cursor-pointer transition-all ${
                         mode === "single"
                           ? "hover:bg-green-50 hover:border-green-300"

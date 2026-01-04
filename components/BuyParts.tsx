@@ -12,6 +12,7 @@ import {
 import { useLazyGetModelLinesQuery } from "@/lib/redux/api/modelLineApi";
 import { useLazyGetSubcategoriesByCategoryIdQuery } from "@/lib/redux/api/subCategoriesApi";
 import toast from "react-hot-toast";
+import { formatModificationLabel } from "@/lib/utils/modelFormatter";
 
 interface CarMake {
 	id: number;
@@ -342,7 +343,7 @@ const BuyParts = () => {
 							<option value="">{modelLineLoading ? "Loading..." : "🏎️ Select Model"}</option>
 							{modelLineData?.data?.map((model: ModelLine) => (
 								<option key={model.id} value={model.id}>
-									{model.name}
+									{formatModificationLabel(model.name)}
 								</option>
 							))}
 						</select>
@@ -387,7 +388,7 @@ const BuyParts = () => {
 						>
 							<option value="">{modificationsLoading ? "Loading..." : "⚙️ Select Modification"}</option>
 							{modificationsData?.data?.map((model: any) => (
-								<optgroup key={model.id} label={model.name}>
+								<optgroup key={model.id} label={formatModificationLabel(model.name)}>
 									{model.modifications.map((mod: any) => (
 										<option key={mod.id} value={mod.name}>
 											{mod.name}
