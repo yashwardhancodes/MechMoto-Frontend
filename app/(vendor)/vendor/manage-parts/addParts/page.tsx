@@ -135,6 +135,7 @@ const AddPart: React.FC = () => {
 		if (vehicles.length === 0) return;
 
 		const vehicle = vehicles[0];
+		console.log("Selected Vehicle:", vehicle);
 		setSelectedVehicle(vehicle);
 		setFormData((prev) => ({ ...prev, vehicleId: vehicle.id.toString() }));
 		setIsVehicleModalOpen(false);
@@ -341,21 +342,49 @@ const AddPart: React.FC = () => {
 							className="w-full px-4 py-3 border border-[#808080] rounded-lg text-left flex justify-between items-center hover:border-[#9AE144] transition-colors"
 						>
 							<span className={selectedVehicle ? "text-gray-700" : "text-gray-400"}>
-								{selectedVehicle
-									? `${
-											selectedVehicle.modification?.model_line?.car_make
-												?.name || ""
-									  } ${selectedVehicle.modification?.model_line?.name || ""} ${
-											selectedVehicle.modification?.name
-												? `(${selectedVehicle.modification.name})`
-												: ""
-									  } ${
-											selectedVehicle.engine_type?.name
-												? `- ${selectedVehicle.engine_type.name}`
-												: ""
-									  } [${selectedVehicle.production_year}]`
-									: "Click to select vehicle"}
-							</span>
+  {selectedVehicle
+    ? (() => {
+        // Always extract make and model line from modification.models (most reliable source)
+        // There can be multiple models linked, but usually the specific generation is one of them
+        const models = selectedVehicle.modification.models ?? [];
+
+        // Find the most specific generation (avoid "All Generations" if possible)
+        const specificModel = models.find(
+          (m: any) => m.name.includes("GEN") || m.name.includes("1ST") || !m.name.toLowerCase().includes("all")
+        ) || models[0];
+
+        const make = specificModel?.model_line?.car_make?.name ?? "Mahindra";
+        const modelLine = specificModel?.model_line?.name ?? "Bolero";
+        const generation = specificModel?.name && !specificModel.name.toLowerCase().includes("all")
+          ? specificModel.name
+          : "";
+
+        // Clean up variant name: replace "/" with " • " for better readability
+        const rawVariant = selectedVehicle.modification.name ?? "";
+        const variant = rawVariant
+          ? `(${rawVariant.replace(/\//g, " • ")})`
+          : "";
+
+        const engine = selectedVehicle.engine_type?.name
+          ? `- ${selectedVehicle.engine_type.name}`
+          : "";
+
+        const year = selectedVehicle.production_year ? `[${selectedVehicle.production_year}]` : "";
+
+        // Build the string, avoiding duplication
+        const parts = [
+          make,
+          modelLine,
+          generation && generation !== modelLine ? generation : "",
+          variant,
+          engine,
+          year,
+        ].filter(Boolean);
+
+        return parts.join(" ").trim() || "Selected Vehicle";
+      })()
+    : "Click to select vehicle"}
+</span>
 							<ChevronDown className="w-5 h-5 text-[#9AE144]" />
 						</button>
 
