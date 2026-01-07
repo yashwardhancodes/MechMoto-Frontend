@@ -276,11 +276,12 @@ const UpdatePart: React.FC = () => {
 			}
 
 			createPartSchema.parse(payload);
+			console.log(payload);
 
 			await updatePart({ id: partId, ...payload }).unwrap();
 
 			toast.success("Part updated successfully!");
-			window.location.href = "/vendor/manage-parts";
+			// window.location.href = "/vendor/manage-parts";
 		} catch (err: any) {
 			if (err instanceof z.ZodError) {
 				const formattedErrors: Record<string, string> = {};
