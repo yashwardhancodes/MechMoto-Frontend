@@ -10,7 +10,7 @@ import {
 import { useSelector } from "react-redux";
 import { toast } from "react-hot-toast";
 import { z } from "zod";
-import { createPartSchema } from "@/lib/schema/partSchema";
+import { updatePartSchema } from "@/lib/schema/partSchema";
 import { uploadImageToBackend } from "@/lib/utils/imageUpload";
 import { useGetAllCategoriesQuery } from "@/lib/redux/api/categoriesApi";
 import { useLazyGetSubcategoriesByCategoryIdQuery } from "@/lib/redux/api/subCategoriesApi";
@@ -101,6 +101,45 @@ const UpdatePart: React.FC = () => {
 		partBrandId: "",
 		discountId: "",
 	});
+
+	const formatVehicleName = (vehicle: Vehicle | null): string => {
+	if (!vehicle || !vehicle.modification) {
+		return "Unknown Vehicle";
+	}
+
+	const models = vehicle.modification.models ?? [];
+
+	// If no models, fallback gracefully
+	if (models.length === 0) {
+		return `${vehicle.modification.name || "Unknown"} [${vehicle.production_year || "?"}]`;
+	}
+
+	// Prefer a specific generation (GEN, 1ST, etc.) over "All Generations"
+	const specificModel =
+		models.find(
+			(m: any) =>
+				m.name.toUpperCase().includes("GEN") ||
+				m.name.toUpperCase().includes("1ST") ||
+				!m.name.toLowerCase().includes("all")
+		) || models[0];
+
+	const make = specificModel?.model_line?.car_make?.name ?? "Unknown Make";
+	const modelLine = specificModel?.model_line?.name ?? "Unknown Model";
+	const generation =
+		specificModel?.name && !specificModel.name.toLowerCase().includes("all")
+			? specificModel.name
+			: "";
+
+	const rawVariant = vehicle.modification.name ?? "";
+	const variant = rawVariant ? `(${rawVariant.replace(/\//g, " • ")})` : "";
+
+	const engine = vehicle.engine_type?.name ? `- ${vehicle.engine_type.name}` : "";
+	const year = vehicle.production_year ? `[${vehicle.production_year}]` : "";
+
+	const parts = [make, modelLine, generation, variant, engine, year].filter(Boolean);
+
+	return parts.join(" ").trim() || "Unknown Vehicle";
+};
 
 	const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
 	const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string>("");
@@ -275,13 +314,12 @@ const UpdatePart: React.FC = () => {
 				payload.discountId = parseInt(formData.discountId);
 			}
 
-			createPartSchema.parse(payload);
-			console.log(payload);
+			updatePartSchema.parse(payload);
 
 			await updatePart({ id: partId, ...payload }).unwrap();
 
 			toast.success("Part updated successfully!");
-			// window.location.href = "/vendor/manage-parts";
+			window.location.href = "/vendor/manage-parts";
 		} catch (err: any) {
 			if (err instanceof z.ZodError) {
 				const formattedErrors: Record<string, string> = {};
@@ -385,50 +423,7 @@ const UpdatePart: React.FC = () => {
 						className="w-full px-4 py-3 border border-[#808080] rounded-lg text-left flex justify-between items-center hover:border-[#9AE144]"
 					>
 						<span className={selectedVehicle ? "text-gray-700" : "text-gray-400"}>
-							{selectedVehicle
-								? (() => {
-									const models = selectedVehicle.modification.models ?? [];
-
-									const specificModel =
-										models.find(
-											(m: any) =>
-												m.name.toLowerCase().includes("gen") ||
-												m.name.toLowerCase().includes("1st") ||
-												!m.name.toLowerCase().includes("all")
-										) || models[0];
-
-									const make = specificModel?.model_line?.car_make?.name ?? "N/A";
-									const modelLine = specificModel?.model_line?.name ?? "N/A";
-									const generation =
-										specificModel?.name && !specificModel.name.toLowerCase().includes("all")
-											? specificModel.name
-											: "";
-
-									const rawVariant = selectedVehicle.modification.name ?? "";
-									const variant = rawVariant
-										? `(${rawVariant.replace(/\//g, " • ")})`
-										: "";
-
-									const engine = selectedVehicle.engine_type?.name
-										? `- ${selectedVehicle.engine_type.name}`
-										: "";
-
-									const year = selectedVehicle.production_year
-										? `[${selectedVehicle.production_year}]`
-										: "";
-
-									const parts = [
-										make,
-										modelLine,
-										generation && generation !== modelLine ? generation : "",
-										variant,
-										engine,
-										year,
-									].filter(Boolean);
-
-									return parts.join(" ").trim() || "Selected Vehicle";
-								})()
-								: "Click to select vehicle"}
+							{selectedVehicle ? formatVehicleName(selectedVehicle) : "Click to select vehicle"}
 						</span>
 						<ChevronDown className="w-5 h-5 text-[#9AE144]" />
 					</button>
@@ -537,7 +532,7 @@ const UpdatePart: React.FC = () => {
 											e.stopPropagation();
 											removeImage(index);
 										}}
-										className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
+										className="absolute top-2 right-2 z-50 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
 									>
 										<X className="w-5 h-5" />
 									</button>
@@ -611,15 +606,8 @@ const UpdatePart: React.FC = () => {
 									key={comp.id}
 									className="flex items-center justify-between p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition"
 								>
-									<div>
-										<div className="font-medium">
-											{v.modification?.model_line?.car_make?.name}{" "}
-											{v.modification?.model_line?.name}{" "}
-											{v.modification?.name && `(${v.modification.name})`}
-										</div>
-										<div className="text-sm text-gray-600">
-											{v.engine_type?.name} • {v.production_year}
-										</div>
+									<div className="font-medium text-gray-800">
+										{formatVehicleName(v)}
 									</div>
 									<button
 										onClick={async () => {
