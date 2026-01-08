@@ -81,16 +81,16 @@ export default function ManageParts() {
 
 				return (
 					<div className="text-sm">
-						<span className="font-medium">
+						<span className=" ">
 							{v.modification?.models?.[0]?.model_line?.car_make?.name || "N/A"}{" "}
 							{v.modification?.models?.[0]?.model_line?.name || "N/A"}
 						</span>
 						<br />
-						<span className="text-gray-600">
+						{/* <span className="text-gray-600">
 							{genNames} ({v.production_year})
 						</span>
 						<br />
-						<span className="text-gray-500">{v.modification?.name}</span>
+						<span className="text-gray-500">{v.modification?.name}</span> */}
 					</div>
 				);
 			},

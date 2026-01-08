@@ -18,8 +18,10 @@ export const createPartSchema = z.object({
 export const updatePartSchema = z.object({
   vehicleId: z.number().int().positive("Vehicle ID must be a positive integer").optional(),
   subcategoryId: z.number().int().positive("Subcategory ID must be a positive integer").optional(),
-  partNumber: z.string().min(1, "Part number is required").optional(),
-  description: z.string().min(1, "Description is required").optional(),
+  
+  partNumber: z.string().trim().min(1, "Part number cannot be empty").optional(),
+  description: z.string().trim().min(1, "Description cannot be empty").optional(),
+  
   quantity: z.number().int().min(1, "Quantity must be at least 1").optional(),
   imageUrls: z.array(z.string()).optional(),
   price: z.number().positive("Price must be positive").optional(),
