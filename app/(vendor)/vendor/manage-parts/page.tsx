@@ -75,9 +75,7 @@ export default function ManageParts() {
 				const v = row.vehicle;
 				if (!v) return <span className="text-gray-500">General Part</span>;
 
-				const genNames = v.modification?.models
-					?.map((m: any) => m.name)
-					.join(", ") || "N/A";
+		 
 
 				return (
 					<div className="text-sm">
