@@ -65,7 +65,7 @@ const BuyParts = () => {
 	const [selectedCarMake, setSelectedCarMake] = useState<number | null>(null);
 	const [selectedModelLine, setSelectedModelLine] = useState<number | null>(null);
 	const [selectedProductionYear, setSelectedProductionYear] = useState<string | null>(null);
-	const [selectedModification, setSelectedModification] = useState<string | null>(null);
+	const [selectedModification, setSelectedModification] = useState<number | null>(null);
 	const [searchResults, setSearchResults] = useState<Vehicle[]>([]);
 	const [selectedCategory, setSelectedCategory] = useState<PartCategory | null>(null);
 	const [selectedSubCategory, setSelectedSubCategory] = useState<PartCategory | null>(null);
@@ -203,13 +203,14 @@ const BuyParts = () => {
 			toast.error("Please select at least one filter to search.");
 			return;
 		}
-
+		console.log("modification seleted", modificationsData)
 		try {
 			const result = await triggerGetFilteredVehicles({
 				carMakeId: selectedCarMake ?? undefined,
 				modelLine: selectedModelLine?.toString(),
 				productionYear: selectedProductionYear ? Number(selectedProductionYear) : undefined,
-				modification: selectedModification ?? undefined,
+				modificationId: selectedModification ?? undefined,
+				modelId: modificationsData.data.find(model => model.modifications.some(mod => mod.id === selectedModification))?.id
 			}).unwrap();
 
 			setSearchResults(result.data || []);
@@ -390,7 +391,7 @@ const BuyParts = () => {
 							{modificationsData?.data?.map((model: any) => (
 								<optgroup key={model.id} label={formatModificationLabel(model.name)}>
 									{model.modifications.map((mod: any) => (
-										<option key={mod.id} value={mod.name}>
+										<option key={mod.id} value={mod.id}>
 											{mod.name}
 										</option>
 									))}
@@ -506,13 +507,15 @@ const BuyParts = () => {
 						className="custom-select bg-white focus:outline-none text-gray-700 font-medium text-sm w-full pl-9 pr-8 py-2.5 disabled:text-gray-400 appearance-none cursor-pointer hover:bg-gray-50 rounded-lg transition-all duration-200 disabled:cursor-not-allowed border border-gray-200 focus:border-[rgba(154,225,68,0.8)] focus:ring-2 focus:ring-[rgba(154,225,68,0.2)]"
 						disabled={!selectedProductionYear || modificationsLoading}
 						value={selectedModification ?? ""}
-						onChange={(e) => setSelectedModification(e.target.value || null)}
+						onChange={(e) => {
+							setSelectedModification(e.target.value || null);
+						}}
 					>
 						<option value="">{modificationsLoading ? "Loading..." : "Select Modification"}</option>
 						{modificationsData?.data?.map((model: any) => (
 							<optgroup key={model.id} label={model.name}>
 								{model.modifications.map((mod: any) => (
-									<option key={mod.id} value={mod.name}>
+									<option key={mod.id} value={mod.id}>
 										{mod.name}
 									</option>
 								))}

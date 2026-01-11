@@ -155,14 +155,16 @@ export const vehicleApi = createApi({
 			carMakeId?: number;
 			modelLine?: string;
 			productionYear?: number;
-			modification?: string;
+			modificationId?: number;
+			modelId?: number;
 		}>({
-			query: ({ carMakeId, modelLine, productionYear, modification }) => {
+			query: ({ carMakeId, modelLine, productionYear, modificationId, modelId }) => {
 				const queryParams = new URLSearchParams();
 				if (carMakeId) queryParams.append("carMakeId", carMakeId.toString());
 				if (modelLine) queryParams.append("modelLine", modelLine);
 				if (productionYear) queryParams.append("productionYear", productionYear.toString());
-				if (modification) queryParams.append("modification", modification);
+				if (modificationId) queryParams.append("modificationId", modificationId.toString());
+				if (modelId) queryParams.append("modelId", modelId.toString());
 				return `vehicles/filter?${queryParams.toString()}`;
 			},
 			providesTags: ["Vehicle"],
